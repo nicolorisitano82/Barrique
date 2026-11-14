@@ -1,7 +1,7 @@
 ntdll thread rc=0 1s :: thread: 59 tests executed (0 marked as todo, 0 as flaky, 0 failures), 1 skipped.
 ntdll threadpool rc=1 :: threadpool: 4728 tests executed (2 marked as todo, 0 as flaky, 1 failure), 0 skipped. [after vCPU release fix: no vCPU errors, 15s]
 ntdll virtual rc=31 :: virtual: 2169 tests executed (58 marked as todo, 0 as flaky, 31 failures), 0 skipped. [all remaining = 16K page limits]
-kernel32 debugger rc=124 180s :: debugger: 9 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+kernel32 debugger rc=9 9s :: debugger: 1669 tests executed (6 marked as todo, 0 as flaky, 9 failures), 2 skipped. [after cross-process notification fix]
 kernel32 file rc=8 :: file: 571424 tests executed (241 marked as todo, 0 as flaky, 8 failures), 0 skipped. [after scatter/gather fix; all 8 = 16K page protect]
 kernel32 loader rc=84 12s :: NO SUMMARY
 kernel32 pipe rc=0 10s :: pipe: 38488 tests executed (32 marked as todo, 0 as flaky, 0 failures), 0 skipped.
