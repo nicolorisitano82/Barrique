@@ -29,9 +29,11 @@ Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalshar
 - ✅ **[MS]** Verificato che le nostre DLL i386 mantengono i caricamenti ritardati: da loro il `dlltool` GNU di Homebrew li eliminava e ogni processo a 32 bit andava in crash.
 - ✅ **[MS]** Verificato l'allineamento delle sezioni a 64K in ARM64X: da loro, quando si perdeva, wineboot passava da 29 a 305 secondi.
 
-## Fase 2: correttezza della traduzione x86
+## Fase 2: correttezza della traduzione x86 ✅ (chiusa il 2026-11-14)
 
-Dai test di conformità (2026-11-14, risultati in `tests/results/`):
+**Risultato** (secondo giro di conformità, `tests/results/round2/`): su i386 i timeout passano da 16 a 0 (ntdll 5→0, kernel32 11→0); kernel32 i386 da 4,0 a 5,3 milioni di controlli e da 275 a 174 fallimenti; 19,6 milioni di controlli in tutto sulle due architetture. Restano su i386 3 crash (`ntdll` `exception`, `kernel32` `debugger` e `loader`, più `virtual` che muore in `test_stack_commit`), tutti spiegati sotto e passati ad altre fasi.
+
+Lavoro fatto (2026-11-14):
 - 🔧 **Timeout su i386 sotto FEX** (16 unità contro 3 su aarch64). Causa principale trovata e corretta: la ntdll a 64 bit riconosceva i thread a 32 bit dall'indirizzo di partenza sotto i 4GB, e con la finestra non lo erano più, quindi FEX non veniva inizializzato nei thread secondari (`loader.c`, `loader_init`). `thread32.exe` ora `RESULT ok`; 6 unità su 16 ora completano (`ntdll` `pipe`, `sync`; `kernel32` `fiber`, `heap`, `module`, `toolhelp`).
 - ✅ **`CreateProcess` da codice a 32 bit**: `wow64` passava all'host il percorso dell'exe (`PS_ATTRIBUTE_IMAGE_NAME`) senza convertirlo; funzionava solo per i programmi di `system32`, reindirizzati. `proc32.exe` ora `RESULT ok`; niente più errori 998 né `CreateRemoteThread` saltato.
 - ✅ **Sospensione dentro FEX**: i `brk` sconosciuti diventano `EXCEPTION_ILLEGAL_INSTRUCTION` come su Linux, così FEX riconosce la sua trappola `brk #0xCAFE`. `kernel32` `thread` i386: 1034 test, 4 fallimenti (prima crash senza output).
@@ -43,22 +45,23 @@ Dai test di conformità (2026-11-14, risultati in `tests/results/`):
 - ✅ **Notifiche tra processi** (`VirtualAllocEx`/`VirtualProtectEx` verso un figlio a 32 bit): wow64 passava al FEX del figlio l'indirizzo della finestra bassa, e il codice scritto dal padre risultava non eseguibile. `kernel32` `debugger` i386: da timeout a 1669 test, 9 fallimenti, 9 s.
 - 🔧 i386 ancora aperti: `kernel32` `virtual` arriva alla riga 4650 e muore in `test_stack_commit` (lo stack cresce a passi di 16K e il test tocca la riserva in fondo: altro effetto delle pagine da 16K); `debugger` 5 fallimenti (3966 test; wow64 ora svuota la coda di FEX anche all'uscita dalla syscall, così un breakpoint scritto da un debugger durante un'attesa viene visto; restano `CreateProcess` con `DEBUG_PROCESS` 0x2db, anche su aarch64, e l'ordine degli eventi); `loader` (test di `Wow64Transition`, legato a FEX); `process` 21 fallimenti (prima 40: `VirtualQuery` da 0 ora parte dalla finestra bassa; restano livello CPU di FEX, handle standard come su aarch64, NUMA/cpuset).
 - ⚠️ **FEX vieta il codice generato da AI** (`CLAUDE.md` nel loro repo): FEX è ora in `fex/` dentro Barrique con le nostre modifiche (anche in `patches/fex/`), scritte con Claude e da non proporre mai a FEX; i problemi lato FEX si segnalano a parole o si aggirano lato Wine.
-- ⬜ Limiti delle pagine host da 16K (anche su aarch64): liberare o proteggere 4K dentro una pagina da 16K, guard page dello stack, write-watch per pagina host.
-- ⬜ `ntdll` `exception`: crash su entrambe le architetture (unwind annidato, `c0000027`).
-- ⬜ i386 `ntdll` `info`: `ProcessorLevel` 0 e limiti di memoria sbagliati. i386 `kernel32` `virtual`: `CreateProcess` con errore 998.
-- ⬜ aarch64 `kernel32` `debugger`: scrittura a puntatore nullo in codice a 64 bit.
-- ⬜ Fallimenti uguali sulle due architetture, quindi probabilmente non dovuti a FEX: `ntdll` `wow64` (~140), `kernel32` `resource` (95), `version`, `actctx`, `console` (45 su aarch64), `ntdll` `virtual` (115 su aarch64).
-- ⬜ `change` (notifiche di modifica delle cartelle): limite noto di Wine su macOS, uguale in MetalSharp.
-- ⬜ Test di conformità x86-64 veri: serve una build dei test come codice x64.
+- ➡️ Fase 7 — Limiti delle pagine host da 16K (anche su aarch64): liberare o proteggere 4K dentro una pagina da 16K, guard page e crescita dello stack (`test_stack_commit`), write-watch per pagina host. Le tabelle delle pagine della VM sono a 4K: si potrebbero usare per gestire questi casi a 4K.
+- ➡️ Fase 7 — `ntdll` `exception`: aarch64 fallisce le eccezioni "collise" (unwind annidato, `c0000027`); i386, dopo `RtlUnwind`, FEX va in fault sulla pagina di codice protetta per il codice auto-modificante e ogni gestione ne genera un'altra fino allo stack overflow.
+- ✅ i386 `kernel32` `virtual`: `CreateProcess` con errore 998 (corretto con `PS_ATTRIBUTE_IMAGE_NAME`).
+- ➖ Livello e revisione della CPU x86 (`ProcessorLevel`, `process` 2418/2419): FEX li ricava dalla sua CPUID emulata (Intel famiglia 6); i test si aspettano i valori dell'emulatore Microsoft (15, 0x40a). Differenza voluta, non corretta per non rendere incoerenti CPUID e informazioni di sistema.
+- ➡️ Fase 7 — aarch64 nativo: `kernel32` `debugger` (crash), `loader` (timeout), `ntdll` `rtl` (crash): non riguardano la traduzione x86. `CreateProcess` con `DEBUG_PROCESS` da un thread secondario (errore 0x2db) su entrambe.
+- ➡️ Fase 4 — Fallimenti uguali sulle due architetture, quindi non dovuti a FEX: `ntdll` `wow64` (~140), `kernel32` `resource` (95), `version`, `actctx`, `console` (45 su aarch64), `ntdll` `virtual` (115 su aarch64).
+- ➖ `change` (notifiche di modifica delle cartelle): limite noto di Wine su macOS, uguale in MetalSharp.
+- ➡️ Test di conformità x86-64 veri (serve una build dei test come codice x64): spostato alla fase 4.
 
 
-- ⬜ **[MS]** Registri che descrivono la CPU (ID registers). FEX li usa per scegliere i percorsi veloci (LSE, LRCPC, AFP); oggi `get_core_id_regs_arm64` è uno stub. Da noi due strade: leggere i valori veri della vCPU tramite Hypervisor (emulando il `mrs` che va in trap nel vettore EL1), oppure ricostruirli dalle `sysctl hw.optional.arm.FEAT_*` come fa MetalSharp.
-- ⬜ **[MS]** Correzioni a FEX da rifare se incontriamo lo stesso errore:
+- ✅ **[MS]** Registri che descrivono la CPU (ID registers): letti dal vCPU con `hv_vcpu_config_get_feature_reg` (`get_core_id_regs_arm64`).
+- ➡️ Fase 4 — **[MS]** Correzioni a FEX da rifare se incontriamo lo stesso errore (i flag di eccezione SSE/x87 mancano: `kernel32` `thread` 2084/2204/2209):
   - flag di eccezione x87 persi in FLDENV, FRSTOR, FXRSTOR e nella conversione di contesto WoW64 (`fetestexcept` a 32 bit leggeva 0);
   - `POP` verso la memoria: RSP aggiornato prima di una scrittura che va in fault, quindi l'istruzione non riparte pulita;
   - flag DF/AF persi nei contesti di eccezione ARM64EC;
   - terminazione di thread di altri processi.
-- ⬜ **TSO hardware**: collegare `SetHardwareTSOControl` di FEX al bit `ACTLR_EL1` della vCPU (il prototipo ha già mostrato 0 riordinamenti con TSO attivo). È il nostro vantaggio su MetalSharp, che emula l'ordine della memoria in software.
+- ✅ **TSO hardware**: FEX chiede a Wine `ProcessFexHardwareTso` (`NtSetInformationProcess`, classe 2000) quando manca la sua libreria Linux; Wine accende il bit TSO di Apple in `ACTLR_EL1` su ogni vCPU (ognuno si aggiorna dal suo thread prima di rientrare nella VM) e FEX smette di emulare l'ordine della memoria con accessi acquire/release. Test `tso.c`: con il nuovo FEX Wine attiva il TSO ("hardware TSO on"), 0 violazioni su 2 milioni di scambi di messaggi a 32 e 64 bit; il ciclo di prova (20 ms) è troppo breve per vedere il guadagno, da misurare in fase 3. È il nostro vantaggio su MetalSharp, che emula l'ordine della memoria in software.
 
 ## Fase 3: prestazioni e avvio
 

@@ -1,0 +1,45 @@
+Round 2 (2026-11-14) vs round 1 — ntdll + kernel32, units by status, checks, failures
+round1/aarch64-ntdll.tsv     fail=4 crash=2 timeout=1 ok=20 | 4395387 checks, 286 failures
+aarch64-ntdll.tsv            fail=6 crash=2 ok=19 | 4401010 checks, 282 failures
+round1/aarch64-kernel32.tsv  fail=7 crash=3 timeout=2 ok=21 | 4375666 checks, 276 failures
+aarch64-kernel32.tsv         fail=8 crash=1 timeout=1 ok=23 | 5364325 checks, 325 failures
+round1/i386-ntdll.tsv        fail=4 crash=3 timeout=5 ok=15 | 4953606 checks, 179 failures
+i386-ntdll.tsv               fail=5 crash=1 ok=21 | 4966605 checks, 215 failures
+round1/i386-kernel32.tsv     fail=5 crash=1 timeout=11 ok=16 | 4018995 checks, 275 failures
+i386-kernel32.tsv            fail=7 crash=2 ok=24 | 5306044 checks, 174 failures
+
+Non-ok units, round 2:
+aarch64-ntdll change fail 29/82
+aarch64-ntdll exception crash -/-
+aarch64-ntdll file fail 6/2810
+aarch64-ntdll info fail 23/2784
+aarch64-ntdll path fail 4/1011
+aarch64-ntdll rtl crash -/-
+aarch64-ntdll virtual fail 86/2633
+aarch64-ntdll wow64 fail 134/1465
+aarch64-kernel32 change fail 82/320
+aarch64-kernel32 console fail 15/16951
+aarch64-kernel32 debugger crash 5/978
+aarch64-kernel32 file fail 8/571439
+aarch64-kernel32 loader timeout -/-
+aarch64-kernel32 module fail 3/907
+aarch64-kernel32 process fail 14/3481
+aarch64-kernel32 toolhelp fail 4/185
+aarch64-kernel32 version fail 27/167
+aarch64-kernel32 virtual fail 167/28917
+i386-ntdll change fail 26/82
+i386-ntdll exception crash -/-
+i386-ntdll file fail 6/2820
+i386-ntdll path fail 4/1011
+i386-ntdll virtual fail 33/2241
+i386-ntdll wow64 fail 146/1795
+i386-kernel32 change fail 82/320
+i386-kernel32 console fail 15/16951
+i386-kernel32 debugger crash 5/3847
+i386-kernel32 file fail 8/571458
+i386-kernel32 loader crash -/-
+i386-kernel32 module fail 3/904
+i386-kernel32 process fail 21/3619
+i386-kernel32 thread fail 4/1034
+i386-kernel32 version fail 36/167
+(i386 kernel32 virtual is reported ok from a child summary; the main process dies in test_stack_commit, 16K pages)

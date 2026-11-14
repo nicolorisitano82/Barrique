@@ -17,7 +17,7 @@ public:
       UnalignedHandlerType = FEXCore::ArchHelpers::Arm64::UnalignedHandlerType::NonAtomic;
     }
 
-    if (TSOEnabled() && FEX::Windows::UnixLib::TryEnableHardwareTSO()) {
+    if (TSOEnabled() && (FEX::Windows::UnixLib::TryEnableHardwareTSO() || TryEnableHostTSO())) {
       CTX.SetHardwareTSOSupport(true);
     }
 
@@ -34,6 +34,13 @@ public:
   }
 
 private:
+  // Barrique: without the Linux unix library, ask Wine for it. Under Wine's
+  // Hypervisor.framework backend on macOS this sets Apple's TSO bit on the vCPUs.
+  static bool TryEnableHostTSO() {
+    ULONG Enable = 1;
+    return NtSetInformationProcess(NtCurrentProcess(), ProcessFexHardwareTso, &Enable, sizeof(Enable)) == STATUS_SUCCESS;
+  }
+
   FEX_CONFIG_OPT(TSOEnabled, TSOENABLED);
   FEX_CONFIG_OPT(HalfBarrierTSOEnabled, HALFBARRIERTSOENABLED);
   FEX_CONFIG_OPT(StrictInProcessSplitLocks, STRICTINPROCESSSPLITLOCKS);

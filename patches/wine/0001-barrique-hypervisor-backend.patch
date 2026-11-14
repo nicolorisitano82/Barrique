@@ -131,10 +131,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..e679012
+index 0000000..2a352b8
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,825 @@
+@@ -0,0 +1,853 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -252,7 +252,7 @@ index 0000000..e679012
 +static uint64_t *stage2_bitmap;     /* one bit per 16K host page below IPA_LIMIT */
 +static pthread_mutex_t hvf_mutex = PTHREAD_MUTEX_INITIALIZER;
 +static _Atomic uint64_t tlb_generation;
-+static BOOL hvf_tso;
++static volatile BOOL hvf_tso;      /* x86 memory ordering (Apple's TSO bit) for all vCPUs */
 +
 +struct hvf_vcpu
 +{
@@ -260,6 +260,7 @@ index 0000000..e679012
 +    hv_vcpu_exit_t  *exit;
 +    uint64_t         tlb_seen;
 +    BOOL             at_eret;      /* PC is on an eret in the vector table */
++    BOOL             tso;          /* ACTLR_EL1 has the TSO bit */
 +};
 +
 +static pthread_key_t vcpu_key;
@@ -683,10 +684,37 @@ index 0000000..e679012
 +    InterlockedDecrement( &vcpu_count );
 +}
 +
++/* a vCPU's registers can only be set from its own thread: each one catches up
++ * with hvf_tso before it runs the guest again */
++static void update_tso( struct hvf_vcpu *v )
++{
++    uint64_t actlr;
++    BOOL tso = hvf_tso;
++
++    if (v->tso == tso) return;
++    hv_vcpu_get_sys_reg( v->vcpu, HV_SYS_REG_ACTLR_EL1, &actlr );
++    if (tso) actlr |= ACTLR_APPLE_TSO;
++    else actlr &= ~ACTLR_APPLE_TSO;
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_ACTLR_EL1, actlr );
++    v->tso = tso;
++}
++
++/***********************************************************************
++ *           hvf_set_tso
++ *
++ * Run the guest with x86-like memory ordering (TSO), so that an x86 emulator
++ * doesn't have to emulate it with barriers and acquire/release accesses.
++ */
++void hvf_set_tso( BOOL enable )
++{
++    if (hvf_tso == enable) return;
++    TRACE( "hardware TSO %s\n", enable ? "on" : "off" );
++    hvf_tso = enable;
++}
++
 +static struct hvf_vcpu *get_vcpu(void)
 +{
 +    struct hvf_vcpu *v = pthread_getspecific( vcpu_key );
-+    uint64_t actlr;
 +    unsigned int tries = 0;
 +
 +    if (v) return v;
@@ -717,9 +745,8 @@ index 0000000..e679012
 +    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_CNTKCTL_EL1, 3 );     /* EL0 counter access */
 +    hv_vcpu_set_vtimer_offset( v->vcpu, 0 );                        /* same clock as the host */
 +    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_VBAR_EL1, (uint64_t)guest_code + (hvf_guest_vectors - hvf_guest_start) );
-+    hv_vcpu_get_sys_reg( v->vcpu, HV_SYS_REG_ACTLR_EL1, &actlr );
-+    if (hvf_tso) actlr |= ACTLR_APPLE_TSO;
-+    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_ACTLR_EL1, actlr );
++    v->tso = FALSE;
++    update_tso( v );
 +    pthread_setspecific( vcpu_key, v );
 +    return v;
 +}
@@ -876,6 +903,7 @@ index 0000000..e679012
 +            v->tlb_seen = tlb_generation;
 +        }
 +
++        update_tso( v );
 +        if (hv_vcpu_run( v->vcpu ))
 +        {
 +            ERR( "hv_vcpu_run failed\n" );
@@ -980,7 +1008,7 @@ index dde4b58..ea33ef9 100644
  }
  
 diff --git a/dlls/ntdll/unix/process.c b/dlls/ntdll/unix/process.c
-index 1d10948..aa61c23 100644
+index 1d10948..e2147a1 100644
 --- a/dlls/ntdll/unix/process.c
 +++ b/dlls/ntdll/unix/process.c
 @@ -406,6 +406,7 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
@@ -1132,6 +1160,23 @@ index 1d10948..aa61c23 100644
  
      if (pid != -1)
      {
+@@ -1668,6 +1699,16 @@ NTSTATUS WINAPI NtSetInformationProcess( HANDLE handle, PROCESSINFOCLASS class,
+ {
+     unsigned int ret = STATUS_SUCCESS;
+ 
++#ifdef WINE_HVF
++    if (class == (PROCESSINFOCLASS)2000)  /* ProcessFexHardwareTso: the x86 emulator asks for x86 memory ordering */
++    {
++        if (size != sizeof(ULONG)) return STATUS_INFO_LENGTH_MISMATCH;
++        if (handle != NtCurrentProcess()) return STATUS_NOT_SUPPORTED;
++        hvf_set_tso( *(const ULONG *)info != 0 );
++        return STATUS_SUCCESS;
++    }
++#endif
++
+     switch (class)
+     {
+     case ProcessAccessToken:
 diff --git a/dlls/ntdll/unix/server.c b/dlls/ntdll/unix/server.c
 index c80226f..173124f 100644
 --- a/dlls/ntdll/unix/server.c
@@ -1860,10 +1905,10 @@ index 11171cc..0b532e7 100644
      process_exit_wrapper( get_unix_exit_code( status ));
  }
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..ee87a54 100644
+index 829db1e..3ab7902 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
-@@ -138,6 +138,57 @@ static inline struct thread_data *get_thread_data(void)
+@@ -138,6 +138,58 @@ static inline struct thread_data *get_thread_data(void)
      return pthread_getspecific( thread_data_key );
  }
  
@@ -1903,6 +1948,7 @@ index 829db1e..ee87a54 100644
 +extern void hvf_run( struct hvf_exit *ex, volatile LONG *pending );
 +extern void hvf_kick(void);
 +extern void hvf_release_vcpu(void);
++extern void hvf_set_tso( BOOL enable );
 +extern BOOL is_wait_syscall( const void *func );
 +extern int virtual_hvf_get_prot( const void *addr );
 +extern void virtual_hvf_flush_shadows(void);
