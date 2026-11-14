@@ -2670,6 +2670,20 @@ index ef1287a..c2af84f 100644
          break;
      default:
          filter_out = FALSE;
+diff --git a/dlls/wow64/syscall.c b/dlls/wow64/syscall.c
+index d6fea09..1629edc 100644
+--- a/dlls/wow64/syscall.c
++++ b/dlls/wow64/syscall.c
+@@ -1212,6 +1212,9 @@ NTSTATUS WINAPI Wow64SystemServiceEx( UINT num, UINT *args )
+     }
+     status = wow64_syscall( args, table->ServiceTable[id] );
+     free_temp_data();
++    /* another process may have changed our code while we were blocked (a debugger
++     * setting a breakpoint): the emulator must drop its translations before we go on */
++    Wow64ProcessPendingCrossProcessItems();
+     return status;
+ }
+ 
 diff --git a/dlls/wow64/virtual.c b/dlls/wow64/virtual.c
 index 605abe1..b675509 100644
 --- a/dlls/wow64/virtual.c
