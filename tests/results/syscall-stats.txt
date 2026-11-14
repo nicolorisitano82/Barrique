@@ -1,0 +1,14 @@
+== cmd dir /s system32 (ARM64)
+hvf stats: pid 010c, 0.28 s, 10645 exits (38278/s): 10393 syscalls (37372/s), 0 unix calls, 252 page table fills, 0 other
+hvf stats: pid 0100, 0.36 s, 575 exits (1581/s): 338 syscalls (929/s), 0 unix calls, 237 page table fills, 0 other
+== cmd dir /s system32 (i386)
+hvf stats: pid 0118, 0.30 s, 21363 exits (70634/s): 20489 syscalls (67744/s), 0 unix calls, 873 page table fills, 0 other
+== reg query /s HKLM\Software (ARM64)
+hvf stats: pid 0130, 6.62 s, 642191 exits (97071/s): 641998 syscalls (97042/s), 0 unix calls, 193 page table fills, 0 other
+hvf stats: pid 0124, 6.70 s, 575 exits (86/s): 338 syscalls (50/s), 0 unix calls, 237 page table fills, 0 other
+== kernel32 file test (aarch64)
+hvf stats: pid 013c, 3.11 s, 76977 exits (24766/s): 76641 syscalls (24658/s), 0 unix calls, 336 page table fills, 0 other
+== kernel32 file test (i386)
+hvf stats: pid 0148, 3.54 s, 109018 exits (30786/s): 107572 syscalls (30378/s), 0 unix calls, 1443 page table fills, 0 other
+== bench x86-64 (all tests)
+hvf stats: pid 0154, 2.98 s, 1002444 exits (335875/s): 1001563 syscalls (335580/s), 0 unix calls, 879 page table fills, 0 other

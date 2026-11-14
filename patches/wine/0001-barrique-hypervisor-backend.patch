@@ -184,10 +184,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..0e2d0ea
+index 0000000..22b70e7
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,880 @@
+@@ -0,0 +1,916 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -305,6 +305,10 @@ index 0000000..0e2d0ea
 +static uint64_t *stage2_bitmap;     /* one bit per 16K host page below IPA_LIMIT */
 +static pthread_mutex_t hvf_mutex = PTHREAD_MUTEX_INITIALIZER;
 +static _Atomic uint64_t tlb_generation;
++/* exits from the VM, by reason (WINE_HVF_STATS=1 prints them when the process exits) */
++static LONG stat_exits, stat_syscalls, stat_unix_calls, stat_page_fills, stat_other;
++static double stat_start;
++static double stat_now(void);
 +static volatile BOOL hvf_tso;      /* x86 memory ordering (Apple's TSO bit) for all vCPUs */
 +
 +struct hvf_vcpu
@@ -674,6 +678,7 @@ index 0000000..0e2d0ea
 +    hvf_syscall_stub = guest_code + (hvf_guest_syscall_stub - hvf_guest_start);
 +    hvf_unix_call_stub = guest_code + (hvf_guest_unix_call_stub - hvf_guest_start);
 +
++    stat_start = stat_now();
 +    pthread_key_create( &vcpu_key, destroy_vcpu );
 +    {
 +        uint32_t max_vcpus = 0;
@@ -772,6 +777,30 @@ index 0000000..0e2d0ea
 +    else actlr &= ~ACTLR_APPLE_TSO;
 +    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_ACTLR_EL1, actlr );
 +    v->tso = tso;
++}
++
++static double stat_now(void)
++{
++    struct timespec ts;
++    clock_gettime( CLOCK_MONOTONIC, &ts );
++    return ts.tv_sec + ts.tv_nsec / 1e9;
++}
++
++/***********************************************************************
++ *           hvf_print_stats
++ *
++ * With WINE_HVF_STATS=1, how often the process left the VM, and why.
++ */
++void hvf_print_stats(void)
++{
++    double secs;
++
++    if (!stat_start || !getenv( "WINE_HVF_STATS" )) return;
++    secs = stat_now() - stat_start;
++    fprintf( stderr, "hvf stats: pid %04x, %.2f s, %d exits (%.0f/s): %d syscalls (%.0f/s), %d unix calls, "
++             "%d page table fills, %d other\n", (int)GetCurrentProcessId(), secs, (int)stat_exits,
++             stat_exits / secs, (int)stat_syscalls, stat_syscalls / secs, (int)stat_unix_calls,
++             (int)stat_page_fills, (int)stat_other );
 +}
 +
 +/***********************************************************************
@@ -984,6 +1013,7 @@ index 0000000..0e2d0ea
 +        }
 +
 +        update_tso( v );
++        InterlockedIncrement( &stat_exits );
 +        if (hv_vcpu_run( v->vcpu ))
 +        {
 +            ERR( "hv_vcpu_run failed\n" );
@@ -1049,6 +1079,8 @@ index 0000000..0e2d0ea
 +        case 0x15:  /* svc */
 +            ex->type = (esr & 0xffff) == 1 ? HVF_EXIT_SYSCALL :
 +                       (esr & 0xffff) == 2 ? HVF_EXIT_UNIX_CALL : HVF_EXIT_OTHER;
++            InterlockedIncrement( ex->type == HVF_EXIT_SYSCALL ? &stat_syscalls :
++                                  ex->type == HVF_EXIT_UNIX_CALL ? &stat_unix_calls : &stat_other );
 +            return;
 +        case 0x20:  /* instruction abort */
 +        case 0x24:  /* data abort */
@@ -1056,7 +1088,11 @@ index 0000000..0e2d0ea
 +            unsigned int dfsc = esr & 0x3f;
 +            BOOL exec = (esr >> 26) == 0x20, write = !exec && ((esr >> 6) & 1);
 +            /* translation or permission fault: maybe just not mapped in the guest yet */
-+            if (dfsc >= 0x04 && dfsc <= 0x0f && map_guest_page( far, write, exec )) continue;
++            if (dfsc >= 0x04 && dfsc <= 0x0f && map_guest_page( far, write, exec ))
++            {
++                InterlockedIncrement( &stat_page_fills );
++                continue;
++            }
 +            ex->type = HVF_EXIT_FAULT;
 +            return;
 +        }
@@ -2042,24 +2078,25 @@ index 83084b8..ec1677d 100644
  
  static DWORD get_core_id_regs_arm64( struct smbios_wine_id_reg_value_arm64 *regs,
 diff --git a/dlls/ntdll/unix/thread.c b/dlls/ntdll/unix/thread.c
-index 11171cc..0b532e7 100644
+index 11171cc..b00ac21 100644
 --- a/dlls/ntdll/unix/thread.c
 +++ b/dlls/ntdll/unix/thread.c
-@@ -1564,6 +1564,9 @@ static DECLSPEC_NORETURN void exit_thread( int status )
+@@ -1564,6 +1564,10 @@ static DECLSPEC_NORETURN void exit_thread( int status )
   */
  void exit_process( int status )
  {
 +#ifdef WINE_HVF
 +    virtual_hvf_flush_shadows();
++    hvf_print_stats();
 +#endif
      pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
      process_exit_wrapper( get_unix_exit_code( status ));
  }
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..ba63d3b 100644
+index 829db1e..2091b1d 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
-@@ -138,6 +138,60 @@ static inline struct thread_data *get_thread_data(void)
+@@ -138,6 +138,61 @@ static inline struct thread_data *get_thread_data(void)
      return pthread_getspecific( thread_data_key );
  }
  
@@ -2099,6 +2136,7 @@ index 829db1e..ba63d3b 100644
 +extern void hvf_run( struct hvf_exit *ex, volatile LONG *pending );
 +extern void hvf_kick(void);
 +extern void hvf_release_vcpu(void);
++extern void hvf_print_stats(void);
 +extern BOOL hvf_vcpu_should_release(void);
 +extern void hvf_set_tso( BOOL enable );
 +extern BOOL is_wait_syscall( const void *func );

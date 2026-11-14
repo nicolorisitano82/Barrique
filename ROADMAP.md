@@ -63,7 +63,7 @@ Lavoro fatto (2026-11-14):
   - terminazione di thread di altri processi.
 - ✅ **TSO hardware**: FEX chiede a Wine `ProcessFexHardwareTso` (`NtSetInformationProcess`, classe 2000) quando manca la sua libreria Linux; Wine accende il bit TSO di Apple in `ACTLR_EL1` su ogni vCPU (ognuno si aggiorna dal suo thread prima di rientrare nella VM) e FEX smette di emulare l'ordine della memoria con accessi acquire/release. Test `tso.c`: con il nuovo FEX Wine attiva il TSO ("hardware TSO on"), 0 violazioni su 2 milioni di scambi di messaggi a 32 e 64 bit; il ciclo di prova (20 ms) è troppo breve per vedere il guadagno, da misurare in fase 3. È il nostro vantaggio su MetalSharp, che emula l'ordine della memoria in software.
 
-## Fase 3: prestazioni e avvio
+## Fase 3: prestazioni e avvio ✅ (chiusa il 2026-11-14)
 
 Misure con `tests/pe/bench.c` (stesso sorgente nativo macOS / ARM64 / x86-64 / i386, checksum confrontati col nativo; risultati in `tests/results/bench-*.txt`), in ms:
 
@@ -82,8 +82,9 @@ Misure con `tests/pe/bench.c` (stesso sorgente nativo macOS / ARM64 / x86-64 / i
 - ✅ **Fault-around**: al primo accesso la VM mappa l'intero blocco allineato da 64K (16 pagine) leggendo le protezioni con un solo lock; memoria nuova da 4,4× a 2,8× il nativo. Il resto è il controllo di sicurezza delle pagine host prima di darle alla VM (protezione dal kernel panic), che resta per pagina.
 - ✅ Avvio: `hello32` 0,58 s a freddo / 0,08 s a caldo, `hello64` 0,51–0,56 / 0,04 s.
 - ✅ **Registri SIMD pigri sulle syscall**: all'uscita per syscall o unix call si leggono solo i registri interi; i 32 SIMD restano nel vCPU e si leggono solo per un contesto del thread, una callback nel codice Windows o il rilascio del vCPU. Syscall da 2,05 a 1,76 µs (ARM64), da 2,08 a 1,85 (x86-64), da 2,20 a 1,99 (i386); test `fpsys.c` (valori in virgola mobile vivi attraverso syscall e callback) identico al bit sulle tre architetture.
-- ⬜ **Uscita dalla VM (~1,7 µs per syscall contro 0,1 µs nativi)**: il resto è il viaggio di andata e ritorno dalla VM. Prossima idea: gestire alcune syscall frequenti senza uscire (per esempio quelle che leggono solo dati del processo), e misurare quante syscall al secondo fanno i programmi reali per capire quanto conta.
-- ⬜ ARM64: compilare con LSE (`-march=armv8.1-a` o superiore) le DLL di Wine, così gli atomici non usano i cicli LL/SC.
+- ✅ **Quanto costano le uscite dalla VM nei programmi reali** (`WINE_HVF_STATS=1` stampa uscite e syscall al secondo a fine processo; `tests/results/syscall-stats.txt`): `reg query /s` 97.000 syscall/s (~16% del tempo nelle uscite), `cmd dir /s` i386 68.000/s (~11%), ARM64 37.000/s (~6%), test kernel32 `file` 25–30.000/s (~4–5%).
+- ➡️ Fase 7 — Uscita dalla VM (~1,7 µs per syscall contro 0,1 µs nativi): gestire alcune syscall frequenti senza uscire (per esempio quelle che leggono solo dati del processo); conta per i programmi con molte syscall (fino al 16% nelle misure).
+- ✅ **LSE**: le parti ARM64 e ARM64EC di Wine si compilano con `-march=armv8.1-a` (`aarch64_CFLAGS`/`arm64ec_CFLAGS`): atomici con istruzioni LSE invece dei cicli LL/SC. Nel benchmark gli incrementi atomici passano da 175 a 92 ms (nativo 89–95). Tutti gli Apple Silicon hanno LSE, e Windows 11 su ARM lo richiede.
 
 ## Fase 4: validazione
 

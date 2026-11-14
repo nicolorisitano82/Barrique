@@ -24,7 +24,9 @@ what is being fixed and what comes next.
 ## Building (outline)
 
 1. Wine 11.22 source with `patches/wine/*.patch` applied; build an arm64 Wine
-   with the ARM64EC and i386 PE targets (llvm-mingw). The patch to
+   with the ARM64EC and i386 PE targets, passing
+   `aarch64_CFLAGS="-g -O2 -march=armv8.1-a" arm64ec_CFLAGS="-g -O2 -march=armv8.1-a"`
+   to `configure` (LSE atomics, present on every Apple Silicon). The patch to
    `configure.ac` links the Hypervisor framework; run `autoreconf` if you
    don't use the patched `configure`.
 2. FEX from `fex/`, cross-built with llvm-mingw for
