@@ -184,10 +184,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..367b0f4
+index 0000000..0e2d0ea
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,875 @@
+@@ -0,0 +1,880 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -834,6 +834,11 @@ index 0000000..367b0f4
 + * about to block in a syscall gives its vCPU back; the guest state lives in the
 + * syscall frame meanwhile, and a new vCPU is set up when the guest resumes.
 + */
++BOOL hvf_vcpu_should_release(void)
++{
++    return vcpu_count >= vcpu_release_threshold && pthread_getspecific( vcpu_key );
++}
++
 +void hvf_release_vcpu(void)
 +{
 +    struct hvf_vcpu *v;
@@ -1280,7 +1285,7 @@ index c80226f..173124f 100644
          {
              ext[count].Type = MemExtendedParameterImageMachine;
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
-index 02b6d57..d170526 100644
+index 02b6d57..922221a 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
 +++ b/dlls/ntdll/unix/signal_arm64.c
 @@ -29,6 +29,8 @@
@@ -1292,7 +1297,39 @@ index 02b6d57..d170526 100644
  #include <stdlib.h>
  #include <stdarg.h>
  #include <stdio.h>
-@@ -783,6 +785,10 @@ NTSTATUS get_thread_wow64_context( HANDLE handle, void *ctx, ULONG size )
+@@ -412,6 +414,10 @@ void *get_wow_context( CONTEXT *context )
+ }
+ 
+ 
++#ifdef WINE_HVF
++static void hvf_sync_fp(void);
++#endif
++
+ /***********************************************************************
+  *              NtSetContextThread  (NTDLL.@)
+  *              ZwSetContextThread  (NTDLL.@)
+@@ -432,6 +438,9 @@ NTSTATUS WINAPI NtSetContextThread( HANDLE handle, const CONTEXT *context )
+         ret = set_thread_context( handle, context, &self, IMAGE_FILE_MACHINE_ARM64 );
+         if (ret || !self) return ret;
+     }
++#ifdef WINE_HVF
++    hvf_sync_fp();  /* the frame must hold the guest FP state before part of it is replaced */
++#endif
+ 
+     if (flags & CONTEXT_INTEGER)
+     {
+@@ -486,6 +495,10 @@ NTSTATUS WINAPI NtGetContextThread( HANDLE handle, CONTEXT *context )
+         if (ret || !self) return ret;
+     }
+     else if (!frame) return STATUS_ACCESS_DENIED;
++#ifdef WINE_HVF
++    if (needed_flags & (CONTEXT_FLOATING_POINT | CONTEXT_ARM64_FLOATING_POINT_LOW | CONTEXT_ARM64_FLOATING_POINT_HIGH))
++        hvf_sync_fp();
++#endif
+ 
+     if (needed_flags & CONTEXT_INTEGER)
+     {
+@@ -783,6 +796,10 @@ NTSTATUS get_thread_wow64_context( HANDLE handle, void *ctx, ULONG size )
  /***********************************************************************
   *           setup_raise_exception
   */
@@ -1303,7 +1340,7 @@ index 02b6d57..d170526 100644
  static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcontext,
                                     EXCEPTION_RECORD *rec, CONTEXT *context )
  {
-@@ -790,6 +796,14 @@ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcont
+@@ -790,6 +807,14 @@ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcont
      struct exc_stack_layout *stack;
      void *stack_ptr = (void *)(SP_sig(sigcontext) & ~15);
  
@@ -1318,7 +1355,7 @@ index 02b6d57..d170526 100644
      if (!chpe || !chpe->InSimulation)
      {
          NTSTATUS status = send_debug_event( data, rec, context, TRUE );
-@@ -1037,6 +1051,7 @@ __ASM_GLOBAL_FUNC( user_mode_abort_thread,
+@@ -1037,6 +1062,7 @@ __ASM_GLOBAL_FUNC( user_mode_abort_thread,
                     "bl " __ASM_NAME("abort_thread") )
  
  
@@ -1326,7 +1363,7 @@ index 02b6d57..d170526 100644
  /***********************************************************************
   *           KeUserModeCallback
   */
-@@ -1071,6 +1086,7 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+@@ -1071,6 +1097,7 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
      if (!frame->prev_frame) return STATUS_NO_CALLBACK_ACTIVE;
      user_mode_callback_return( ret_ptr, ret_len, status, data->teb );
  }
@@ -1334,7 +1371,7 @@ index 02b6d57..d170526 100644
  
  
  /***********************************************************************
-@@ -1078,11 +1094,70 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+@@ -1078,11 +1105,89 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
   *
   * Handle a page fault happening during a system call.
   */
@@ -1349,6 +1386,25 @@ index 02b6d57..d170526 100644
 +#define HVF_PENDING_QUIT    2
 +static __thread volatile BOOL hvf_in_guest;
 +static __thread volatile LONG hvf_pending;
++
++/* On syscalls and unix calls only the integer registers are copied out of the vCPU
++ * (each register is a separate Hypervisor call): the FP/SIMD state stays in the vCPU,
++ * and this frame doesn't hold it yet. hvf_sync_fp() fetches it when something needs
++ * it: a thread context, a callback into the guest, giving the vCPU back. */
++static __thread struct syscall_frame *hvf_lazy_fp;
++
++static void hvf_sync_fp(void)
++{
++    struct syscall_frame *frame = hvf_lazy_fp;
++    struct hvf_regs regs;
++
++    if (!frame) return;
++    hvf_get_user_regs( &regs, TRUE );
++    frame->fpcr = regs.fpcr;
++    frame->fpsr = regs.fpsr;
++    memcpy( frame->v, regs.v, sizeof(frame->v) );
++    hvf_lazy_fp = NULL;
++}
 +
 +static BOOL hvf_defer_signal( LONG what )
 +{
@@ -1405,7 +1461,7 @@ index 02b6d57..d170526 100644
      if (!is_inside_syscall( data, SP_sig(context) )) return FALSE;
  
      TRACE( "code=%x flags=%x addr=%p pc=%p\n",
-@@ -1392,6 +1467,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1392,6 +1497,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      ucontext_t *sigcontext = _sigcontext;
      struct thread_data *data = get_thread_data();
  
@@ -1417,7 +1473,7 @@ index 02b6d57..d170526 100644
      if (is_inside_syscall( data, SP_sig(sigcontext) )) abort_thread(0);
      user_mode_abort_thread( 0, get_syscall_frame( data ));
  }
-@@ -1440,6 +1520,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1440,6 +1550,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      extern const ULONG_PTR __wine_unix_call_dispatcher_user_stack;
      extern const ULONG_PTR call_user_mode_callback_user_stack_ptr;
  
@@ -1453,7 +1509,7 @@ index 02b6d57..d170526 100644
      /* if we're in a syscall dispatcher, but not yet on the syscall stack, construct
       * the frame now from the signal context. */
      if ((ULONG_PTR)__wine_syscall_dispatcher <= PC_sig(sigcontext) &&
-@@ -1509,6 +1618,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1509,6 +1648,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      struct syscall_frame *frame = get_syscall_frame( data );
      DWORD i;
  
@@ -1463,7 +1519,7 @@ index 02b6d57..d170526 100644
      if (!is_inside_syscall( data, SP_sig(sigcontext) )) return;
      if (!frame) return;
  
-@@ -1691,6 +1803,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
+@@ -1691,6 +1833,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
  }
  
  
@@ -1471,7 +1527,7 @@ index 02b6d57..d170526 100644
  /***********************************************************************
   *           signal_start_thread
   */
-@@ -1728,6 +1841,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
+@@ -1728,6 +1871,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
                     "mov sp, x4\n\t"
                     "bl " __ASM_NAME("init_syscall_frame") "\n\t"
                     "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
@@ -1479,7 +1535,7 @@ index 02b6d57..d170526 100644
  
  
  /***********************************************************************
-@@ -1966,4 +2080,408 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+@@ -1966,4 +2110,428 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
  __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
                        __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
  
@@ -1554,7 +1610,15 @@ index 02b6d57..d170526 100644
 +        regs.sp = (ULONG64)user_context;
 +        regs.pc = (ULONG64)pKiUserEmulationDispatcher;
 +    }
-+    /* always restore FP state: a nested user callback may have clobbered it */
++    if (hvf_lazy_fp == frame && !(frame->restore_flags & RESTORE_FLAGS_EMULATION))
++    {
++        /* nothing touched the FP state, it is still in the vCPU */
++        hvf_lazy_fp = NULL;
++        hvf_set_user_regs( &regs, FALSE );
++        return;
++    }
++    hvf_sync_fp();
++    /* otherwise restore FP state too: a nested user callback may have clobbered it */
 +    hvf_set_user_regs( &regs, TRUE );
 +}
 +
@@ -1583,7 +1647,11 @@ index 02b6d57..d170526 100644
 +
 +    func = (syscall_func)table->ServiceTable[id];
 +    /* a thread that is going to wait doesn't need its vCPU meanwhile */
-+    if (table == get_teb_data( data )->syscall_table && is_wait_syscall( func )) hvf_release_vcpu();
++    if (table == get_teb_data( data )->syscall_table && is_wait_syscall( func ) && hvf_vcpu_should_release())
++    {
++        hvf_sync_fp();  /* the FP state goes away with the vCPU */
++        hvf_release_vcpu();
++    }
 +    return func( args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9],
 +                 args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19] );
 +}
@@ -1750,7 +1818,7 @@ index 02b6d57..d170526 100644
 +        hvf_run( &ex, &hvf_pending );
 +        data = get_thread_data();
 +        frame = get_syscall_frame( data );
-+        hvf_get_user_regs( &regs, TRUE );
++        hvf_get_user_regs( &regs, ex.type != HVF_EXIT_SYSCALL && ex.type != HVF_EXIT_UNIX_CALL );
 +
 +        switch (ex.type)
 +        {
@@ -1764,6 +1832,7 @@ index 02b6d57..d170526 100644
 +                hvf_save_frame( frame, &regs, regs.x[9], regs.x[30] );
 +            else
 +                hvf_save_frame( frame, &regs, regs.x[30], regs.x[30] );
++            hvf_lazy_fp = frame;  /* regs has no FP state, see hvf_sync_fp() */
 +            hvf_in_guest = FALSE;
 +            /* a signal that came in after the vCPU stopped: the frame is valid now */
 +            if (hvf_pending) hvf_handle_pending( FALSE );
@@ -1781,6 +1850,7 @@ index 02b6d57..d170526 100644
 +                /* we may have been inside a user callback: back to this syscall's frame */
 +                get_teb_data( data )->syscall_frame = frame;
 +                data->jmp_buf = NULL;  /* a Unix-side __TRY we unwound through */
++                if (hvf_lazy_fp != frame) hvf_lazy_fp = NULL;  /* a callback frame we left */
 +            }
 +            hvf_syscall_jmp = prev;
 +            break;
@@ -1800,7 +1870,12 @@ index 02b6d57..d170526 100644
 +            hvf_handle_exception( data, &ex, &regs );
 +            continue;
 +        }
-+        if (cb && cb->done) return;
++        if (cb && cb->done)
++        {
++            /* the callback frame goes away; the caller's frame was synced before the callback */
++            hvf_lazy_fp = NULL;
++            return;
++        }
 +        hvf_restore_frame( frame, ret );
 +    }
 +}
@@ -1836,6 +1911,7 @@ index 02b6d57..d170526 100644
 +    regs.sp    = sp;
 +    regs.pc    = (ULONG64)pKiUserCallbackDispatcher;
 +    regs.cpsr  = frame->cpsr;
++    hvf_sync_fp();  /* the callback will use the FP registers */
 +    hvf_set_user_regs( &regs, FALSE );
 +
 +    hvf_loop( &cb );
@@ -1980,10 +2056,10 @@ index 11171cc..0b532e7 100644
      process_exit_wrapper( get_unix_exit_code( status ));
  }
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..8d0dd7e 100644
+index 829db1e..ba63d3b 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
-@@ -138,6 +138,59 @@ static inline struct thread_data *get_thread_data(void)
+@@ -138,6 +138,60 @@ static inline struct thread_data *get_thread_data(void)
      return pthread_getspecific( thread_data_key );
  }
  
@@ -2023,6 +2099,7 @@ index 829db1e..8d0dd7e 100644
 +extern void hvf_run( struct hvf_exit *ex, volatile LONG *pending );
 +extern void hvf_kick(void);
 +extern void hvf_release_vcpu(void);
++extern BOOL hvf_vcpu_should_release(void);
 +extern void hvf_set_tso( BOOL enable );
 +extern BOOL is_wait_syscall( const void *func );
 +extern int virtual_hvf_get_prot( const void *addr );
