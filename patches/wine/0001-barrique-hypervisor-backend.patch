@@ -2671,7 +2671,7 @@ index ef1287a..c2af84f 100644
      default:
          filter_out = FALSE;
 diff --git a/dlls/wow64/virtual.c b/dlls/wow64/virtual.c
-index 605abe1..36179b3 100644
+index 605abe1..b675509 100644
 --- a/dlls/wow64/virtual.c
 +++ b/dlls/wow64/virtual.c
 @@ -46,7 +46,8 @@ static BOOL WINAPIV send_cross_process_notification( HANDLE process, UINT id, co
@@ -2780,7 +2780,7 @@ index 605abe1..36179b3 100644
  
      if (!status)
      {
-@@ -597,7 +601,7 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+@@ -597,24 +601,31 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
      case MemoryBasicInformation:  /* MEMORY_BASIC_INFORMATION */
          if (len < sizeof(MEMORY_BASIC_INFORMATION32))
              status = STATUS_INFO_LENGTH_MISMATCH;
@@ -2789,7 +2789,23 @@ index 605abe1..36179b3 100644
              status = STATUS_INVALID_PARAMETER;
          else
          {
-@@ -613,8 +617,8 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+             MEMORY_BASIC_INFORMATION info;
+             MEMORY_BASIC_INFORMATION32 *info32 = ptr;
++            ULONG_PTR low = wow64_low_base(), start;
+ 
++            /* with the 32-bit address space in a window, its first 64K are there too */
++            if (low && (ULONG_PTR)addr < 0x10000) addr = (char *)low + (ULONG_PTR)addr;
+             if (!(status = NtQueryVirtualMemory( handle, addr, class, &info, sizeof(info), &res_len )))
+             {
+-                info32->BaseAddress = PtrToUlong( info.BaseAddress );
++                /* a free range reaching into the window from below starts at 0 for 32-bit code */
++                start = (ULONG_PTR)info.BaseAddress;
++                if (low && start < low) start = low;
++                info32->BaseAddress = PtrToUlong( (void *)start );
+                 info32->AllocationBase = PtrToUlong( info.AllocationBase );
+                 info32->AllocationProtect = info.AllocationProtect;
++                info.RegionSize = (ULONG_PTR)info.BaseAddress + info.RegionSize - start;
+                 info32->RegionSize = info.RegionSize;
                  info32->State = info.State;
                  info32->Protect = info.Protect;
                  info32->Type = info.Type;
@@ -2800,7 +2816,7 @@ index 605abe1..36179b3 100644
              }
          }
          res_len = sizeof(MEMORY_BASIC_INFORMATION32);
-@@ -642,7 +646,7 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+@@ -642,7 +653,7 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
      {
          if (len < sizeof(MEMORY_REGION_INFORMATION32))
              status = STATUS_INFO_LENGTH_MISMATCH;
@@ -2809,7 +2825,7 @@ index 605abe1..36179b3 100644
              status = STATUS_INVALID_PARAMETER;
          else
          {
-@@ -658,8 +662,8 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+@@ -658,8 +669,8 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
                  info32->CommitSize = info.CommitSize;
                  info32->PartitionId = info.PartitionId;
                  info32->NodePreference = info.NodePreference;
@@ -2820,7 +2836,7 @@ index 605abe1..36179b3 100644
              }
          }
          res_len = sizeof(MEMORY_REGION_INFORMATION32);
-@@ -689,7 +693,7 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+@@ -689,7 +700,7 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
      {
          if (len < sizeof(MEMORY_IMAGE_INFORMATION32)) return STATUS_INFO_LENGTH_MISMATCH;
  
@@ -2829,7 +2845,7 @@ index 605abe1..36179b3 100644
          else
          {
              MEMORY_IMAGE_INFORMATION info;
-@@ -851,9 +855,9 @@ NTSTATUS WINAPI wow64_NtUnmapViewOfSection( UINT *args )
+@@ -851,9 +862,9 @@ NTSTATUS WINAPI wow64_NtUnmapViewOfSection( UINT *args )
      BOOL is_current = RtlIsCurrentProcess( process );
      NTSTATUS status;
  
@@ -2841,7 +2857,7 @@ index 605abe1..36179b3 100644
      return status;
  }
  
-@@ -870,9 +874,9 @@ NTSTATUS WINAPI wow64_NtUnmapViewOfSectionEx( UINT *args )
+@@ -870,9 +881,9 @@ NTSTATUS WINAPI wow64_NtUnmapViewOfSectionEx( UINT *args )
      BOOL is_current = RtlIsCurrentProcess( process );
      NTSTATUS status;
  

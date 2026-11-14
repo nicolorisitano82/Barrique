@@ -39,3 +39,7 @@ Build scripts and a single self-contained `.app` are planned (roadmap phase 6).
 The Wine changes are under Wine's license, LGPL 2.1 or later. The FEX changes
 are under FEX's license, MIT. Ideas taken from MetalSharp-Wine (AGPL-3.0) are
 reimplemented, no code is copied.
+
+The FEX project does not accept AI-generated code. The FEX patch here was
+written with an AI assistant: it is for Barrique builds only and must not be
+submitted to FEX as is.

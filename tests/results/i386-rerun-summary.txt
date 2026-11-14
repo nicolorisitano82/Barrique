@@ -5,7 +5,7 @@ kernel32 debugger rc=9 9s :: debugger: 1669 tests executed (6 marked as todo, 0 
 kernel32 file rc=8 :: file: 571424 tests executed (241 marked as todo, 0 as flaky, 8 failures), 0 skipped. [after scatter/gather fix; all 8 = 16K page protect]
 kernel32 loader rc=84 12s :: NO SUMMARY
 kernel32 pipe rc=0 10s :: pipe: 38488 tests executed (32 marked as todo, 0 as flaky, 0 failures), 0 skipped.
-kernel32 process rc=40 23s :: process: 3609 tests executed (172 marked as todo, 0 as flaky, 40 failures), 0 skipped. [after shadow map fixes]
+kernel32 process rc=21 23s :: process: 3627 tests executed (172 marked as todo, 0 as flaky, 21 failures), 0 skipped. [after wow64 VirtualQuery-from-0 fix; left: FEX cpu level, std handles (also aarch64), NUMA/cpuset]
 kernel32 sync rc=1 :: sync: 338922 tests executed (5 marked as todo, 0 as flaky, 1 failure), 0 skipped. [after vCPU destroy fix]
 kernel32 virtual rc=253 15s :: NO SUMMARY — reaches virtual.c:4650 (test_ReadProcessMemory), then dies in test_stack_commit: "Exception frame is not in stack limits" [after FEX unmap fix]
 DONE
