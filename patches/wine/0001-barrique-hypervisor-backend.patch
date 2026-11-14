@@ -1,0 +1,3152 @@
+diff --git a/configure b/configure
+index e5f72d7..dcca4c1 100755
+--- a/configure
++++ b/configure
+@@ -761,6 +761,7 @@ COREAUDIO_LIBS
+ SYSTEMCONFIGURATION_LIBS
+ SECURITY_LIBS
+ APPKIT_LIBS
++HYPERVISOR_LIBS
+ CORESERVICES_LIBS
+ APPLICATIONSERVICES_LIBS
+ IOKIT_LIBS
+@@ -12402,15 +12403,18 @@ case $host_os in
+ 
+     APPKIT_LIBS="-framework AppKit"
+ 
++    HYPERVISOR_LIBS="-framework Hypervisor"
++
+     SECURITY_LIBS="-framework Security -framework CoreFoundation"
+ 
+     SYSTEMCONFIGURATION_LIBS="-framework SystemConfiguration"
+ 
+ 
+-    WINELOADER_LDFLAGS="-Wl,-segalign,0x1000,-pagezero_size,0x1000,-sectcreate,__TEXT,__info_plist,loader/wine_info.plist"
++    WINELOADER_LDFLAGS="-Wl,-sectcreate,__TEXT,__info_plist,loader/wine_info.plist"
+ 
+     case $HOST_ARCH in
+       x86_64)
++        WINELOADER_LDFLAGS="-Wl,-segalign,0x1000,-pagezero_size,0x1000 $WINELOADER_LDFLAGS"
+                 { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking whether the compiler supports -Wl,-no_huge" >&5
+ printf %s "checking whether the compiler supports -Wl,-no_huge... " >&6; }
+ if test ${ac_cv_cflags__Wl__no_huge+y}
+@@ -24118,6 +24122,7 @@ IOKIT_LIBS = $IOKIT_LIBS
+ APPLICATIONSERVICES_LIBS = $APPLICATIONSERVICES_LIBS
+ CORESERVICES_LIBS = $CORESERVICES_LIBS
+ APPKIT_LIBS = $APPKIT_LIBS
++HYPERVISOR_LIBS = $HYPERVISOR_LIBS
+ SECURITY_LIBS = $SECURITY_LIBS
+ SYSTEMCONFIGURATION_LIBS = $SYSTEMCONFIGURATION_LIBS
+ COREAUDIO_LIBS = $COREAUDIO_LIBS
+diff --git a/configure.ac b/configure.ac
+index afcdd85..32e1727 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -985,13 +985,15 @@ case $host_os in
+     AC_SUBST(APPLICATIONSERVICES_LIBS,"-framework ApplicationServices")
+     AC_SUBST(CORESERVICES_LIBS,"-framework CoreServices")
+     AC_SUBST(APPKIT_LIBS,"-framework AppKit")
++    AC_SUBST(HYPERVISOR_LIBS,"-framework Hypervisor")
+     AC_SUBST(SECURITY_LIBS,"-framework Security -framework CoreFoundation")
+     AC_SUBST(SYSTEMCONFIGURATION_LIBS,"-framework SystemConfiguration")
+ 
+-    WINELOADER_LDFLAGS="-Wl,-segalign,0x1000,-pagezero_size,0x1000,-sectcreate,__TEXT,__info_plist,loader/wine_info.plist"
++    WINELOADER_LDFLAGS="-Wl,-sectcreate,__TEXT,__info_plist,loader/wine_info.plist"
+ 
+     case $HOST_ARCH in
+       x86_64)
++        WINELOADER_LDFLAGS="-Wl,-segalign,0x1000,-pagezero_size,0x1000 $WINELOADER_LDFLAGS"
+         dnl If the -no_huge linker option is present (added in Xcode 15.3), use zerofill sections instead of the preloader
+         WINE_TRY_CFLAGS([-Wl,-no_huge],
+            [wine_use_preloader=no
+diff --git a/dlls/ntdll/Makefile.in b/dlls/ntdll/Makefile.in
+index 4c43b77..cb7d252 100644
+--- a/dlls/ntdll/Makefile.in
++++ b/dlls/ntdll/Makefile.in
+@@ -5,7 +5,7 @@ IMPORTLIB = ntdll
+ IMPORTS   = $(SYMCRYPT_PE_LIBS) $(ZLIB_PE_LIBS) $(MUSL_PE_LIBS)
+ EXTRAINCL = $(SYMCRYPT_PE_CFLAGS) $(ZLIB_PE_CFLAGS)
+ UNIX_CFLAGS  = $(HWLOC_CFLAGS)
+-UNIX_LIBS    = $(IOKIT_LIBS) $(COREFOUNDATION_LIBS) $(CORESERVICES_LIBS) $(RT_LIBS) $(PTHREAD_LIBS) $(I386_LIBS) $(PROCSTAT_LIBS) $(HWLOC_LIBS)
++UNIX_LIBS    = $(HYPERVISOR_LIBS) $(IOKIT_LIBS) $(COREFOUNDATION_LIBS) $(CORESERVICES_LIBS) $(RT_LIBS) $(PTHREAD_LIBS) $(I386_LIBS) $(PROCSTAT_LIBS) $(HWLOC_LIBS)
+ 
+ EXTRADLLFLAGS = -nodefaultlibs
+ i386_EXTRADLLFLAGS = -Wl,--image-base,0x7bc00000
+@@ -53,6 +53,7 @@ SOURCES = \
+ 	unix/debug.c \
+ 	unix/env.c \
+ 	unix/file.c \
++	unix/hvf.c \
+ 	unix/loader.c \
+ 	unix/loadorder.c \
+ 	unix/process.c \
+diff --git a/dlls/ntdll/loader.c b/dlls/ntdll/loader.c
+index d0c2145..7fcaa16 100644
+--- a/dlls/ntdll/loader.c
++++ b/dlls/ntdll/loader.c
+@@ -4521,7 +4521,13 @@ void loader_init( CONTEXT *context, void **entry )
+     else
+     {
+ #ifdef _WIN64
+-        if (NtCurrentTeb()->WowTebOffset && !((ULONG_PTR)*entry >> 32)) init_wow64( context );
++        if (NtCurrentTeb()->WowTebOffset)
++        {
++            /* a 32-bit thread starts in the 32-bit address space; on hosts that cannot map
++             * the low 4GB that space is a 4GB-aligned window holding the 32-bit TEB */
++            ULONG_PTR low_base = ((ULONG_PTR)NtCurrentTeb() + NtCurrentTeb()->WowTebOffset) & ~(ULONG_PTR)0xffffffff;
++            if (!(((ULONG_PTR)*entry - low_base) >> 32)) init_wow64( context );
++        }
+ #endif
+ #ifdef __arm64ec__
+         arm64ec_thread_init();
+diff --git a/dlls/ntdll/unix/file.c b/dlls/ntdll/unix/file.c
+index d99a9a1..b13c9bb 100644
+--- a/dlls/ntdll/unix/file.c
++++ b/dlls/ntdll/unix/file.c
+@@ -6108,10 +6108,10 @@ NTSTATUS WINAPI NtReadFileScatter( HANDLE file, HANDLE event, PIO_APC_ROUTINE ap
+     while (length)
+     {
+         if (offset && offset->QuadPart != FILE_USE_FILE_POINTER_POSITION)
+-            result = pread( unix_handle, (char *)segments->Buffer + pos,
++            result = pread( unix_handle, (char *)wine_low_window_ptr( (ULONG_PTR)segments->Buffer ) + pos,
+                             min( length - pos, page_size - pos ), offset->QuadPart + total );
+         else
+-            result = read( unix_handle, (char *)segments->Buffer + pos, min( length - pos, page_size - pos ) );
++            result = read( unix_handle, (char *)wine_low_window_ptr( (ULONG_PTR)segments->Buffer ) + pos, min( length - pos, page_size - pos ) );
+ 
+         if (result == -1)
+         {
+@@ -6409,10 +6409,10 @@ NTSTATUS WINAPI NtWriteFileGather( HANDLE file, HANDLE event, PIO_APC_ROUTINE ap
+     while (length)
+     {
+         if (offset && offset->QuadPart != FILE_USE_FILE_POINTER_POSITION)
+-            result = pwrite( unix_handle, (char *)segments->Buffer + pos,
++            result = pwrite( unix_handle, (char *)wine_low_window_ptr( (ULONG_PTR)segments->Buffer ) + pos,
+                              page_size - pos, offset->QuadPart + total );
+         else
+-            result = write( unix_handle, (char *)segments->Buffer + pos, page_size - pos );
++            result = write( unix_handle, (char *)wine_low_window_ptr( (ULONG_PTR)segments->Buffer ) + pos, page_size - pos );
+ 
+         if (result == -1)
+         {
+diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
+new file mode 100644
+index 0000000..e679012
+--- /dev/null
++++ b/dlls/ntdll/unix/hvf.c
+@@ -0,0 +1,825 @@
++/*
++ * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
++ *
++ * macOS on Apple Silicon can't host Windows code directly: __PAGEZERO is 4GB,
++ * pages are 16K and the kernel owns x18. Instead each Windows thread runs on a
++ * vCPU at EL0, with stage-1 page tables built here:
++ *
++ *  - guest VA == IPA == host VA for all Windows memory (kept below 1TB, the
++ *    largest IPA the hardware offers), so the Unix side dereferences guest
++ *    pointers directly;
++ *  - stage-1 and stage-2 entries are created lazily on the first guest fault,
++ *    from the protections virtual.c tracks for each 4K Windows page;
++ *  - any host mmap/munmap/mprotect of Windows memory drops the affected
++ *    entries, the next guest access faults them back in;
++ *  - KUSER_SHARED_DATA is mapped at its Windows address 0x7ffe0000;
++ *  - guest syscalls (svc) and faults reach the host through a tiny EL1 vector
++ *    table that issues hvc.
++ */
++
++#if 0
++#pragma makedep unix
++#endif
++
++#include "config.h"
++
++#if defined(__APPLE__) && defined(__aarch64__)
++
++#include <assert.h>
++#include <pthread.h>
++#include <stdarg.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/mman.h>
++#include <time.h>
++#include <unistd.h>
++#include <mach/mach.h>
++#include <mach/mach_vm.h>
++#include <Hypervisor/Hypervisor.h>
++
++#include "ntstatus.h"
++#define WIN32_NO_STATUS
++#include "windef.h"
++#include "winternl.h"
++#include "unix_private.h"
++#include "wine/asm.h"
++#include "wine/debug.h"
++
++WINE_DEFAULT_DEBUG_CHANNEL(hvf);
++
++#define GUEST_PAGE     0x1000ULL
++#define HOST_PAGE      0x4000ULL
++#define IPA_LIMIT      (1ULL << 40)
++#define KUSD_VA        0x7ffe0000ULL
++
++/* stage-1 descriptor bits, 4K granule */
++#define D_VALID    (1ULL << 0)
++#define D_TABLE    (1ULL << 1)        /* also "page" at level 3 */
++#define D_AP_RW    (1ULL << 6)
++#define D_AP_RO    (3ULL << 6)
++#define D_AP_EL1   (0ULL << 6)
++#define D_SH_INNER (3ULL << 8)
++#define D_AF       (1ULL << 10)
++#define D_PXN      (1ULL << 53)
++#define D_UXN      (1ULL << 54)
++#define D_ADDR     0x0000fffffffff000ULL
++
++#define ACTLR_APPLE_TSO (1ULL << 1)
++
++/* memory shared with the VM must stay private: a fork() would make it copy-on-write */
++static void *vm_mmap( size_t size )
++{
++    void *ptr = mmap( NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0 );
++    if (ptr != MAP_FAILED) minherit( ptr, size, VM_INHERIT_NONE );
++    return ptr;
++}
++
++/* guest code: EL1 vectors plus the EL0 stubs that Windows code calls */
++extern const char hvf_guest_start[], hvf_guest_end[], hvf_guest_vectors[],
++                  hvf_guest_syscall_stub[], hvf_guest_unix_call_stub[];
++
++__ASM_GLOBAL_FUNC( hvf_guest_code,
++    ".p2align 12\n"
++    __ASM_NAME("hvf_guest_start") ":\n"
++    __ASM_NAME("hvf_guest_vectors") ":\n\t"
++    /* every exception taken to EL1 exits to the host with its vector offset
++     * as hvc immediate; the host resumes at the eret that follows, or at the
++     * TLB flush 4 bytes later when it changed the page tables */
++    ".irp idx, 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15\n\t"
++    ".p2align 7\n\t"
++    "hvc #(\\idx)\n\t"
++    "eret\n\t"
++    "tlbi vmalle1is\n\t"
++    "dsb ish\n\t"
++    "isb\n\t"
++    "eret\n\t"
++    ".endr\n\t"
++    ".p2align 4\n"
++    __ASM_NAME("hvf_guest_syscall_stub") ":\n\t"
++    "svc #1\n\t"
++    "ret\n\t"
++    ".p2align 4\n"
++    __ASM_NAME("hvf_guest_unix_call_stub") ":\n\t"
++    "svc #2\n\t"
++    "ret\n\t"
++    ".p2align 12\n"
++    __ASM_NAME("hvf_guest_end") ":\n\t"
++    "ret" )
++
++void *hvf_syscall_stub;
++void *hvf_unix_call_stub;
++
++static char *guest_code;            /* host copy of the guest code, mapped at the same VA */
++static uint64_t ttbr0;              /* root table, IPA == host VA */
++static uint64_t *stage2_bitmap;     /* one bit per 16K host page below IPA_LIMIT */
++static pthread_mutex_t hvf_mutex = PTHREAD_MUTEX_INITIALIZER;
++static _Atomic uint64_t tlb_generation;
++static BOOL hvf_tso;
++
++struct hvf_vcpu
++{
++    hv_vcpu_t        vcpu;
++    hv_vcpu_exit_t  *exit;
++    uint64_t         tlb_seen;
++    BOOL             at_eret;      /* PC is on an eret in the vector table */
++};
++
++static pthread_key_t vcpu_key;
++/* Blocking threads give their vCPU back once this many are in use. A thread only
++ * keeps its vCPU through a wait if it entered the wait below the threshold, so
++ * blocked threads never hold more than that and the rest stays available. */
++static LONG vcpu_release_threshold = 32;
++static void destroy_vcpu( void *ptr );
++
++/* ------------------------------------------------------------------------
++ * Stage-1 page tables
++ */
++
++static void *alloc_table(void)
++{
++    /* tables live in host memory below IPA_LIMIT and are mapped in stage 2 at their own address */
++    static char *pool, *pool_end;
++    void *ret;
++
++    if (pool == pool_end)
++    {
++        size_t size = 16 << 20;
++        pool = vm_mmap( size );
++        if (pool == MAP_FAILED || (uint64_t)pool + size > IPA_LIMIT)
++        {
++            ERR( "cannot allocate page tables below 1TB\n" );
++            abort();
++        }
++        if (hv_vm_map( pool, (uint64_t)pool, size, HV_MEMORY_READ | HV_MEMORY_WRITE ))
++        {
++            ERR( "hv_vm_map of page table pool failed\n" );
++            abort();
++        }
++        pool_end = pool + size;
++    }
++    ret = pool;
++    pool += GUEST_PAGE;
++    return ret;
++}
++
++static uint64_t *pte_for( uint64_t va, BOOL create )
++{
++    uint64_t *table = (uint64_t *)ttbr0;
++    int level;
++
++    for (level = 0; level < 3; level++)
++    {
++        unsigned idx = (va >> (39 - 9 * level)) & 0x1ff;
++        if (!(table[idx] & D_VALID))
++        {
++            if (!create) return NULL;
++            table[idx] = (uint64_t)alloc_table() | D_TABLE | D_VALID;
++        }
++        table = (uint64_t *)(table[idx] & D_ADDR);
++    }
++    return &table[(va >> 12) & 0x1ff];
++}
++
++static uint64_t prot_to_pte( int unix_prot )
++{
++    uint64_t pte = D_AF | D_SH_INNER | D_TABLE | D_VALID | D_PXN;  /* attr index 0: normal WB */
++
++    pte |= (unix_prot & PROT_WRITE) ? D_AP_RW : D_AP_RO;
++    if (!(unix_prot & PROT_EXEC)) pte |= D_UXN;
++    return pte;
++}
++
++static BOOL query_page( uint64_t page, vm_region_extended_info_data_t *info, vm_page_info_basic_data_t *page_info,
++                        mach_vm_address_t *region_start, mach_vm_size_t *region_size )
++{
++    mach_msg_type_number_t count = VM_REGION_EXTENDED_INFO_COUNT;
++    mach_port_t object = MACH_PORT_NULL;
++
++    *region_start = page;
++    *region_size = 0;
++    memset( page_info, 0, sizeof(*page_info) );
++    if (mach_vm_region( mach_task_self(), region_start, region_size, VM_REGION_EXTENDED_INFO,
++                        (vm_region_info_t)info, &count, &object ) != KERN_SUCCESS) return FALSE;
++    if (*region_start > page || *region_start + *region_size < page + HOST_PAGE) return FALSE;
++    count = VM_PAGE_INFO_BASIC_COUNT;
++    return mach_vm_page_info( mach_task_self(), page, VM_PAGE_INFO_BASIC,
++                              (vm_page_info_t)page_info, &count ) == KERN_SUCCESS;
++}
++
++/* anonymous, readable, not executable, not file-backed or code-signing related */
++static BOOL page_type_ok( const vm_region_extended_info_data_t *info, const vm_page_info_basic_data_t *page_info )
++{
++    if (info->external_pager || (info->protection & VM_PROT_EXECUTE) || !(info->protection & VM_PROT_READ))
++        return FALSE;
++    if ((page_info->disposition & VM_PAGE_QUERY_PAGE_PRESENT) &&
++        (page_info->disposition & (VM_PAGE_QUERY_PAGE_EXTERNAL | VM_PAGE_QUERY_PAGE_CS_VALIDATED |
++                                   VM_PAGE_QUERY_PAGE_CS_TAINTED | VM_PAGE_QUERY_PAGE_CS_NX)))
++        return FALSE;
++    return TRUE;
++}
++
++/*
++ * The page isn't reached through a copy-on-write chain. Truly shared anonymous
++ * memory is fine: Windows sections are POSIX shm objects (see server/mapping.c),
++ * and mapping them into the VM keeps them coherent with other processes.
++ */
++static BOOL page_is_usable( const vm_region_extended_info_data_t *info, const vm_page_info_basic_data_t *page_info )
++{
++    switch (info->share_mode)
++    {
++    case SM_PRIVATE:
++    case SM_EMPTY:
++    case SM_PRIVATE_ALIASED:
++    case SM_SHARED:
++    case SM_TRUESHARED:
++    case SM_SHARED_ALIASED:
++        return TRUE;
++    case SM_COW:  /* region summary: what matters is where this page lives */
++        return (page_info->disposition & VM_PAGE_QUERY_PAGE_PRESENT) && page_info->depth == 0;
++    default:
++        return FALSE;
++    }
++}
++
++/*
++ * Replace a copy-on-write page that writing didn't resolve by a fresh private
++ * anonymous page with the same contents. Note: a host thread reading the page
++ * while it is being replaced could briefly see zeroes.
++ */
++static BOOL replace_with_private_copy( uint64_t page, vm_prot_t vm_prot )
++{
++    char tmp[HOST_PAGE];
++
++    memcpy( tmp, (void *)page, HOST_PAGE );
++    if (mmap( (void *)page, HOST_PAGE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0 ) != (void *)page)
++        return FALSE;
++    minherit( (void *)page, HOST_PAGE, VM_INHERIT_NONE );
++    memcpy( (void *)page, tmp, HOST_PAGE );
++    if (!(vm_prot & VM_PROT_WRITE)) mprotect( (void *)page, HOST_PAGE, PROT_READ );
++    TRACE( "replaced copy-on-write page %llx with a private copy\n", (unsigned long long)page );
++    return TRUE;
++}
++
++/*
++ * Check that a host page is plain private anonymous memory without execute
++ * permission before handing it to hv_vm_map. Other page types (file-backed,
++ * executable, code-signing related...) can panic the kernel with
++ * "[SPTM] VIOLATION_ILLEGAL_MAPPING_TYPE", so anything else is refused.
++ * Copy-on-write anonymous pages are first made private.
++ */
++static BOOL host_page_is_safe( uint64_t page, vm_prot_t *prot )
++{
++    vm_region_extended_info_data_t info;
++    vm_page_info_basic_data_t page_info;
++    mach_vm_address_t addr;
++    mach_vm_size_t size;
++    static int logged;
++
++    if (!query_page( page, &info, &page_info, &addr, &size ))
++    {
++        WARN( "refusing %llx: not mapped on the host\n", (unsigned long long)page );
++        return FALSE;
++    }
++    if (!page_type_ok( &info, &page_info )) goto refuse;
++
++    if (!page_is_usable( &info, &page_info ) && info.share_mode == SM_COW)
++    {
++        /* writing gives us a private copy and keeps the contents */
++        if (!(info.protection & VM_PROT_WRITE) &&
++            mprotect( (void *)page, HOST_PAGE, PROT_READ | PROT_WRITE )) goto refuse;
++        __atomic_fetch_or( (volatile uint64_t *)page, 0, __ATOMIC_SEQ_CST );
++        if (!(info.protection & VM_PROT_WRITE)) mprotect( (void *)page, HOST_PAGE, PROT_READ );
++        if (!query_page( page, &info, &page_info, &addr, &size ) || !page_type_ok( &info, &page_info )) goto refuse;
++    }
++    if (!page_is_usable( &info, &page_info ) && info.share_mode == SM_COW)
++    {
++        if (!replace_with_private_copy( page, info.protection )) goto refuse;
++        if (!query_page( page, &info, &page_info, &addr, &size ) || !page_type_ok( &info, &page_info ) ||
++            !page_is_usable( &info, &page_info ))
++            goto refuse;
++    }
++    if (!page_is_usable( &info, &page_info )) goto refuse;  /* any other share mode */
++    *prot = info.protection;
++    return TRUE;
++
++refuse:
++    if (logged++ < 4)
++        ERR( "refusing to map host page %llx in the VM: pager %u prot %x share mode %u shadow depth %u "
++             "page depth %d disposition %#x, region %llx-%llx\n",
++             (unsigned long long)page, info.external_pager, info.protection, info.share_mode,
++             info.shadow_depth, page_info.depth, page_info.disposition,
++             (unsigned long long)addr, (unsigned long long)(addr + size) );
++    return FALSE;
++}
++
++static BOOL map_stage2( uint64_t ipa )
++{
++    uint64_t page = ipa & ~(HOST_PAGE - 1), bit = page / HOST_PAGE;
++    vm_prot_t prot;
++
++    if (ipa >= IPA_LIMIT) return FALSE;
++    if (stage2_bitmap[bit / 64] & (1ULL << (bit % 64))) return TRUE;
++    if (!host_page_is_safe( page, &prot )) return FALSE;
++    /* never give the guest more access than the host mapping has */
++    if (hv_vm_map( (void *)page, page, HOST_PAGE,
++                   HV_MEMORY_READ | HV_MEMORY_EXEC | ((prot & VM_PROT_WRITE) ? HV_MEMORY_WRITE : 0) ))
++        return FALSE;
++    stage2_bitmap[bit / 64] |= 1ULL << (bit % 64);
++    return TRUE;
++}
++
++static void clear_ptes( uint64_t *table, int level, uint64_t base, uint64_t start, uint64_t end )
++{
++    unsigned int shift = 39 - 9 * level;
++    uint64_t span = 1ULL << shift;
++    unsigned int idx = (start - base) >> shift;
++
++    for (; idx < 512 && base + idx * span < end; idx++)
++    {
++        uint64_t entry_base = base + idx * span;
++        if (!(table[idx] & D_VALID)) continue;
++        if (level == 3)
++        {
++            if (entry_base != KUSD_VA) table[idx] = 0;
++            continue;
++        }
++        clear_ptes( (uint64_t *)(table[idx] & D_ADDR), level + 1, entry_base,
++                    start > entry_base ? start : entry_base,
++                    end < entry_base + span ? end : entry_base + span );
++    }
++}
++
++/***********************************************************************
++ *           hvf_invalidate
++ *
++ * Called by virtual.c after it changed the host mapping of Windows memory.
++ */
++void hvf_invalidate( const void *addr, size_t size )
++{
++    uint64_t start = (uint64_t)addr & ~(GUEST_PAGE - 1);
++    uint64_t end = ((uint64_t)addr + size + GUEST_PAGE - 1) & ~(GUEST_PAGE - 1);
++    uint64_t bit, last;
++
++    if (!ttbr0 || start >= IPA_LIMIT || !size) return;
++    if (end > IPA_LIMIT) end = IPA_LIMIT;
++
++    pthread_mutex_lock( &hvf_mutex );
++    clear_ptes( (uint64_t *)ttbr0, 0, 0, start, end );
++    /* the low window is also mapped at its Windows address, see hvf_low_ptr() */
++    if (start < HVF_LOW_BASE + 0x100000000ULL && end > HVF_LOW_BASE)
++    {
++        uint64_t low_start = start > HVF_LOW_BASE ? start - HVF_LOW_BASE : 0;
++        uint64_t low_end = end < HVF_LOW_BASE + 0x100000000ULL ? end - HVF_LOW_BASE : 0x100000000ULL;
++        clear_ptes( (uint64_t *)ttbr0, 0, 0, low_start, low_end );
++    }
++
++    /* the host may have replaced the pages: drop stage 2 too, it refaults on demand */
++    last = (end + HOST_PAGE - 1) / HOST_PAGE;
++    for (bit = start / HOST_PAGE; bit < last; bit++)
++    {
++        uint64_t *word = &stage2_bitmap[bit / 64];
++        if (!*word) { bit |= 63; continue; }
++        if (!(*word & (1ULL << (bit % 64)))) continue;
++        hv_vm_unmap( bit * HOST_PAGE, HOST_PAGE );
++        *word &= ~(1ULL << (bit % 64));
++    }
++    tlb_generation++;
++    pthread_mutex_unlock( &hvf_mutex );
++}
++
++/* try to resolve a stage-1 fault from the Windows page protections */
++static BOOL map_guest_page( uint64_t va, BOOL write, BOOL exec )
++{
++    int prot;
++    uint64_t *pte, host = (uint64_t)hvf_low_ptr( va );  /* below 4GB: the low window */
++    BOOL ret = FALSE;
++
++    if (va >= IPA_LIMIT) return FALSE;
++    prot = virtual_hvf_get_prot( (void *)host );
++    if (prot < 0 || !(prot & PROT_READ)) return FALSE;
++    if (write && !(prot & PROT_WRITE)) return FALSE;
++    if (exec && !(prot & PROT_EXEC)) return FALSE;
++
++    pthread_mutex_lock( &hvf_mutex );
++    if (map_stage2( host ) && (pte = pte_for( va, TRUE )))
++    {
++        *pte = (host & ~(GUEST_PAGE - 1)) | prot_to_pte( prot );
++        tlb_generation++;   /* a stale permission entry may still be cached */
++        ret = TRUE;
++    }
++    pthread_mutex_unlock( &hvf_mutex );
++    return ret;
++}
++
++/***********************************************************************
++ *           hvf_init_process
++ */
++void hvf_init_process(void)
++{
++    hv_vm_config_t config = hv_vm_config_create();
++    uint32_t ipa_bits;
++    size_t code_size = hvf_guest_end - hvf_guest_start;
++    uint64_t va, *pte;
++    hv_return_t ret;
++
++    /* experimental: a bad hv_vm_map panics the kernel, so never start by accident */
++    if (!getenv( "WINE_HVF" ) || strcmp( getenv( "WINE_HVF" ), "1" ))
++    {
++        ERR( "Windows code needs the experimental Hypervisor.framework backend on this host.\n"
++             "It can crash macOS; set WINE_HVF=1 to run it anyway.\n" );
++        exit(1);
++    }
++    if ((ret = hv_vm_config_get_max_ipa_size( &ipa_bits )) || ipa_bits < 40)
++    {
++        ERR( "need 40-bit IPA support (got %u, ret %x)\n", ipa_bits, ret );
++        exit(1);
++    }
++    hv_vm_config_set_ipa_size( config, 40 );
++    hv_vm_config_set_ipa_granule( config, HV_IPA_GRANULE_4KB );
++    if ((ret = hv_vm_create( config )))
++    {
++        ERR( "hv_vm_create failed %x; is the loader signed with com.apple.security.hypervisor?\n", ret );
++        exit(1);
++    }
++
++    stage2_bitmap = mmap( NULL, IPA_LIMIT / HOST_PAGE / 8, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0 );
++    assert( stage2_bitmap != MAP_FAILED );
++    ttbr0 = (uint64_t)alloc_table();
++
++    /* guest code: host-owned memory, outside of any Windows view */
++    guest_code = vm_mmap( code_size );
++    assert( guest_code != MAP_FAILED && (uint64_t)guest_code + code_size < IPA_LIMIT );
++    memcpy( guest_code, hvf_guest_start, code_size );
++    mprotect( guest_code, code_size, PROT_READ );
++    for (va = (uint64_t)guest_code; va < (uint64_t)guest_code + code_size; va += GUEST_PAGE)
++    {
++        map_stage2( va );
++        pte = pte_for( va, TRUE );
++        *pte = va | D_AF | D_SH_INNER | D_TABLE | D_VALID | D_AP_RO;  /* executable at EL0 and EL1 */
++    }
++    hvf_syscall_stub = guest_code + (hvf_guest_syscall_stub - hvf_guest_start);
++    hvf_unix_call_stub = guest_code + (hvf_guest_unix_call_stub - hvf_guest_start);
++
++    pthread_key_create( &vcpu_key, destroy_vcpu );
++    {
++        uint32_t max_vcpus = 0;
++        if (!hv_vm_get_max_vcpu_count( &max_vcpus ) && max_vcpus >= 16)
++            vcpu_release_threshold = max_vcpus / 2;
++        TRACE( "%u vCPUs at most, released by blocking threads from %d\n", max_vcpus, (int)vcpu_release_threshold );
++    }
++    hvf_tso = getenv( "WINE_HVF_TSO" ) && atoi( getenv( "WINE_HVF_TSO" ));
++    TRACE( "VM ready, guest code at %p\n", guest_code );
++}
++
++/***********************************************************************
++ *           hvf_map_user_shared_data
++ *
++ * Map the host page holding KUSER_SHARED_DATA at 0x7ffe0000 in the guest.
++ */
++static const void *kusd_source;   /* host mapping of the wineserver section */
++static void *kusd_copy;           /* anonymous page the guest sees at 0x7ffe0000 */
++
++static void *kusd_refresh_thread( void *arg )
++{
++    const struct timespec delay = { 0, 1000000 };  /* 1ms, the tick count granularity */
++
++    for (;;)
++    {
++        memcpy( kusd_copy, kusd_source, GUEST_PAGE );
++        nanosleep( &delay, NULL );
++    }
++    return NULL;
++}
++
++/***********************************************************************
++ *           hvf_map_user_shared_data
++ *
++ * The shared data page is file-backed, so it can't be mapped in the VM.
++ * The guest sees an anonymous copy that a host thread keeps up to date.
++ */
++void hvf_map_user_shared_data( void *host )
++{
++    pthread_t thread;
++    uint64_t *pte;
++
++    kusd_source = host;
++    kusd_copy = vm_mmap( HOST_PAGE );
++    if (kusd_copy == MAP_FAILED || (uint64_t)kusd_copy + HOST_PAGE > IPA_LIMIT)
++    {
++        ERR( "cannot allocate the shared data copy\n" );
++        exit(1);
++    }
++    memcpy( kusd_copy, kusd_source, GUEST_PAGE );
++
++    pthread_mutex_lock( &hvf_mutex );
++    if (!map_stage2( (uint64_t)kusd_copy ))
++    {
++        pthread_mutex_unlock( &hvf_mutex );
++        ERR( "cannot map the shared data copy\n" );
++        exit(1);
++    }
++    pte = pte_for( KUSD_VA, TRUE );
++    *pte = (uint64_t)kusd_copy | D_AF | D_SH_INNER | D_TABLE | D_VALID | D_AP_RO | D_UXN | D_PXN;
++    tlb_generation++;
++    pthread_mutex_unlock( &hvf_mutex );
++
++    pthread_create( &thread, NULL, kusd_refresh_thread, NULL );
++    pthread_detach( thread );
++}
++
++/* ------------------------------------------------------------------------
++ * vCPUs
++ */
++
++static LONG vcpu_count;  /* live vCPUs; Hypervisor.framework allows hv_vm_get_max_vcpu_count() */
++
++/* a vCPU belongs to its thread: destroy it when the thread exits, or the VM
++ * runs out of them after a few dozen short-lived threads */
++static void destroy_vcpu( void *ptr )
++{
++    struct hvf_vcpu *v = ptr;
++    hv_return_t ret;
++
++    if ((ret = hv_vcpu_destroy( v->vcpu ))) ERR( "hv_vcpu_destroy failed %x\n", ret );
++    free( v );
++    InterlockedDecrement( &vcpu_count );
++}
++
++static struct hvf_vcpu *get_vcpu(void)
++{
++    struct hvf_vcpu *v = pthread_getspecific( vcpu_key );
++    uint64_t actlr;
++    unsigned int tries = 0;
++
++    if (v) return v;
++    v = calloc( 1, sizeof(*v) );
++    /* all vCPUs taken: threads give theirs back when they block, see hvf_release_vcpu() */
++    while (hv_vcpu_create( &v->vcpu, &v->exit, NULL ))
++    {
++        if (++tries == 1) WARN( "no vCPU left (%d in use), waiting for one\n", (int)vcpu_count );
++        if (tries > 30000)  /* 30 seconds */
++        {
++            ERR( "hv_vcpu_create failed, %d vCPUs in use\n", (int)vcpu_count );
++            abort();
++        }
++        usleep( 1000 );
++    }
++    InterlockedIncrement( &vcpu_count );
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_MAIR_EL1, 0xff );
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_TCR_EL1,
++                         16 | (1ULL << 8) | (1ULL << 10) | (3ULL << 12)  /* T0SZ 48 bit, WB, inner shareable */
++                         | (1ULL << 23)                                   /* EPD1 */
++                         | (2ULL << 32) );                                /* IPS 40 bit */
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_TTBR0_EL1, ttbr0 );
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_SCTLR_EL1,
++                         0x30d00800ULL | (1 << 0) | (1 << 2) | (1 << 12)  /* RES1, M, C, I */
++                         | (1 << 14) | (1 << 15) | (1 << 16) | (1 << 18) | (1 << 26)  /* DZE UCT nTWI nTWE UCI */
++                         | (1 << 6) );  /* nAA: LSE2 unaligned LDAR/STLR within 16 bytes don't fault */
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_CPACR_EL1, 3ULL << 20 );
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_CNTKCTL_EL1, 3 );     /* EL0 counter access */
++    hv_vcpu_set_vtimer_offset( v->vcpu, 0 );                        /* same clock as the host */
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_VBAR_EL1, (uint64_t)guest_code + (hvf_guest_vectors - hvf_guest_start) );
++    hv_vcpu_get_sys_reg( v->vcpu, HV_SYS_REG_ACTLR_EL1, &actlr );
++    if (hvf_tso) actlr |= ACTLR_APPLE_TSO;
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_ACTLR_EL1, actlr );
++    pthread_setspecific( vcpu_key, v );
++    return v;
++}
++
++/***********************************************************************
++ *           hvf_release_vcpu
++ *
++ * A VM has a fixed number of vCPUs (64 on current Macs) and a vCPU can only be
++ * used by the thread that created it. When half of them are taken, a thread
++ * about to block in a syscall gives its vCPU back; the guest state lives in the
++ * syscall frame meanwhile, and a new vCPU is set up when the guest resumes.
++ */
++void hvf_release_vcpu(void)
++{
++    struct hvf_vcpu *v;
++
++    if (vcpu_count < vcpu_release_threshold) return;
++    if (!(v = pthread_getspecific( vcpu_key ))) return;
++    TRACE( "releasing vCPU, %d in use\n", (int)vcpu_count );
++    pthread_setspecific( vcpu_key, NULL );
++    destroy_vcpu( v );
++}
++
++/***********************************************************************
++ *           hvf_set_user_regs
++ *
++ * Set the EL0 state the vCPU resumes with. FP state only if fp != NULL.
++ */
++void hvf_set_user_regs( const struct hvf_regs *regs, BOOL fp )
++{
++    struct hvf_vcpu *v = get_vcpu();
++    int i;
++
++    for (i = 0; i < 31; i++) hv_vcpu_set_reg( v->vcpu, HV_REG_X0 + i, regs->x[i] );
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_SP_EL0, regs->sp );
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_ELR_EL1, regs->pc );
++    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_SPSR_EL1, regs->cpsr & 0xf0000000 );  /* EL0t, NZCV */
++    if (fp)
++    {
++        hv_vcpu_set_reg( v->vcpu, HV_REG_FPCR, regs->fpcr );
++        hv_vcpu_set_reg( v->vcpu, HV_REG_FPSR, regs->fpsr );
++        for (i = 0; i < 32; i++)
++        {
++            hv_simd_fp_uchar16_t q;
++            memcpy( &q, &regs->v[i], sizeof(q) );
++            hv_vcpu_set_simd_fp_reg( v->vcpu, HV_SIMD_FP_REG_Q0 + i, q );
++        }
++    }
++    if (!v->at_eret)
++    {
++        /* first entry: start at an eret in EL1 */
++        hv_vcpu_set_reg( v->vcpu, HV_REG_CPSR, 0x3c5 );  /* EL1h, DAIF masked */
++        hv_vcpu_set_reg( v->vcpu, HV_REG_PC, (uint64_t)guest_code + 4 );
++        v->at_eret = TRUE;
++    }
++}
++
++void hvf_get_user_regs( struct hvf_regs *regs, BOOL fp )
++{
++    struct hvf_vcpu *v = get_vcpu();
++    uint64_t val;
++    int i;
++
++    for (i = 0; i < 31; i++)
++    {
++        hv_vcpu_get_reg( v->vcpu, HV_REG_X0 + i, &val );
++        regs->x[i] = val;
++    }
++    hv_vcpu_get_sys_reg( v->vcpu, HV_SYS_REG_SP_EL0, &val );
++    regs->sp = val;
++    hv_vcpu_get_sys_reg( v->vcpu, HV_SYS_REG_ELR_EL1, &val );
++    regs->pc = val;
++    hv_vcpu_get_sys_reg( v->vcpu, HV_SYS_REG_SPSR_EL1, &val );
++    regs->cpsr = val & 0xf0000000;
++    if (fp)
++    {
++        hv_vcpu_get_reg( v->vcpu, HV_REG_FPCR, &val );
++        regs->fpcr = val;
++        hv_vcpu_get_reg( v->vcpu, HV_REG_FPSR, &val );
++        regs->fpsr = val;
++        for (i = 0; i < 32; i++)
++        {
++            hv_simd_fp_uchar16_t q;
++            hv_vcpu_get_simd_fp_reg( v->vcpu, HV_SIMD_FP_REG_Q0 + i, &q );
++            memcpy( &regs->v[i], &q, sizeof(q) );
++        }
++    }
++}
++
++/***********************************************************************
++ *           hvf_kick
++ *
++ * Make the current thread's hv_vcpu_run() return. Called from a signal handler
++ * that interrupted the guest; hvf_run() then reports HVF_EXIT_INTERRUPT.
++ */
++void hvf_kick(void)
++{
++    struct hvf_vcpu *v = pthread_getspecific( vcpu_key );
++
++    if (v) hv_vcpus_exit( &v->vcpu, 1 );
++}
++
++/* Can the guest state be handed out now? On success the vCPU is parked on an
++ * eret in EL1 with ELR_EL1/SPSR_EL1/SP_EL0 holding the EL0 state, which is
++ * what hvf_get_user_regs() and hvf_set_user_regs() work with. */
++static BOOL at_safe_point( struct hvf_vcpu *v )
++{
++    uint64_t cpsr, pc;
++
++    hv_vcpu_get_reg( v->vcpu, HV_REG_CPSR, &cpsr );
++    hv_vcpu_get_reg( v->vcpu, HV_REG_PC, &pc );
++    if (!(cpsr & 0xc))
++    {
++        /* interrupted at EL0: move the user state to where an exception would have put it */
++        hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_ELR_EL1, pc );
++        hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_SPSR_EL1, cpsr );
++        hv_vcpu_set_reg( v->vcpu, HV_REG_CPSR, 0x3c5 );
++        hv_vcpu_set_reg( v->vcpu, HV_REG_PC, (uint64_t)guest_code + 4 );
++        v->at_eret = TRUE;
++        return TRUE;
++    }
++    /* EL1 in a vector slot: only the hvc at offset 0 hasn't reported its exception yet */
++    return (pc & 0x7f) != 0;
++}
++
++/***********************************************************************
++ *           hvf_run
++ *
++ * Run the guest until something the Unix side has to handle: a syscall,
++ * a unix call, or an exception that isn't a lazy page table fill.
++ */
++void hvf_run( struct hvf_exit *ex, volatile LONG *pending )
++{
++    struct hvf_vcpu *v = get_vcpu();
++
++    for (;;)
++    {
++        uint64_t syndrome, esr, far;
++        unsigned int ec;
++
++        /* a signal arrived while the guest owned the registers (HV_EXIT_REASON_CANCELED comes back here) */
++        if (*pending && at_safe_point( v ))
++        {
++            ex->type = HVF_EXIT_INTERRUPT;
++            return;
++        }
++
++        if (v->tlb_seen != tlb_generation)
++        {
++            uint64_t pc;
++            hv_vcpu_get_reg( v->vcpu, HV_REG_PC, &pc );
++            if ((pc & 0x7f) == 4)   /* on the plain eret: take the flush path */
++                hv_vcpu_set_reg( v->vcpu, HV_REG_PC, (pc & ~0x7fULL) + 8 );
++            v->tlb_seen = tlb_generation;
++        }
++
++        if (hv_vcpu_run( v->vcpu ))
++        {
++            ERR( "hv_vcpu_run failed\n" );
++            abort();
++        }
++        switch (v->exit->reason)
++        {
++        case HV_EXIT_REASON_EXCEPTION:
++            break;
++        case HV_EXIT_REASON_VTIMER_ACTIVATED:
++        case HV_EXIT_REASON_CANCELED:
++            continue;
++        default:
++            ERR( "unexpected exit reason %u\n", v->exit->reason );
++            abort();
++        }
++
++        syndrome = v->exit->exception.syndrome;
++        ec = syndrome >> 26;
++
++        if (ec == 0x24 || ec == 0x20)
++        {
++            /* stage-2 fault: the host page isn't (or no longer) mapped in the VM */
++            uint64_t ipa = v->exit->exception.physical_address, bit = ipa / HOST_PAGE;
++            BOOL ok;
++            if (ipa < IPA_LIMIT && (stage2_bitmap[bit / 64] & (1ULL << (bit % 64))))
++            {
++                /* already mapped: a permission fault, retrying would spin forever */
++                ERR( "stage-2 permission fault at IPA %llx, syndrome %llx\n",
++                     (unsigned long long)ipa, (unsigned long long)syndrome );
++                abort();
++            }
++            pthread_mutex_lock( &hvf_mutex );
++            ok = map_stage2( ipa );
++            pthread_mutex_unlock( &hvf_mutex );
++            if (ok) continue;
++            ERR( "stage-2 fault at IPA %llx with no host memory\n", (unsigned long long)ipa );
++            abort();
++        }
++        if (ec != 0x16)
++        {
++            uint64_t pc;
++            hv_vcpu_get_reg( v->vcpu, HV_REG_PC, &pc );
++            ERR( "unexpected EL2 exception syndrome %llx pc %llx\n", (unsigned long long)syndrome,
++                 (unsigned long long)pc );
++            abort();
++        }
++
++        /* hvc from our vector table: the immediate is the vector index */
++        hv_vcpu_get_sys_reg( v->vcpu, HV_SYS_REG_ESR_EL1, &esr );
++        hv_vcpu_get_sys_reg( v->vcpu, HV_SYS_REG_FAR_EL1, &far );
++        ex->esr = esr;
++        ex->far = far;
++        ex->vector = syndrome & 0xffff;
++
++        if (ex->vector != 8)   /* 8: synchronous exception from lower EL, AArch64 */
++        {
++            ex->type = HVF_EXIT_OTHER;
++            return;
++        }
++        switch (esr >> 26)
++        {
++        case 0x15:  /* svc */
++            ex->type = (esr & 0xffff) == 1 ? HVF_EXIT_SYSCALL :
++                       (esr & 0xffff) == 2 ? HVF_EXIT_UNIX_CALL : HVF_EXIT_OTHER;
++            return;
++        case 0x20:  /* instruction abort */
++        case 0x24:  /* data abort */
++        {
++            unsigned int dfsc = esr & 0x3f;
++            BOOL exec = (esr >> 26) == 0x20, write = !exec && ((esr >> 6) & 1);
++            /* translation or permission fault: maybe just not mapped in the guest yet */
++            if (dfsc >= 0x04 && dfsc <= 0x0f && map_guest_page( far, write, exec )) continue;
++            ex->type = HVF_EXIT_FAULT;
++            return;
++        }
++        default:
++            ex->type = HVF_EXIT_OTHER;
++            return;
++        }
++    }
++}
++
++#endif  /* __APPLE__ && __aarch64__ */
+diff --git a/dlls/ntdll/unix/loader.c b/dlls/ntdll/unix/loader.c
+index dde4b58..ea33ef9 100644
+--- a/dlls/ntdll/unix/loader.c
++++ b/dlls/ntdll/unix/loader.c
+@@ -1565,6 +1565,14 @@ static void load_ntdll_functions( HMODULE module )
+         *p__wine_unix_call_dispatcher_arm64ec = __wine_unix_call_dispatcher;
+     }
+     else *p__wine_unix_call_dispatcher = __wine_unix_call_dispatcher;
++#ifdef WINE_HVF
++    /* Windows code runs in the VM: enter the host through the guest stubs */
++    *p__wine_syscall_dispatcher = hvf_syscall_stub;
++    /* on ARM64EC the exported pointer goes through __wine_unix_call_arm64ec, which jumps
++     * to __wine_unix_call_dispatcher_arm64ec: replace the target, keep the wrapper */
++    if (p__wine_unix_call_dispatcher_arm64ec) *p__wine_unix_call_dispatcher_arm64ec = hvf_unix_call_stub;
++    else *p__wine_unix_call_dispatcher = hvf_unix_call_stub;
++#endif
+ #undef GET_FUNC
+ }
+ 
+diff --git a/dlls/ntdll/unix/process.c b/dlls/ntdll/unix/process.c
+index 1d10948..aa61c23 100644
+--- a/dlls/ntdll/unix/process.c
++++ b/dlls/ntdll/unix/process.c
+@@ -406,6 +406,7 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
+     int stdin_fd = -1, stdout_fd = -1;
+     pid_t pid;
+     char **argv;
++    BOOL new_session;
+ 
+     if (wine_server_handle_to_fd( params->hStdInput, FILE_READ_DATA, &stdin_fd, NULL ) &&
+         isatty(0) && is_unix_console_handle( params->hStdInput ))
+@@ -415,15 +416,20 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
+         isatty(1) && is_unix_console_handle( params->hStdOutput ))
+         stdout_fd = 1;
+ 
++    /* Windows memory is not inherited by fork() children when running in a
++     * VM (see hvf.c): read everything the child needs before forking */
++    new_session = (peb && peb->ProcessParameters &&
++                    params->ProcessGroupId != peb->ProcessParameters->ProcessGroupId) ||
++                   params->ConsoleHandle == CONSOLE_HANDLE_ALLOC ||
++                   params->ConsoleHandle == CONSOLE_HANDLE_ALLOC_NO_WINDOW ||
++                   params->ConsoleHandle == NULL;
++    argv = build_argv( &params->CommandLine, 2 );
++
+     if (!(pid = fork()))  /* child */
+     {
+         if (!(pid = fork()))  /* grandchild */
+         {
+-            if ((peb && peb->ProcessParameters &&
+-                 params->ProcessGroupId != peb->ProcessParameters->ProcessGroupId) ||
+-                params->ConsoleHandle == CONSOLE_HANDLE_ALLOC ||
+-                params->ConsoleHandle == CONSOLE_HANDLE_ALLOC_NO_WINDOW ||
+-                params->ConsoleHandle == NULL)
++            if (new_session)
+             {
+                 setsid();
+                 set_stdio_fd( -1, -1 );  /* close stdin and stdout */
+@@ -439,8 +445,6 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
+                 fchdir( unixdir );
+                 close( unixdir );
+             }
+-            argv = build_argv( &params->CommandLine, 2 );
+-
+             exec_wineloader( argv, socketfd, pe_info );
+             _exit(1);
+         }
+@@ -448,6 +452,7 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
+         _exit(pid == -1);
+     }
+ 
++    free( argv );
+     if (pid != -1)
+     {
+         /* reap child */
+@@ -467,10 +472,12 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
+ /***********************************************************************
+  *           __wine_unix_spawnvp
+  */
+-NTSTATUS WINAPI __wine_unix_spawnvp( char * const argv[], int wait )
++NTSTATUS WINAPI __wine_unix_spawnvp( char * const win_argv[], int wait )
+ {
+     pid_t pid, wret;
+     int fd[2], status, err;
++    char **argv, *p;
++    size_t i, count = 0, len = 0;
+ 
+ #ifdef HAVE_PIPE2
+     if (pipe2( fd, O_CLOEXEC ) == -1)
+@@ -481,6 +488,23 @@ NTSTATUS WINAPI __wine_unix_spawnvp( char * const argv[], int wait )
+         fcntl( fd[1], F_SETFD, FD_CLOEXEC );
+     }
+ 
++    /* the arguments may be in Windows memory, which fork() children don't
++     * inherit when running in a VM (see hvf.c): copy them first */
++    while (win_argv[count]) len += strlen( win_argv[count++] ) + 1;
++    if (!(argv = malloc( (count + 1) * sizeof(*argv) + len )))
++    {
++        close( fd[0] );
++        close( fd[1] );
++        return STATUS_NO_MEMORY;
++    }
++    p = (char *)(argv + count + 1);
++    for (i = 0; i < count; i++)
++    {
++        argv[i] = strcpy( p, win_argv[i] );
++        p += strlen( p ) + 1;
++    }
++    argv[count] = NULL;
++
+     if (!(pid = fork()))
+     {
+         /* in child */
+@@ -513,6 +537,7 @@ NTSTATUS WINAPI __wine_unix_spawnvp( char * const argv[], int wait )
+     else err = errno_to_status( errno );
+ 
+     close( fd[0] );
++    free( argv );
+     return err;
+ }
+ 
+@@ -567,6 +592,7 @@ static NTSTATUS fork_and_exec( OBJECT_ATTRIBUTES *attr, const char *unix_name, i
+     int fd[2], stdin_fd = -1, stdout_fd = -1;
+     char **argv;
+     NTSTATUS status = STATUS_SUCCESS;
++    BOOL new_session;
+ 
+ #ifdef HAVE_PIPE2
+     if (pipe2( fd, O_CLOEXEC ) == -1)
+@@ -585,17 +611,22 @@ static NTSTATUS fork_and_exec( OBJECT_ATTRIBUTES *attr, const char *unix_name, i
+         isatty(1) && is_unix_console_handle( params->hStdOutput ))
+         stdout_fd = 1;
+ 
++    /* Windows memory is not inherited by fork() children when running in a
++     * VM (see hvf.c): read everything the child needs before forking */
++    new_session = (peb && peb->ProcessParameters &&
++                    params->ProcessGroupId != peb->ProcessParameters->ProcessGroupId) ||
++                   params->ConsoleHandle == CONSOLE_HANDLE_ALLOC ||
++                   params->ConsoleHandle == CONSOLE_HANDLE_ALLOC_NO_WINDOW ||
++                   params->ConsoleHandle == NULL;
++    argv = build_argv( &params->CommandLine, 0 );
++
+     if (!(pid = fork()))  /* child */
+     {
+         if (!(pid = fork()))  /* grandchild */
+         {
+             close( fd[0] );
+ 
+-            if ((peb && peb->ProcessParameters &&
+-                 params->ProcessGroupId != peb->ProcessParameters->ProcessGroupId) ||
+-                params->ConsoleHandle == CONSOLE_HANDLE_ALLOC ||
+-                params->ConsoleHandle == CONSOLE_HANDLE_ALLOC_NO_WINDOW ||
+-                params->ConsoleHandle == NULL)
++            if (new_session)
+             {
+                 setsid();
+                 set_stdio_fd( -1, -1 );  /* close stdin and stdout */
+@@ -608,7 +639,6 @@ static NTSTATUS fork_and_exec( OBJECT_ATTRIBUTES *attr, const char *unix_name, i
+             /* Reset signals that we previously set to SIG_IGN */
+             signal( SIGPIPE, SIG_DFL );
+ 
+-            argv = build_argv( &params->CommandLine, 0 );
+             if (unixdir != -1)
+             {
+                 fchdir( unixdir );
+@@ -636,6 +666,7 @@ static NTSTATUS fork_and_exec( OBJECT_ATTRIBUTES *attr, const char *unix_name, i
+         _exit(0); /* child if fork succeeded */
+     }
+     close( fd[1] );
++    free( argv );
+ 
+     if (pid != -1)
+     {
+diff --git a/dlls/ntdll/unix/server.c b/dlls/ntdll/unix/server.c
+index c80226f..173124f 100644
+--- a/dlls/ntdll/unix/server.c
++++ b/dlls/ntdll/unix/server.c
+@@ -627,6 +627,22 @@ static void invoke_system_apc( const union apc_call *call, union apc_result *res
+             ext[count].Pointer = &addr_req;
+             count++;
+         }
++#ifdef WINE_HVF
++        else if (!addr && is_wow64())
++        {
++            /* 32-bit code must be able to use the address: stay in the low window.
++             * Elsewhere this happens by itself, as free memory is searched bottom-up */
++            SYSTEM_BASIC_INFORMATION sbi;
++
++            virtual_get_system_info( &sbi, TRUE );
++            addr_req.LowestStartingAddress = NULL;
++            addr_req.HighestEndingAddress = sbi.HighestUserAddress;
++            addr_req.Alignment = 0;
++            ext[count].Type = MemExtendedParameterAddressRequirements;
++            ext[count].Pointer = &addr_req;
++            count++;
++        }
++#endif
+         if (call->map_view_ex.machine)
+         {
+             ext[count].Type = MemExtendedParameterImageMachine;
+diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
+index 02b6d57..d170526 100644
+--- a/dlls/ntdll/unix/signal_arm64.c
++++ b/dlls/ntdll/unix/signal_arm64.c
+@@ -29,6 +29,8 @@
+ #include <assert.h>
+ #include <pthread.h>
+ #include <signal.h>
++#include <setjmp.h>
++#include <dlfcn.h>
+ #include <stdlib.h>
+ #include <stdarg.h>
+ #include <stdio.h>
+@@ -783,6 +785,10 @@ NTSTATUS get_thread_wow64_context( HANDLE handle, void *ctx, ULONG size )
+ /***********************************************************************
+  *           setup_raise_exception
+  */
++#ifdef WINE_HVF
++static BOOL handle_syscall_fault( struct thread_data *data, ucontext_t *context, EXCEPTION_RECORD *rec );
++#endif
++
+ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcontext,
+                                    EXCEPTION_RECORD *rec, CONTEXT *context )
+ {
+@@ -790,6 +796,14 @@ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcont
+     struct exc_stack_layout *stack;
+     void *stack_ptr = (void *)(SP_sig(sigcontext) & ~15);
+ 
++#ifdef WINE_HVF
++    /* Windows code only runs in the VM, so a signal always comes from host code: hand the
++     * error back to the guest as the syscall result, never send the host into Windows code */
++    if (handle_syscall_fault( data, sigcontext, rec )) return;
++    ERR( "host exception %#x at %p outside a syscall\n", (int)rec->ExceptionCode, rec->ExceptionAddress );
++    abort_thread( 1 );
++#endif
++
+     if (!chpe || !chpe->InSimulation)
+     {
+         NTSTATUS status = send_debug_event( data, rec, context, TRUE );
+@@ -1037,6 +1051,7 @@ __ASM_GLOBAL_FUNC( user_mode_abort_thread,
+                    "bl " __ASM_NAME("abort_thread") )
+ 
+ 
++#ifndef WINE_HVF
+ /***********************************************************************
+  *           KeUserModeCallback
+  */
+@@ -1071,6 +1086,7 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+     if (!frame->prev_frame) return STATUS_NO_CALLBACK_ACTIVE;
+     user_mode_callback_return( ret_ptr, ret_len, status, data->teb );
+ }
++#endif /* WINE_HVF */
+ 
+ 
+ /***********************************************************************
+@@ -1078,11 +1094,70 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+  *
+  * Handle a page fault happening during a system call.
+  */
++#ifdef WINE_HVF
++/* set while the host runs a syscall or unix call for the guest, see hvf_loop() */
++static __thread jmp_buf *hvf_syscall_jmp;
++
++/* The guest registers live in the vCPU while hvf_in_guest is set, and the syscall
++ * frame is stale. A signal that needs them (suspend, quit) is then recorded in
++ * hvf_pending and the vCPU is kicked out; hvf_loop() handles it at a safe point. */
++#define HVF_PENDING_SUSPEND 1
++#define HVF_PENDING_QUIT    2
++static __thread volatile BOOL hvf_in_guest;
++static __thread volatile LONG hvf_pending;
++
++static BOOL hvf_defer_signal( LONG what )
++{
++    if (!hvf_in_guest) return FALSE;
++    __atomic_fetch_or( &hvf_pending, what, __ATOMIC_SEQ_CST );
++    hvf_kick();
++    return TRUE;
++}
++#endif
++
+ static BOOL handle_syscall_fault( struct thread_data *data, ucontext_t *context, EXCEPTION_RECORD *rec )
+ {
+     struct syscall_frame *frame;
+     DWORD i;
+ 
++#ifdef WINE_HVF
++    /* a fault on a guest buffer inside a Unix-side __TRY (ntdll_set_exception_jmp_buf)
++     * goes to that handler first, as without the VM */
++    if (data->jmp_buf)
++    {
++        REGn_sig(0, context) = (ULONG_PTR)data->jmp_buf;
++        REGn_sig(1, context) = 1;
++        PC_sig(context)      = (ULONG_PTR)longjmp;
++        data->jmp_buf = NULL;
++        return TRUE;
++    }
++    /* there is no asm dispatcher to return through: unwind to hvf_loop(),
++     * which hands the status back to the guest as the syscall result */
++    if (!hvf_syscall_jmp) return FALSE;
++    {
++        static LONG logged;
++        if (InterlockedIncrement( &logged ) <= 20)
++        {
++            /* diagnostics only: dladdr isn't async-signal-safe, but we are about to longjmp anyway */
++            Dl_info pc_info = { 0 }, lr_info = { 0 };
++            dladdr( (void *)PC_sig(context), &pc_info );
++            dladdr( (void *)LR_sig(context), &lr_info );
++            WARN( "host fault in syscall %#x: code=%x access %llu at %p, host pc=%p (%s %s+%#lx) lr=%p (%s %s+%#lx)\n",
++                  get_syscall_frame( data ) ? get_syscall_frame( data )->syscall_id : 0, rec->ExceptionCode,
++                  (unsigned long long)rec->ExceptionInformation[0], (void *)rec->ExceptionInformation[1],
++                  (void *)PC_sig(context), pc_info.dli_fname ? strrchr( pc_info.dli_fname, '/' ) + 1 : "?",
++                  pc_info.dli_sname ? pc_info.dli_sname : "?",
++                  (unsigned long)((char *)PC_sig(context) - (char *)(pc_info.dli_saddr ? pc_info.dli_saddr : pc_info.dli_fbase)),
++                  (void *)LR_sig(context), lr_info.dli_fname ? strrchr( lr_info.dli_fname, '/' ) + 1 : "?",
++                  lr_info.dli_sname ? lr_info.dli_sname : "?",
++                  (unsigned long)((char *)LR_sig(context) - (char *)(lr_info.dli_saddr ? lr_info.dli_saddr : lr_info.dli_fbase)) );
++        }
++    }
++    REGn_sig(0, context) = (ULONG_PTR)hvf_syscall_jmp;
++    REGn_sig(1, context) = rec->ExceptionCode;
++    PC_sig(context)      = (ULONG_PTR)longjmp;
++    return TRUE;
++#endif
+     if (!is_inside_syscall( data, SP_sig(context) )) return FALSE;
+ 
+     TRACE( "code=%x flags=%x addr=%p pc=%p\n",
+@@ -1392,6 +1467,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+     ucontext_t *sigcontext = _sigcontext;
+     struct thread_data *data = get_thread_data();
+ 
++#ifdef WINE_HVF
++    /* there is no user mode stack to unwind to on the host: always exit from the Unix side */
++    if (hvf_defer_signal( HVF_PENDING_QUIT )) return;
++    abort_thread( 0 );
++#endif
+     if (is_inside_syscall( data, SP_sig(sigcontext) )) abort_thread(0);
+     user_mode_abort_thread( 0, get_syscall_frame( data ));
+ }
+@@ -1440,6 +1520,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+     extern const ULONG_PTR __wine_unix_call_dispatcher_user_stack;
+     extern const ULONG_PTR call_user_mode_callback_user_stack_ptr;
+ 
++#ifdef WINE_HVF
++    /* the host never runs Windows code: either the guest is in the vCPU (defer),
++     * or the host is in a syscall and the frame holds the guest state */
++    if (!data->teb || !get_syscall_frame( data ))
++    {
++        server_select( NULL, 0, SELECT_INTERRUPTIBLE, 0, NULL, NULL );
++        return;
++    }
++    if ((chpe = data->teb->ChpeV2CpuAreaInfo) && chpe->SuspendDoorbell &&
++        (chpe->InSimulation || chpe->InSyscallCallback))
++    {
++        /* the x64 emulator suspends itself when it sees the doorbell, with the x64 context */
++        NTSTATUS status = server_select( NULL, 0, SELECT_INTERRUPTIBLE | SELECT_COOPERATIVE_SUSPEND,
++                                         0, NULL, NULL );
++        if (status == STATUS_THREAD_WAS_SUSPENDED)
++        {
++            *chpe->SuspendDoorbell = -1;
++            arm64_thread_data( data )->suspend_pending = TRUE;
++        }
++        return;
++    }
++    if (hvf_defer_signal( HVF_PENDING_SUSPEND )) return;
++    context.ContextFlags = CONTEXT_FULL | CONTEXT_ARM64_X18 | CONTEXT_EXCEPTION_REQUEST;
++    NtGetContextThread( GetCurrentThread(), &context );
++    wait_suspend( &context );
++    NtSetContextThread( GetCurrentThread(), &context );
++    return;
++#endif
++
+     /* if we're in a syscall dispatcher, but not yet on the syscall stack, construct
+      * the frame now from the signal context. */
+     if ((ULONG_PTR)__wine_syscall_dispatcher <= PC_sig(sigcontext) &&
+@@ -1509,6 +1618,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+     struct syscall_frame *frame = get_syscall_frame( data );
+     DWORD i;
+ 
++#ifdef WINE_HVF
++    return;  /* only raised by the asm syscall dispatcher, which is not used */
++#endif
+     if (!is_inside_syscall( data, SP_sig(sigcontext) )) return;
+     if (!frame) return;
+ 
+@@ -1691,6 +1803,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
+ }
+ 
+ 
++#ifndef WINE_HVF
+ /***********************************************************************
+  *           signal_start_thread
+  */
+@@ -1728,6 +1841,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
+                    "mov sp, x4\n\t"
+                    "bl " __ASM_NAME("init_syscall_frame") "\n\t"
+                    "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
++#endif /* WINE_HVF */
+ 
+ 
+ /***********************************************************************
+@@ -1966,4 +2080,408 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+ __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
+                       __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
+ 
++#ifdef WINE_HVF
++
++/***********************************************************************
++ *           __wine_unix_current_teb
++ *
++ * NtCurrentTeb() for the Unix side on macOS, where x18 belongs to the kernel.
++ */
++__attribute__((visibility("default"))) TEB *__wine_unix_current_teb(void)
++{
++    struct thread_data *data = get_thread_data();
++    return data ? data->teb : NULL;
++}
++
++/* KeUserModeCallback frame; NtCallbackReturn finds it from the current syscall frame */
++struct hvf_callback
++{
++    struct syscall_frame frame;
++    void                *ret_ptr;
++    ULONG                ret_len;
++    NTSTATUS             status;
++    BOOL                 done;
++};
++
++static void hvf_loop( struct hvf_callback *cb );
++
++/* guest registers -> syscall frame, as __wine_syscall_dispatcher stores them */
++static void hvf_save_frame( struct syscall_frame *frame, const struct hvf_regs *regs, ULONG64 lr, ULONG64 pc )
++{
++    memcpy( frame->x, regs->x, sizeof(frame->x) );
++    frame->fp   = regs->x[29];
++    frame->lr   = lr;
++    frame->sp   = regs->sp;
++    frame->pc   = pc;
++    frame->cpsr = regs->cpsr;
++    frame->restore_flags = 0;
++    frame->syscall_id = regs->x[8];
++    frame->fpcr = regs->fpcr;
++    frame->fpsr = regs->fpsr;
++    memcpy( frame->v, regs->v, sizeof(frame->v) );
++}
++
++/* syscall frame -> guest registers, as __wine_syscall_dispatcher_return does */
++static void hvf_restore_frame( struct syscall_frame *frame, ULONG64 retval )
++{
++    struct hvf_regs regs;
++
++    memcpy( regs.x, frame->x, sizeof(frame->x) );
++    if (!(frame->restore_flags & CONTEXT_INTEGER)) regs.x[0] = retval;
++    regs.x[29] = frame->fp;
++    regs.x[30] = frame->lr;
++    regs.sp    = frame->sp;
++    regs.pc    = frame->pc;
++    regs.cpsr  = frame->cpsr;
++    regs.fpcr  = frame->fpcr;
++    regs.fpsr  = frame->fpsr;
++    memcpy( regs.v, frame->v, sizeof(regs.v) );
++    if (frame->restore_flags & RESTORE_FLAGS_EMULATION)
++    {
++        /* back to x64 code: hand the full context to the emulator, as usr2_handler does
++         * for the asm dispatcher */
++        struct thread_data *data = get_thread_data();
++        CONTEXT *user_context = (CONTEXT *)((frame->sp - sizeof(CONTEXT)) & ~15);
++
++        if (!(frame->restore_flags & CONTEXT_INTEGER)) frame->x[0] = retval;
++        data->teb->ChpeV2CpuAreaInfo->InSimulation = 1;
++        user_context->ContextFlags = CONTEXT_FULL;
++        NtGetContextThread( GetCurrentThread(), user_context );
++        regs.x[0] = frame->x[0];
++        regs.sp = (ULONG64)user_context;
++        regs.pc = (ULONG64)pKiUserEmulationDispatcher;
++    }
++    /* always restore FP state: a nested user callback may have clobbered it */
++    hvf_set_user_regs( &regs, TRUE );
++}
++
++static ULONG64 hvf_dispatch_syscall( struct thread_data *data, const struct hvf_regs *regs )
++{
++    typedef ULONG_PTR (*syscall_func)( ULONG_PTR, ULONG_PTR, ULONG_PTR, ULONG_PTR, ULONG_PTR,
++                                       ULONG_PTR, ULONG_PTR, ULONG_PTR, ULONG_PTR, ULONG_PTR,
++                                       ULONG_PTR, ULONG_PTR, ULONG_PTR, ULONG_PTR, ULONG_PTR,
++                                       ULONG_PTR, ULONG_PTR, ULONG_PTR, ULONG_PTR, ULONG_PTR );
++    SYSTEM_SERVICE_TABLE *table = get_teb_data( data )->syscall_table + ((regs->x[8] >> 12) & 3);
++    ULONG id = regs->x[8] & 0xfff;
++    ULONG_PTR args[20];
++    unsigned int i, nstack = 0;
++    syscall_func func;
++
++    if (id >= table->ServiceLimit)
++    {
++        WARN( "bad syscall %#llx\n", (unsigned long long)regs->x[8] );
++        return STATUS_INVALID_SYSTEM_SERVICE;
++    }
++    if (table->ArgumentTable[id] > 64) nstack = (table->ArgumentTable[id] - 64) / 8;
++    if (nstack > 12) nstack = 12;
++    memset( args, 0, sizeof(args) );
++    for (i = 0; i < 8; i++) args[i] = regs->x[i];
++    for (i = 0; i < nstack; i++) args[8 + i] = ((ULONG_PTR *)regs->sp)[i];  /* guest VA == host VA */
++
++    func = (syscall_func)table->ServiceTable[id];
++    /* a thread that is going to wait doesn't need its vCPU meanwhile */
++    if (table == get_teb_data( data )->syscall_table && is_wait_syscall( func )) hvf_release_vcpu();
++    return func( args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9],
++                 args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19] );
++}
++
++/* turn a guest exception into a Windows exception on the guest stack */
++static void hvf_handle_exception( struct thread_data *data, const struct hvf_exit *ex, struct hvf_regs *regs )
++{
++    EXCEPTION_RECORD rec = { .ExceptionAddress = (void *)regs->pc };
++    struct exc_stack_layout *stack;
++    CONTEXT context = { .ContextFlags = CONTEXT_FULL };
++    NTSTATUS status;
++    unsigned int i;
++
++    if (ex->vector != 8)
++    {
++        ERR( "exception in guest EL1: vector %u esr %llx far %llx elr %llx\n", ex->vector,
++             (unsigned long long)ex->esr, (unsigned long long)ex->far, (unsigned long long)regs->pc );
++        abort_process( 1 );
++    }
++
++    for (i = 0; i < 29; i++) context.X[i] = regs->x[i];
++    context.Fp   = regs->x[29];
++    context.Lr   = regs->x[30];
++    context.Sp   = regs->sp;
++    context.Pc   = regs->pc;
++    context.Cpsr = regs->cpsr;
++    context.Fpcr = regs->fpcr;
++    context.Fpsr = regs->fpsr;
++    memcpy( context.V, regs->v, sizeof(context.V) );
++
++    switch (ESR_ELx_EC( ex->esr ))
++    {
++    case ESR_ELx_EC_IABT_LOW:
++    case ESR_ELx_EC_PC_ALIGN:
++        rec.ExceptionCode = EXCEPTION_ACCESS_VIOLATION;
++        rec.ExceptionInformation[0] = EXCEPTION_EXECUTE_FAULT;
++        rec.ExceptionInformation[1] = ex->far;
++        rec.NumberParameters = 2;
++        break;
++    case ESR_ELx_EC_DABT_LOW:
++        if (ESR_ELx_ISS_DFSC( ex->esr ) == ESR_ELx_ISS_DFSC_ALIGN_FAULT)
++        {
++            rec.ExceptionCode = EXCEPTION_DATATYPE_MISALIGNMENT;
++            break;
++        }
++        rec.ExceptionCode = EXCEPTION_ACCESS_VIOLATION;
++        rec.ExceptionInformation[0] = ESR_ELx_ISS_DABT_WNR( ex->esr ) ? EXCEPTION_WRITE_FAULT : EXCEPTION_READ_FAULT;
++        rec.ExceptionInformation[1] = ex->far;
++        rec.NumberParameters = 2;
++        /* guard pages, write watches: the fix changes the protection and we just retry;
++         * the host knows memory below 4GB by its low window address, see hvf_low_ptr() */
++        rec.ExceptionInformation[1] = (ULONG_PTR)hvf_low_ptr( ex->far );
++        if (!virtual_handle_fault( data, &rec, (void *)regs->sp )) return;
++        rec.ExceptionInformation[1] = ex->far;
++        break;
++    case ESR_ELx_EC_BRK64:
++        switch (ESR_ELx_ISS_BRK_COMMENT( ex->esr ))
++        {
++        case 0xf000:
++            context.Pc += 4;  /* skip the brk instruction */
++            rec.ExceptionCode = EXCEPTION_BREAKPOINT;
++            rec.NumberParameters = 1;
++            break;
++        case 0xf001:
++            rec.ExceptionCode = STATUS_ASSERTION_FAILURE;
++            break;
++        case 0xf003:
++            rec.ExceptionCode = STATUS_STACK_BUFFER_OVERRUN;
++            rec.ExceptionFlags = EXCEPTION_NONCONTINUABLE;
++            rec.NumberParameters = 1;
++            rec.ExceptionInformation[0] = context.X[0];
++            break;
++        case 0xf004:
++            rec.ExceptionCode = EXCEPTION_INT_DIVIDE_BY_ZERO;
++            break;
++        default:
++            /* as trap_handler: other comments are illegal instructions; the x86
++             * emulators rely on it, e.g. FEX's suspend trap brk #0xcafe */
++            rec.ExceptionCode = EXCEPTION_ILLEGAL_INSTRUCTION;
++            break;
++        }
++        break;
++    case ESR_ELx_EC_SOFTSTP_LOW:
++        rec.ExceptionCode = EXCEPTION_SINGLE_STEP;
++        break;
++    default:
++        rec.ExceptionCode = EXCEPTION_ILLEGAL_INSTRUCTION;
++        break;
++    }
++
++    TRACE( "code %#x at %p addr %#llx\n", rec.ExceptionCode, rec.ExceptionAddress, (unsigned long long)ex->far );
++    /* inside the x64 emulator the debugger gets the event from the emulated context instead */
++    if (data->teb->ChpeV2CpuAreaInfo && data->teb->ChpeV2CpuAreaInfo->InSimulation)
++        status = DBG_EXCEPTION_NOT_HANDLED;
++    else
++        status = send_debug_event( data, &rec, &context, TRUE );
++    if ((status == DBG_CONTINUE || status == DBG_EXCEPTION_HANDLED) && is_emulated_code( context.Pc ))
++    {
++        /* the debugger moved the thread into x64 code */
++        CONTEXT *user_context = (CONTEXT *)((context.Sp - sizeof(CONTEXT)) & ~15);
++
++        data->teb->ChpeV2CpuAreaInfo->InSimulation = 1;
++        *user_context = context;
++        user_context->ContextFlags = CONTEXT_FULL;
++        regs->sp = (ULONG64)user_context;
++        regs->pc = (ULONG64)pKiUserEmulationDispatcher;
++        hvf_set_user_regs( regs, FALSE );
++        return;
++    }
++    if (status == DBG_CONTINUE || status == DBG_EXCEPTION_HANDLED)
++    {
++        for (i = 0; i < 29; i++) regs->x[i] = context.X[i];
++        regs->x[29] = context.Fp;
++        regs->x[30] = context.Lr;
++        regs->sp = context.Sp;
++        regs->pc = context.Pc;
++        hvf_set_user_regs( regs, FALSE );
++        return;
++    }
++
++    stack = virtual_setup_exception( data, (void *)(regs->sp & ~15), sizeof(*stack), &rec );
++    stack->rec = rec;
++    stack->context = context;
++    context_init_empty_xstate( &stack->context, stack->redzone );
++    regs->sp = (ULONG64)stack;
++    regs->pc = (ULONG64)pKiUserExceptionDispatcher;
++    regs->x[18] = (ULONG64)data->teb;
++    hvf_set_user_regs( regs, FALSE );
++}
++
++/* handle a signal deferred by hvf_defer_signal(); the frame holds the guest state.
++ * user: the guest was stopped in user code, not on a syscall entry */
++static void hvf_handle_pending( BOOL user )
++{
++    LONG what = __atomic_exchange_n( &hvf_pending, 0, __ATOMIC_SEQ_CST );
++    sigset_t old_set;
++    CONTEXT context;
++
++    if (!what) return;
++    if (what & HVF_PENDING_QUIT) abort_thread( 0 );
++
++    pthread_sigmask( SIG_BLOCK, &server_block_set, &old_set );
++    context.ContextFlags = CONTEXT_FULL | CONTEXT_ARM64_X18 | (user ? 0 : CONTEXT_EXCEPTION_REQUEST);
++    NtGetContextThread( GetCurrentThread(), &context );
++    if (user) context.ContextFlags |= CONTEXT_EXCEPTION_REPORTING;
++    wait_suspend( &context );
++    NtSetContextThread( GetCurrentThread(), &context );
++    pthread_sigmask( SIG_SETMASK, &old_set, NULL );
++}
++
++/* run guest code until the thread exits, or until cb is completed by NtCallbackReturn */
++static void hvf_loop( struct hvf_callback *cb )
++{
++    struct hvf_exit ex;
++    struct hvf_regs regs;
++
++    for (;;)
++    {
++        struct thread_data *data;
++        struct syscall_frame * volatile frame;  /* used after longjmp */
++        ULONG64 ret;
++
++        hvf_in_guest = TRUE;
++        hvf_run( &ex, &hvf_pending );
++        data = get_thread_data();
++        frame = get_syscall_frame( data );
++        hvf_get_user_regs( &regs, TRUE );
++
++        switch (ex.type)
++        {
++        case HVF_EXIT_SYSCALL:
++        case HVF_EXIT_UNIX_CALL:
++        {
++            jmp_buf jmp, *prev = hvf_syscall_jmp;
++            int fault;
++
++            if (ex.type == HVF_EXIT_SYSCALL)  /* thunk: mov x8, id; mov x9, x30; ldr x16, dispatcher; blr x16; ret */
++                hvf_save_frame( frame, &regs, regs.x[9], regs.x[30] );
++            else
++                hvf_save_frame( frame, &regs, regs.x[30], regs.x[30] );
++            hvf_in_guest = FALSE;
++            /* a signal that came in after the vCPU stopped: the frame is valid now */
++            if (hvf_pending) hvf_handle_pending( FALSE );
++
++            /* a fault in the host code returns here, see handle_syscall_fault() */
++            if (!(fault = setjmp( jmp )))
++            {
++                hvf_syscall_jmp = &jmp;
++                if (ex.type == HVF_EXIT_SYSCALL) ret = hvf_dispatch_syscall( data, &regs );
++                else ret = ((unixlib_entry_t *)regs.x[0])[regs.x[1]]( (void *)regs.x[2] );
++            }
++            else
++            {
++                ret = (ULONG)fault;
++                /* we may have been inside a user callback: back to this syscall's frame */
++                get_teb_data( data )->syscall_frame = frame;
++                data->jmp_buf = NULL;  /* a Unix-side __TRY we unwound through */
++            }
++            hvf_syscall_jmp = prev;
++            break;
++        }
++        case HVF_EXIT_INTERRUPT:
++        {
++            static LONG count;
++            LONG n = InterlockedIncrement( &count );
++            if (n <= 3 || !(n % 500)) WARN( "guest interrupted for a signal (%d), pc %p\n", n, (void *)regs.pc );
++        }
++            hvf_save_frame( frame, &regs, regs.x[30], regs.pc );
++            hvf_in_guest = FALSE;
++            hvf_handle_pending( TRUE );
++            hvf_restore_frame( frame, frame->x[0] );
++            continue;
++        default:
++            hvf_handle_exception( data, &ex, &regs );
++            continue;
++        }
++        if (cb && cb->done) return;
++        hvf_restore_frame( frame, ret );
++    }
++}
++
++/***********************************************************************
++ *           KeUserModeCallback
++ */
++NTSTATUS KeUserModeCallback( ULONG id, const void *args, ULONG len, void **ret_ptr, ULONG *ret_len )
++{
++    struct thread_data *data = get_thread_data();
++    struct syscall_frame *frame = get_syscall_frame( data );
++    ULONG64 sp = (frame->sp - offsetof( struct callback_stack_layout, args_data[len] ) - 16) & ~15;
++    struct callback_stack_layout *stack = (struct callback_stack_layout *)sp;
++    struct hvf_callback cb __attribute__((aligned(16)));
++    struct hvf_regs regs;
++
++    stack->args = stack->args_data;
++    stack->len  = len;
++    stack->id   = id;
++    stack->lr   = frame->lr;
++    stack->sp   = frame->sp;
++    stack->pc   = frame->pc;
++    memcpy( stack->args_data, args, len );
++
++    memset( &cb, 0, sizeof(cb) );
++    cb.frame.prev_frame = frame;
++    get_teb_data( data )->syscall_frame = &cb.frame;
++
++    memcpy( regs.x, frame->x, sizeof(frame->x) );
++    regs.x[18] = (ULONG64)data->teb;
++    regs.x[29] = frame->fp;
++    regs.x[30] = frame->lr;
++    regs.sp    = sp;
++    regs.pc    = (ULONG64)pKiUserCallbackDispatcher;
++    regs.cpsr  = frame->cpsr;
++    hvf_set_user_regs( &regs, FALSE );
++
++    hvf_loop( &cb );
++
++    get_teb_data( data )->syscall_frame = frame;
++    *ret_ptr = cb.ret_ptr;
++    *ret_len = cb.ret_len;
++    return cb.status;
++}
++
++/***********************************************************************
++ *           NtCallbackReturn  (NTDLL.@)
++ */
++NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status )
++{
++    struct thread_data *data = get_thread_data();
++    struct syscall_frame *frame = get_syscall_frame( data );
++    struct hvf_callback *cb = CONTAINING_RECORD( frame, struct hvf_callback, frame );
++
++    if (!frame->prev_frame) return STATUS_NO_CALLBACK_ACTIVE;
++    cb->ret_ptr = ret_ptr;
++    cb->ret_len = ret_len;
++    cb->status  = status;
++    cb->done    = TRUE;
++    return STATUS_SUCCESS;
++}
++
++/***********************************************************************
++ *           signal_start_thread
++ */
++void DECLSPEC_NORETURN signal_start_thread( PRTL_THREAD_START_ROUTINE entry, void *arg, TEB *teb )
++{
++    struct thread_data *data = get_thread_data();
++    struct syscall_frame storage __attribute__((aligned(16))), *frame;
++
++    if (!(frame = get_syscall_frame( data )))
++    {
++        frame = &storage;
++        get_teb_data( data )->syscall_frame = frame;
++    }
++    frame->restore_flags = 0;
++    frame->prev_frame = NULL;
++    frame->syscall_cfa = NULL;
++    init_syscall_frame( (LPTHREAD_START_ROUTINE)entry, arg, teb );
++    hvf_restore_frame( frame, frame->x[0] );
++    hvf_loop( NULL );
++    abort();
++}
++
++#endif  /* WINE_HVF */
++
+ #endif  /* __aarch64__ */
+diff --git a/dlls/ntdll/unix/syscall.c b/dlls/ntdll/unix/syscall.c
+index dea2cbb..fb1f4e3 100644
+--- a/dlls/ntdll/unix/syscall.c
++++ b/dlls/ntdll/unix/syscall.c
+@@ -248,6 +248,22 @@ SYSTEM_SERVICE_TABLE KeServiceDescriptorTable[4] =
+     { (ULONG_PTR *)syscalls, NULL, ARRAY_SIZE(syscalls), syscall_args }
+ };
+ 
++#ifdef WINE_HVF
++/* does the table entry block the thread? The names may stand for wrappers here, see above */
++BOOL is_wait_syscall( const void *func )
++{
++    return func == (const void *)NtWaitForSingleObject ||
++           func == (const void *)NtWaitForMultipleObjects ||
++           func == (const void *)NtSignalAndWaitForSingleObject ||
++           func == (const void *)NtDelayExecution ||
++           func == (const void *)NtRemoveIoCompletion ||
++           func == (const void *)NtRemoveIoCompletionEx ||
++           func == (const void *)NtWaitForAlertByThreadId ||
++           func == (const void *)NtWaitForKeyedEvent ||
++           func == (const void *)NtWaitForDebugEvent;
++}
++#endif
++
+ static const char *ntsyscall_names[] =
+ {
+ #define SYSCALL_ENTRY(id,name,args) #name,
+diff --git a/dlls/ntdll/unix/system.c b/dlls/ntdll/unix/system.c
+index 83084b8..ec1677d 100644
+--- a/dlls/ntdll/unix/system.c
++++ b/dlls/ntdll/unix/system.c
+@@ -2121,6 +2121,45 @@ static DWORD get_core_id_regs_arm64( struct smbios_wine_id_reg_value_arm64 *regs
+     return regidx;
+ }
+ 
++#elif defined(WINE_HVF)
++
++#include <Hypervisor/Hypervisor.h>
++
++/* Windows code runs in a Hypervisor.framework VM (see hvf.c): report the ID registers
++ * the vCPU exposes, which is what code in the VM can actually use. EL0 can't read them
++ * on macOS, and FEX picks its fast paths (LSE, LSE2, LRCPC, ...) from these values. */
++static DWORD get_core_id_regs_arm64( struct smbios_wine_id_reg_value_arm64 *regs,
++                                     WORD logical_thread_id )
++{
++    static const struct { WORD id; hv_feature_reg_t reg; } map[] =
++    {
++        { 0x4020, HV_FEATURE_REG_ID_AA64PFR0_EL1 },
++        { 0x4021, HV_FEATURE_REG_ID_AA64PFR1_EL1 },
++        { 0x4024, HV_FEATURE_REG_ID_AA64ZFR0_EL1 },
++        { 0x4025, HV_FEATURE_REG_ID_AA64SMFR0_EL1 },
++        { 0x4028, HV_FEATURE_REG_ID_AA64DFR0_EL1 },
++        { 0x4029, HV_FEATURE_REG_ID_AA64DFR1_EL1 },
++        { 0x4030, HV_FEATURE_REG_ID_AA64ISAR0_EL1 },
++        { 0x4031, HV_FEATURE_REG_ID_AA64ISAR1_EL1 },
++        { 0x4032, HV_FEATURE_REG_ID_AA64ISAR2_EL1 },
++        { 0x4038, HV_FEATURE_REG_ID_AA64MMFR0_EL1 },
++        { 0x4039, HV_FEATURE_REG_ID_AA64MMFR1_EL1 },
++        { 0x403a, HV_FEATURE_REG_ID_AA64MMFR2_EL1 },
++        { 0x5801, HV_FEATURE_REG_CTR_EL0 },
++    };
++    hv_vcpu_config_t config = hv_vcpu_config_create();
++    DWORD i, regidx = 0;
++    uint64_t value;
++
++    /* MIDR_EL1 isn't a feature register in the API: report Apple as the implementer */
++    regs[regidx++] = (struct smbios_wine_id_reg_value_arm64){ 0x4000, 0x61000000 };
++    for (i = 0; i < ARRAY_SIZE(map); i++)
++        if (!hv_vcpu_config_get_feature_reg( config, map[i].reg, &value ))
++            regs[regidx++] = (struct smbios_wine_id_reg_value_arm64){ map[i].id, value };
++    os_release( config );
++    return regidx;
++}
++
+ #else
+ 
+ static DWORD get_core_id_regs_arm64( struct smbios_wine_id_reg_value_arm64 *regs,
+diff --git a/dlls/ntdll/unix/thread.c b/dlls/ntdll/unix/thread.c
+index 11171cc..0b532e7 100644
+--- a/dlls/ntdll/unix/thread.c
++++ b/dlls/ntdll/unix/thread.c
+@@ -1564,6 +1564,9 @@ static DECLSPEC_NORETURN void exit_thread( int status )
+  */
+ void exit_process( int status )
+ {
++#ifdef WINE_HVF
++    virtual_hvf_flush_shadows();
++#endif
+     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
+     process_exit_wrapper( get_unix_exit_code( status ));
+ }
+diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
+index 829db1e..ee87a54 100644
+--- a/dlls/ntdll/unix/unix_private.h
++++ b/dlls/ntdll/unix/unix_private.h
+@@ -138,6 +138,57 @@ static inline struct thread_data *get_thread_data(void)
+     return pthread_getspecific( thread_data_key );
+ }
+ 
++#if defined(__APPLE__) && defined(__aarch64__)
++/* Windows code runs in a Hypervisor.framework VM, see hvf.c */
++#define WINE_HVF 1
++
++struct hvf_regs
++{
++    ULONG64  x[31];
++    ULONG64  sp;
++    ULONG64  pc;
++    ULONG    cpsr;
++    ULONG    fpcr;
++    ULONG    fpsr;
++    NEON128  v[32];
++};
++
++enum hvf_exit_type { HVF_EXIT_SYSCALL, HVF_EXIT_UNIX_CALL, HVF_EXIT_FAULT, HVF_EXIT_OTHER,
++                    HVF_EXIT_INTERRUPT };  /* a signal asked for the guest state, see hvf_kick() */
++
++struct hvf_exit
++{
++    enum hvf_exit_type type;
++    unsigned int       vector;
++    ULONG64            esr;
++    ULONG64            far;
++};
++
++extern void *hvf_syscall_stub;
++extern void *hvf_unix_call_stub;
++extern void hvf_init_process(void);
++extern void hvf_map_user_shared_data( void *host );
++extern void hvf_invalidate( const void *addr, size_t size );
++extern void hvf_set_user_regs( const struct hvf_regs *regs, BOOL fp );
++extern void hvf_get_user_regs( struct hvf_regs *regs, BOOL fp );
++extern void hvf_run( struct hvf_exit *ex, volatile LONG *pending );
++extern void hvf_kick(void);
++extern void hvf_release_vcpu(void);
++extern BOOL is_wait_syscall( const void *func );
++extern int virtual_hvf_get_prot( const void *addr );
++extern void virtual_hvf_flush_shadows(void);
++
++/* the low window, see wine/unixlib.h */
++#define HVF_LOW_BASE WINE_LOW_WINDOW_BASE
++static inline void *hvf_low_ptr( ULONG_PTR addr ) { return wine_low_window_ptr( addr ); }
++/* the other way round: the address Windows code knows for a host address */
++static inline ULONG_PTR hvf_guest_addr( const void *ptr )
++{
++    ULONG_PTR addr = (ULONG_PTR)ptr;
++    return addr - HVF_LOW_BASE < 0x100000000ULL ? addr - HVF_LOW_BASE : addr;
++}
++#endif
++
+ /* thread private data, stored in NtCurrentTeb()->GdiTebBatch */
+ struct teb_data
+ {
+diff --git a/dlls/ntdll/unix/virtual.c b/dlls/ntdll/unix/virtual.c
+index 84f2a39..2f6b37b 100644
+--- a/dlls/ntdll/unix/virtual.c
++++ b/dlls/ntdll/unix/virtual.c
+@@ -92,6 +92,59 @@
+ #include "wine/debug.h"
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(virtual);
++
++#ifdef WINE_HVF
++/* Keep the VM's page tables in sync with the host mappings, see hvf.c.
++ *
++ * Only anonymous, non-executable host memory may back guest memory: the
++ * kernel panics (SPTM VIOLATION_ILLEGAL_MAPPING_TYPE) when hv_vm_map is given
++ * some other kinds of pages. The host never runs Windows code, so PROT_EXEC is
++ * dropped (execute permission comes from the guest page tables), and file
++ * mappings at a fixed address, i.e. into Windows views, are refused with
++ * ENODEV so that virtual.c falls back to reading the file. */
++static inline BOOL hvf_is_shm_fd( int fd )
++{
++    struct stat st;
++    /* POSIX shared memory objects (what wineserver uses for anonymous sections) have no file type */
++    return !fstat( fd, &st ) && !(st.st_mode & S_IFMT);
++}
++static inline void *hvf_mmap( void *addr, size_t len, int prot, int flags, int fd, off_t off )
++{
++    void *ret;
++
++    if (fd != -1 && (flags & MAP_FIXED) && !hvf_is_shm_fd( fd ))
++    {
++        errno = ENODEV;
++        return MAP_FAILED;
++    }
++    ret = mmap( addr, len, prot & ~PROT_EXEC, flags, fd, off );
++    if (ret == MAP_FAILED) return ret;
++    /* fork() (e.g. to start wineserver) would turn private pages copy-on-write:
++     * the VM must keep seeing the same pages as the host */
++    minherit( ret, len, VM_INHERIT_NONE );
++    hvf_invalidate( ret, len );
++    return ret;
++}
++static inline int hvf_munmap( void *addr, size_t len )
++{
++    int ret = munmap( addr, len );
++    hvf_invalidate( addr, len );
++    return ret;
++}
++static inline int hvf_mprotect( void *addr, size_t len, int prot )
++{
++    int ret = mprotect( addr, len, prot & ~PROT_EXEC );
++    hvf_invalidate( addr, len );
++    return ret;
++}
++#define mmap hvf_mmap
++#define munmap hvf_munmap
++#define mprotect hvf_mprotect
++/* reserved areas become Windows memory through mprotect: keep them out of fork() too */
++#define WINE_VM_INHERIT VM_INHERIT_NONE
++#else
++#define WINE_VM_INHERIT VM_INHERIT_COPY
++#endif
+ WINE_DECLARE_DEBUG_CHANNEL(module);
+ WINE_DECLARE_DEBUG_CHANNEL(mem_areas);
+ 
+@@ -175,7 +228,11 @@ static const UINT_PTR host_page_mask = 0xfff;
+ /* Note: these are Windows limits, you cannot change them. */
+ static void *dos_space_start     = (void *)0x10000;         /* start of available DOS space (between 0 and 64K) */
+ static void *address_space_start = (void *)0x10000;
+-#ifdef _WIN64
++#ifdef WINE_HVF
++static void *address_space_limit = (void *)0xffffff0000;    /* IPA space of the VM is 40 bits */
++static void *user_space_limit    = (void *)0xffffff0000;
++static void *working_set_limit   = (void *)0xffffff0000;
++#elif defined(_WIN64)
+ static void *address_space_limit = (void *)0x7fffffff0000;  /* top of the total available address space */
+ static void *user_space_limit    = (void *)0x7fffffff0000;  /* top of the user address space */
+ static void *working_set_limit   = (void *)0x7fffffff0000;  /* top of the current working set */
+@@ -579,7 +636,7 @@ static void *anon_mmap_tryfixed( void *start, size_t size, int prot, int flags )
+ #elif defined(__APPLE__)
+     mach_vm_address_t result = (mach_vm_address_t)start;
+     kern_return_t ret = mach_vm_map( mach_task_self(), &result, size, 0, VM_FLAGS_FIXED,
+-                                     MEMORY_OBJECT_NULL, 0, 0, prot, VM_PROT_ALL, VM_INHERIT_COPY );
++                                     MEMORY_OBJECT_NULL, 0, 0, prot, VM_PROT_ALL, WINE_VM_INHERIT );
+ 
+     if (!ret)
+     {
+@@ -639,7 +696,7 @@ static void reserve_area( void *addr, void *end )
+             mach_vm_address_t alloc_address = hole_address;
+ 
+             ret = mach_vm_map( mach_task_self(), &alloc_address, hole_size, 0, VM_FLAGS_FIXED,
+-                               MEMORY_OBJECT_NULL, 0, 0, PROT_NONE, VM_PROT_ALL, VM_INHERIT_COPY );
++                               MEMORY_OBJECT_NULL, 0, 0, PROT_NONE, VM_PROT_ALL, WINE_VM_INHERIT );
+             if (!ret) set_mem_area_state( (void*)hole_address, hole_size, AREA_RESERVED );
+             else if (ret == KERN_NO_SPACE)
+             {
+@@ -1372,6 +1429,7 @@ static void *alloc_free_area( void *limit_low, void *limit_high, size_t size, in
+         {
+             if (mem_area_state( area ) != AREA_FREE) continue;
+             start = ROUND_ADDR( (char *)mem_area_base( area ) + align_mask, align_mask );
++            if (start < limit_low) start = limit_low;
+             if (start >= end || (char *)end - (char *)start < size) continue;
+             if ((ptr = map_free_area( start, end, size, top_down, unix_prot, align_mask ))) return ptr;
+         }
+@@ -1510,8 +1568,135 @@ static void unregister_view( struct file_view *view )
+  *
+  * Deletes a view. virtual_mutex must be held by caller.
+  */
++#ifdef WINE_HVF
++/* Shared writable file mappings.
++ *
++ * A file-backed page can't go into the VM (see hvf_mmap), so a writable view of a
++ * file is anonymous memory filled from the file. A pristine copy of what the file
++ * held is kept on the host side; pages that differ from it are written back to the
++ * file when the view is flushed or unmapped and when the process exits. Two views
++ * of the same file don't see each other's changes until they are written back.
++ */
++struct hvf_shadow
++{
++    struct list       entry;
++    struct file_view *view;
++    char             *base;    /* start of the file data in the view */
++    size_t            size;
++    off_t             offset;  /* file offset of base */
++    int               fd;
++    char             *copy;    /* what the file holds, as far as we know */
++};
++
++static struct list hvf_shadows = LIST_INIT( hvf_shadows );
++
++/* write back the pages of [start, end) that changed; virtual_mutex must be held */
++static void hvf_shadow_flush( struct hvf_shadow *shadow, char *start, char *end )
++{
++    struct stat st;
++    char *page;
++
++    if (fstat( shadow->fd, &st )) return;
++    start = max( start, shadow->base );
++    end = min( end, shadow->base + shadow->size );
++    for (page = ROUND_ADDR( start, page_mask ); page < end; page += page_size)
++    {
++        size_t pos = page - shadow->base, len = min( page_size, shadow->size - pos );
++        off_t file_pos = shadow->offset + pos;
++
++        /* reading a page the guest can't read would fault on the host */
++        if (!(get_unix_prot( get_page_vprot( page )) & PROT_READ)) continue;
++        if (!memcmp( page, shadow->copy + pos, len )) continue;
++        if (file_pos >= st.st_size) continue;  /* never grow the file */
++        if (len > st.st_size - file_pos) len = st.st_size - file_pos;
++        if (pwrite( shadow->fd, page, len, file_pos ) != len)
++        {
++            WARN( "write-back of %p-%p failed: %s\n", page, page + len, strerror(errno) );
++            continue;
++        }
++        memcpy( shadow->copy + pos, page, len );
++    }
++}
++
++static void hvf_shadow_flush_range( char *start, char *end )
++{
++    struct hvf_shadow *shadow;
++
++    LIST_FOR_EACH_ENTRY( shadow, &hvf_shadows, struct hvf_shadow, entry )
++        if (start < shadow->base + shadow->size && end > shadow->base)
++            hvf_shadow_flush( shadow, start, end );
++}
++
++/* write back and forget the shadows of a view going away; virtual_mutex must be held */
++static void hvf_shadow_release( struct file_view *view )
++{
++    struct hvf_shadow *shadow, *next;
++
++    LIST_FOR_EACH_ENTRY_SAFE( shadow, next, &hvf_shadows, struct hvf_shadow, entry )
++    {
++        if (shadow->view != view) continue;
++        hvf_shadow_flush( shadow, shadow->base, shadow->base + shadow->size );
++        list_remove( &shadow->entry );
++        munmap( shadow->copy, ROUND_SIZE( 0, shadow->size, host_page_mask ));
++        close( shadow->fd );
++        free( shadow );
++    }
++}
++
++/* fill [start, start + size) of a view from the file and track it; virtual_mutex must be held */
++static NTSTATUS hvf_shadow_map( struct file_view *view, int fd, size_t start, size_t size, off_t offset )
++{
++    struct hvf_shadow *shadow;
++    char *base = (char *)view->base + start;
++    size_t done = 0;
++    ssize_t ret;
++
++    if (!(shadow = malloc( sizeof(*shadow) ))) return STATUS_NO_MEMORY;
++    if ((shadow->fd = dup( fd )) == -1)
++    {
++        free( shadow );
++        return STATUS_NO_MEMORY;
++    }
++    if ((shadow->copy = anon_mmap_alloc( ROUND_SIZE( 0, size, host_page_mask ),
++                                         PROT_READ | PROT_WRITE )) == MAP_FAILED)
++    {
++        close( shadow->fd );
++        free( shadow );
++        return STATUS_NO_MEMORY;
++    }
++    mprotect( base, size, PROT_READ | PROT_WRITE );
++    while (done < size && (ret = pread( fd, base + done, size - done, offset + done )) > 0) done += ret;
++    memcpy( shadow->copy, base, size );
++
++    shadow->view   = view;
++    shadow->base   = base;
++    shadow->size   = size;
++    shadow->offset = offset;
++    list_add_head( &hvf_shadows, &shadow->entry );
++    TRACE( "shadow %p-%p of file offset %#llx\n", base, base + size, (unsigned long long)offset );
++    return STATUS_SUCCESS;
++}
++
++/***********************************************************************
++ *           virtual_hvf_flush_shadows
++ *
++ * Write back all shared writable file views, at process exit.
++ */
++void virtual_hvf_flush_shadows(void)
++{
++    sigset_t sigset;
++
++    server_enter_uninterrupted_section( &virtual_mutex, &sigset );
++    hvf_shadow_flush_range( NULL, (char *)~(ULONG_PTR)0 );
++    server_leave_uninterrupted_section( &virtual_mutex, &sigset );
++}
++#endif
++
+ static void delete_view( struct file_view *view ) /* [in] View */
+ {
++#ifdef WINE_HVF
++    hvf_shadow_release( view );
++#endif
+     if (!(view->protect & VPROT_SYSTEM)) unmap_area( view->base, view->size );
+     set_page_vprot( view->base, view->size, 0 );
+     if (view->protect & VPROT_ARM64EC) clear_arm64ec_range( view->base, view->size );
+@@ -1838,6 +2023,7 @@ static void *map_reserved_area( void *limit_low, void *limit_high, size_t size,
+         {
+             if (mem_area_state( area ) != AREA_RESERVED) continue;
+             start = ROUND_ADDR( (char *)mem_area_base( area ) + align_mask, align_mask );
++            if (start < limit_low) start = limit_low;
+             if (start >= end || (char *)end - (char *)start < size) continue;
+             ptr = ROUND_ADDR( (char *)end - size, align_mask );
+             break;
+@@ -2012,6 +2198,24 @@ static NTSTATUS map_view( struct file_view **view_ret, void *base, size_t size,
+     if (!align_mask) align_mask = granularity_mask;
+     assert( align_mask >= granularity_mask );
+ 
++#ifdef WINE_HVF
++    /* the VM can only reach the first 1TB: refuse fixed addresses above it
++     * (e.g. exe bases chosen by wineserver at 0x7ff6...), callers then fall
++     * back to any suitable address */
++    if (base && is_beyond_limit( base, size, address_space_limit )) return STATUS_CONFLICTING_ADDRESSES;
++
++    /* addresses and limits below 4GB refer to the low window, see hvf_low_ptr() */
++    if (base) base = hvf_low_ptr( (ULONG_PTR)base );
++    if (limit_high && limit_high < limit_4g)
++    {
++        /* a limit below the first usable address leaves no room: no memory, as
++         * for a range below address_space_start, rather than an invalid range */
++        if (limit_low < limit_high && limit_high < 0x10000) return STATUS_NO_MEMORY;
++        limit_low = HVF_LOW_BASE + max( limit_low, 0x10000 );
++        limit_high += HVF_LOW_BASE;
++    }
++#endif
++
+     if (alloc_type & MEM_REPLACE_PLACEHOLDER)
+     {
+         struct file_view *view;
+@@ -2100,6 +2304,10 @@ static NTSTATUS map_file_into_view( struct file_view *view, int fd, size_t start
+     assert( start < view->size );
+     assert( start + size <= view->size );
+ 
++#ifdef WINE_HVF
++    if ((vprot & VPROT_WRITE) && !hvf_is_shm_fd( fd ))
++        return hvf_shadow_map( view, fd, start, size, offset );
++#endif
+     if (vprot & VPROT_WRITE) flags |= MAP_SHARED;
+     else if (vprot & VPROT_WRITECOPY) flags |= MAP_PRIVATE;
+     else
+@@ -3172,6 +3380,14 @@ static NTSTATUS virtual_map_image( HANDLE mapping, void **addr_ptr, SIZE_T *size
+         SERVER_END_REQ;
+     }
+ 
++#ifdef WINE_HVF
++    /* wineserver picks Windows-like dynamic bases (exes at 0x7ff6...) that the VM can't
++     * reach; drop it so the image is mapped and relocated like a non-shared one */
++    if (pe_mapping->image.map_addr &&
++        is_beyond_limit( wine_server_get_ptr( pe_mapping->image.map_addr ), size, address_space_limit ))
++        pe_mapping->image.map_addr = 0;
++#endif
++
+     server_enter_uninterrupted_section( &virtual_mutex, &sigset );
+ 
+     status = map_image_view( &view, &pe_mapping->image, size, limit_low, limit_high, alloc_type );
+@@ -3376,6 +3592,11 @@ void virtual_init(void)
+     TRACE( "host page size: %uk\n", (UINT)host_page_size / 1024 );
+ #endif
+     host_addr_space_limit = get_host_addr_space_limit();
++#ifdef WINE_HVF
++    /* everything Windows code can reach must fit in the VM's 40-bit IPA space;
++     * this also moves the top-down allocation range (DLLs) below 1TB */
++    if (host_addr_space_limit > address_space_limit) host_addr_space_limit = address_space_limit;
++#endif
+     TRACE( "host addr space limit: %p\n", host_addr_space_limit );
+ 
+     mem_areas = anon_mmap_alloc( mem_areas_size * sizeof(*mem_areas), PROT_READ | PROT_WRITE );
+@@ -3760,21 +3981,34 @@ static void set_large_address_space(void)
+         char *end, *start = address_space_start;  /* low 64K */
+         address_space_start = (void *)0x110000;
+         end = min( address_space_start, main_module );
++#ifdef WINE_HVF
++        /* in the low window, see hvf_low_ptr() */
++        end = min( (char *)address_space_start, (char *)main_module - HVF_LOW_BASE );
++        if (end > start) map_fixed_area( (char *)start + HVF_LOW_BASE, end - start, PROT_READ | PROT_WRITE );
++#else
+         if (end > start) map_fixed_area( start, end - start, PROT_READ | PROT_WRITE );
++#endif
+     }
+ 
+     if (is_win64)
+     {
++#ifdef WINE_HVF
++        const ULONG_PTR low = HVF_LOW_BASE;
++        /* the VM shows KUSER_SHARED_DATA at 0x7ffe0000: keep that page free in the low window */
++        set_mem_area_state( (void *)(low + 0x7ffe0000), 0x10000, AREA_BLOCKED );
++#else
++        const ULONG_PTR low = 0;
++#endif
+         if (main_image_info.ImageCharacteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE)
+         {
+             user_space_wow_limit = limit_4g - 1;
+             /* block a bit of top memory: some apps break if the entire high 2G is available */
+-            set_mem_area_state( (void *)0xfffe0000, 0x20000, AREA_BLOCKED );
++            set_mem_area_state( (void *)(low + 0xfffe0000), 0x20000, AREA_BLOCKED );
+         }
+         else
+         {
+             user_space_wow_limit = limit_2g - 1;
+-            set_mem_area_state( (void *)0x7fff0000, 0x10000, AREA_BLOCKED );
++            set_mem_area_state( (void *)(low + 0x7fff0000), 0x10000, AREA_BLOCKED );
+         }
+     }
+     else if (!(main_image_info.ImageCharacteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE))
+@@ -3849,8 +4083,15 @@ struct thread_data *virtual_alloc_first_thread_data(void)
+     size_t size = signal_stack_mask + 1 + kernel_stack_size;
+     void *ptr;
+ 
++#ifdef WINE_HVF
++    hvf_init_process();
++    /* the host can't map below 4GB: keep the shared data anywhere, the VM maps it at 0x7ffe0000 */
++    status = map_view( &view, NULL, host_page_size, 0, VPROT_READ | VPROT_COMMITTED, 0, 0, granularity_mask );
++    if (!status) user_shared_data = view->base;
++#else
+     /* reserve space for shared user data */
+     status = map_view( &view, user_shared_data, page_size, 0, VPROT_READ | VPROT_COMMITTED, 0, 0, 0 );
++#endif
+     if (status)
+     {
+         ERR( "wine: failed to map the shared user data: %08x\n", status );
+@@ -4286,12 +4527,24 @@ void virtual_map_user_shared_data(void)
+         ERR( "failed to open the USD section: %08x\n", status );
+         exit(1);
+     }
++#ifdef WINE_HVF
++    /* a file-backed page can't go into the VM: map it for the host only,
++     * the guest gets an anonymous copy kept up to date by hvf.c */
++    if ((res = server_get_unix_fd( section, 0, &fd, &needs_close, NULL, NULL )) ||
++        (user_shared_data = mmap( NULL, page_size, PROT_READ, MAP_SHARED, fd, 0 )) == MAP_FAILED)
++    {
++        ERR( "failed to remap the process USD: %d\n", res );
++        exit(1);
++    }
++    hvf_map_user_shared_data( user_shared_data );
++#else
+     if ((res = server_get_unix_fd( section, 0, &fd, &needs_close, NULL, NULL )) ||
+         (user_shared_data != mmap( user_shared_data, page_size, PROT_READ, MAP_SHARED|MAP_FIXED, fd, 0 )))
+     {
+         ERR( "failed to remap the process USD: %d\n", res );
+         exit(1);
+     }
++#endif
+     if (needs_close) close( fd );
+     NtClose( section );
+ }
+@@ -4678,6 +4931,25 @@ BOOL virtual_is_valid_code_address( const void *addr, SIZE_T size )
+ }
+ 
+ 
++#ifdef WINE_HVF
++/***********************************************************************
++ *           virtual_hvf_get_prot
++ *
++ * Unix protection the guest should see for a page, -1 if there is no view.
++ */
++int virtual_hvf_get_prot( const void *addr )
++{
++    struct file_view *view;
++    sigset_t sigset;
++    int ret = -1;
++
++    server_enter_uninterrupted_section( &virtual_mutex, &sigset );
++    if ((view = find_view( addr, 0 ))) ret = get_unix_prot( get_page_vprot( addr ));
++    server_leave_uninterrupted_section( &virtual_mutex, &sigset );
++    return ret;
++}
++#endif
++
+ /***********************************************************************
+  *           virtual_check_buffer_for_read
+  *
+@@ -5004,6 +5276,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
+                                    MEM_PHYSICAL | MEM_LARGE_PAGES | MEM_WRITE_WATCH;
+     ULONG_PTR limit;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    if (*ret) *ret = hvf_low_ptr( (ULONG_PTR)*ret );
++#endif
++
+     TRACE("%p %p %08lx %x %08x\n", process, *ret, *size_ptr, type, protect );
+ 
+     if (!*size_ptr) return STATUS_INVALID_PARAMETER;
+@@ -5148,6 +5425,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *s
+     USHORT machine = 0;
+     unsigned int status;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    if (*ret) *ret = hvf_low_ptr( (ULONG_PTR)*ret );
++#endif
++
+     TRACE( "%p %p %08lx %x %08x %p %u\n",
+           process, *ret, *size_ptr, type, protect, parameters, count );
+ 
+@@ -5206,6 +5488,11 @@ NTSTATUS WINAPI NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T *si
+     LPVOID addr = *addr_ptr;
+     SIZE_T size = *size_ptr;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    addr = hvf_low_ptr( (ULONG_PTR)addr );
++#endif
++
+     TRACE("%p %p %08lx %x\n", process, addr, size, type );
+ 
+     if (process != NtCurrentProcess())
+@@ -5301,6 +5588,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
+     LPVOID addr = *addr_ptr;
+     DWORD old;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    addr = hvf_low_ptr( (ULONG_PTR)addr );
++#endif
++
+     TRACE("%p %p %08lx %08x\n", process, addr, size, new_prot );
+ 
+     if (!old_prot)
+@@ -5941,6 +6233,11 @@ NTSTATUS WINAPI NtQueryVirtualMemory( HANDLE process, LPCVOID addr,
+ {
+     NTSTATUS status;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    addr = hvf_low_ptr( (ULONG_PTR)addr );
++#endif
++
+     TRACE("(%p, %p, info_class=%d, %p, %ld, %p)\n",
+           process, addr, info_class, buffer, len, res_len);
+ 
+@@ -6024,6 +6321,11 @@ NTSTATUS WINAPI NtLockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size,
+ {
+     unsigned int status = STATUS_SUCCESS;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    if (addr && *addr) *addr = hvf_low_ptr( (ULONG_PTR)*addr );
++#endif
++
+     if (process != NtCurrentProcess())
+     {
+         union apc_call call;
+@@ -6062,6 +6364,11 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
+ {
+     unsigned int status = STATUS_SUCCESS;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    if (addr && *addr) *addr = hvf_low_ptr( (ULONG_PTR)*addr );
++#endif
++
+     if (process != NtCurrentProcess())
+     {
+         union apc_call call;
+@@ -6114,10 +6421,18 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
+         return STATUS_INVALID_PARAMETER_4;
+ 
+     /* If both addr_ptr and zero_bits are passed, they have match */
++#ifdef WINE_HVF
++    /* compare the address Windows code asked for, not its low window alias */
++    if (zero_bits && zero_bits < 32 && (hvf_guest_addr( *addr_ptr ) >> (32 - zero_bits)))
++        return STATUS_INVALID_PARAMETER_4;
++    if (zero_bits >= 32 && (hvf_guest_addr( *addr_ptr ) & ~zero_bits))
++        return STATUS_INVALID_PARAMETER_4;
++#else
+     if (zero_bits && zero_bits < 32 && ((UINT_PTR)*addr_ptr >> (32 - zero_bits)))
+         return STATUS_INVALID_PARAMETER_4;
+     if (zero_bits >= 32 && ((UINT_PTR)*addr_ptr & ~zero_bits))
+         return STATUS_INVALID_PARAMETER_4;
++#endif
+ 
+     if (!is_win64 && !is_wow64())
+     {
+@@ -6322,6 +6637,9 @@ done:
+  */
+ NTSTATUS WINAPI NtUnmapViewOfSection( HANDLE process, PVOID addr )
+ {
++#ifdef WINE_HVF
++    addr = hvf_low_ptr( (ULONG_PTR)addr );  /* see hvf_low_ptr() */
++#endif
+     return unmap_view_of_section( process, addr, 0 );
+ }
+ 
+@@ -6333,6 +6651,11 @@ NTSTATUS WINAPI NtUnmapViewOfSectionEx( HANDLE process, PVOID addr, ULONG flags
+ {
+     static const ULONG type_mask = MEM_UNMAP_WITH_TRANSIENT_BOOST | MEM_PRESERVE_PLACEHOLDER;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    addr = hvf_low_ptr( (ULONG_PTR)addr );
++#endif
++
+     if (flags & ~type_mask)
+     {
+         WARN( "Unsupported flags %#x.\n", flags );
+@@ -6473,6 +6796,9 @@ NTSTATUS WINAPI NtFlushVirtualMemory( HANDLE process, LPCVOID *addr_ptr,
+     {
+         if (!*size_ptr) *size_ptr = view->size;
+         *addr_ptr = addr;
++#ifdef WINE_HVF
++        hvf_shadow_flush_range( addr, (char *)addr + *size_ptr );
++#endif
+ #ifdef MS_ASYNC
+         if (msync( ROUND_ADDR( addr, host_page_mask ), ROUND_SIZE( addr, *size_ptr, host_page_mask ), MS_ASYNC ))
+             status = STATUS_NOT_MAPPED_DATA;
+@@ -6493,6 +6819,11 @@ NTSTATUS WINAPI NtGetWriteWatch( HANDLE process, ULONG flags, PVOID base, SIZE_T
+     NTSTATUS status = STATUS_SUCCESS;
+     sigset_t sigset;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    base = hvf_low_ptr( (ULONG_PTR)base );
++#endif
++
+     size = ROUND_SIZE( base, size, page_mask );
+     base = ROUND_ADDR( base, page_mask );
+ 
+@@ -6551,6 +6882,11 @@ NTSTATUS WINAPI NtResetWriteWatch( HANDLE process, PVOID base, SIZE_T size )
+     NTSTATUS status = STATUS_SUCCESS;
+     sigset_t sigset;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    base = hvf_low_ptr( (ULONG_PTR)base );
++#endif
++
+     size = ROUND_SIZE( base, size, page_mask );
+     base = ROUND_ADDR( base, page_mask );
+ 
+@@ -6579,6 +6915,11 @@ NTSTATUS WINAPI NtReadVirtualMemory( HANDLE process, const void *addr, void *buf
+ {
+     unsigned int status;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    addr = hvf_low_ptr( (ULONG_PTR)addr );
++#endif
++
+     if (!virtual_check_buffer_for_write( buffer, size ))
+     {
+         status = STATUS_ACCESS_VIOLATION;
+@@ -6623,6 +6964,11 @@ NTSTATUS WINAPI NtWriteVirtualMemory( HANDLE process, void *addr, const void *bu
+ {
+     unsigned int status;
+ 
++#ifdef WINE_HVF
++    /* Windows addresses below 4GB live higher up on the host, see hvf_low_ptr() */
++    addr = hvf_low_ptr( (ULONG_PTR)addr );
++#endif
++
+     if (virtual_check_buffer_for_read( buffer, size ))
+     {
+         SERVER_START_REQ( write_process_memory )
+@@ -6785,6 +7131,9 @@ NTSTATUS WINAPI NtSetInformationVirtualMemory( HANDLE process,
+  */
+ NTSTATUS WINAPI NtFlushInstructionCache( HANDLE handle, const void *addr, SIZE_T size )
+ {
++#ifdef WINE_HVF
++    addr = hvf_low_ptr( (ULONG_PTR)addr );  /* see hvf_low_ptr() */
++#endif
+ #if defined(__x86_64__) || defined(__i386__)
+     /* no-op */
+ #elif defined(HAVE___CLEAR_CACHE)
+diff --git a/dlls/win32u/font.c b/dlls/win32u/font.c
+index 97936e9..d643139 100644
+--- a/dlls/win32u/font.c
++++ b/dlls/win32u/font.c
+@@ -3046,12 +3046,13 @@ static void update_codepage( UINT screen_dpi )
+         font_dpi = *(DWORD *)info->Data;
+ 
+     RtlInitCodePageTable( utf8_hdr, &utf8_cp );
++    /* in WoW64 processes the 32-bit ntdll stores 32-bit addresses here */
+     if (RtlGetCurrentPeb()->AnsiCodePageData)
+-        RtlInitCodePageTable( RtlGetCurrentPeb()->AnsiCodePageData, &ansi_cp );
++        RtlInitCodePageTable( wine_low_window_ptr( (ULONG_PTR)RtlGetCurrentPeb()->AnsiCodePageData ), &ansi_cp );
+     else
+         ansi_cp = utf8_cp;
+     if (RtlGetCurrentPeb()->OemCodePageData)
+-        RtlInitCodePageTable( RtlGetCurrentPeb()->OemCodePageData, &oem_cp );
++        RtlInitCodePageTable( wine_low_window_ptr( (ULONG_PTR)RtlGetCurrentPeb()->OemCodePageData ), &oem_cp );
+     else
+         oem_cp = utf8_cp;
+     snprintf( cpbuf, sizeof(cpbuf), "%u,%u", ansi_cp.CodePage, oem_cp.CodePage );
+diff --git a/dlls/win32u/message.c b/dlls/win32u/message.c
+index de1a484..c83a235 100644
+--- a/dlls/win32u/message.c
++++ b/dlls/win32u/message.c
+@@ -45,10 +45,11 @@ WINE_DECLARE_DEBUG_CHANNEL(relay);
+ #define QS_HARDWARE     0x40000000
+ #define QS_INTERNAL     (QS_DRIVER | QS_HARDWARE)
+ 
+-static const struct _KUSER_SHARED_DATA *user_shared_data = (struct _KUSER_SHARED_DATA *)0x7ffe0000;
+-
+ static const struct ratio no_dpi;
+ 
++#if !defined(__APPLE__) || !defined(__aarch64__)
++static const struct _KUSER_SHARED_DATA *user_shared_data = (struct _KUSER_SHARED_DATA *)0x7ffe0000;
++
+ static LONG atomic_load_long( const volatile LONG *ptr )
+ {
+ #if defined(__i386__) || defined(__x86_64__)
+@@ -66,9 +67,18 @@ static ULONG atomic_load_ulong( const volatile ULONG *ptr )
+     return __atomic_load_n( ptr, __ATOMIC_SEQ_CST );
+ #endif
+ }
++#endif
+ 
+ static UINT64 get_tick_count(void)
+ {
++#if defined(__APPLE__) && defined(__aarch64__)
++    /* the host cannot map anything below 4GB, so KUSER_SHARED_DATA is not at 0x7ffe0000
++     * on this side; read the same monotonic clock the server uses for TickCount instead */
++    LARGE_INTEGER counter;
++
++    NtQueryPerformanceCounter( &counter, NULL );
++    return counter.QuadPart / 10000;
++#else
+     ULONG high, low;
+ 
+     do
+@@ -79,6 +89,7 @@ static UINT64 get_tick_count(void)
+     while (high != atomic_load_long( &user_shared_data->TickCount.High2Time ));
+     /* note: we ignore TickCountMultiplier */
+     return (UINT64)high << 32 | low;
++#endif
+ }
+ 
+ #define MAX_WINPROC_RECURSION  64
+@@ -4749,6 +4760,10 @@ BOOL WINAPI NtUserPostThreadMessage( DWORD thread, UINT msg, WPARAM wparam, LPAR
+ LRESULT WINAPI NtUserMessageCall( HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam,
+                                   void *result_info, DWORD type, BOOL ansi )
+ {
++    /* a pointer lparam from 32-bit code is a Windows address, see wine_low_window_ptr();
++     * wow64win only converts the messages whose structures differ between 32 and 64 bit */
++    if (is_pointer_message( msg, wparam )) lparam = (LPARAM)wine_low_window_ptr( lparam );
++
+     switch (type)
+     {
+     case NtUserScrollBarWndProc:
+diff --git a/dlls/winemac.drv/unixlib.h b/dlls/winemac.drv/unixlib.h
+index dc22da0..f096cf3 100644
+--- a/dlls/winemac.drv/unixlib.h
++++ b/dlls/winemac.drv/unixlib.h
+@@ -73,5 +73,10 @@
+ 
+ static inline void *param_ptr(UINT64 param)
+ {
++#ifdef WINE_UNIX_LIB
++    /* from 32-bit code this is a Windows address, see wine_low_window_ptr() */
++    return wine_low_window_ptr( (UINT_PTR)param );
++#else
+     return (void *)(UINT_PTR)param;
++#endif
+ }
+diff --git a/dlls/wow64/file.c b/dlls/wow64/file.c
+index 68cb706..151cf46 100644
+--- a/dlls/wow64/file.c
++++ b/dlls/wow64/file.c
+@@ -677,10 +677,10 @@ NTSTATUS WINAPI wow64_NtReadFile( UINT *args )
+     IO_STATUS_BLOCK io;
+     NTSTATUS status;
+ 
+-    if (pBTCpuNotifyReadFile) pBTCpuNotifyReadFile( handle, buffer, len, FALSE, 0 );
++    if (pBTCpuNotifyReadFile) pBTCpuNotifyReadFile( handle, wow64_guest_ptr( buffer ), len, FALSE, 0 );
+     status = NtReadFile( handle, event, apc_32to64( apc ), apc_param_32to64( apc, apc_param ),
+                          iosb_32to64( &io, io32 ), buffer, len, offset, key );
+-    if (pBTCpuNotifyReadFile) pBTCpuNotifyReadFile( handle, buffer, len, TRUE, status );
++    if (pBTCpuNotifyReadFile) pBTCpuNotifyReadFile( handle, wow64_guest_ptr( buffer ), len, TRUE, status );
+     put_iosb( io32, &io );
+     return status;
+ }
+diff --git a/dlls/wow64/process.c b/dlls/wow64/process.c
+index 16ea098..ce82021 100644
+--- a/dlls/wow64/process.c
++++ b/dlls/wow64/process.c
+@@ -161,6 +161,7 @@ static PS_ATTRIBUTE_LIST *ps_attributes_32to64( PS_ATTRIBUTE_LIST **attr, const
+                 OBJECT_ATTRIBUTES attr;
+                 UNICODE_STRING path;
+ 
++                ret->Attributes[i].ValuePtr = ULongToPtr( attr32->Attributes[i].Value );
+                 path.Length = ret->Attributes[i].Size;
+                 path.Buffer = ret->Attributes[i].ValuePtr;
+                 InitializeObjectAttributes( &attr, &path, OBJ_CASE_INSENSITIVE, 0, 0 );
+diff --git a/dlls/wow64/sync.c b/dlls/wow64/sync.c
+index ef1287a..c2af84f 100644
+--- a/dlls/wow64/sync.c
++++ b/dlls/wow64/sync.c
+@@ -1683,7 +1683,7 @@ static BOOL filter_out_state_change( HANDLE handle, DBGUI_WAIT_STATE_CHANGE *sta
+     switch (state->NewState)
+     {
+     case DbgLoadDllStateChange:
+-        filter_out = ((ULONG64)state->StateInfo.LoadDll.BaseOfDll >> 32) != 0;
++        filter_out = (((ULONG64)state->StateInfo.LoadDll.BaseOfDll - wow64_low_base()) >> 32) != 0;
+         if (!filter_out)
+         {
+             USHORT machine;
+@@ -1691,7 +1691,7 @@ static BOOL filter_out_state_change( HANDLE handle, DBGUI_WAIT_STATE_CHANGE *sta
+         }
+         break;
+     case DbgUnloadDllStateChange:
+-        filter_out = ((ULONG_PTR)state->StateInfo.UnloadDll.BaseAddress >> 32) != 0;
++        filter_out = (((ULONG_PTR)state->StateInfo.UnloadDll.BaseAddress - wow64_low_base()) >> 32) != 0;
+         break;
+     default:
+         filter_out = FALSE;
+diff --git a/dlls/wow64/virtual.c b/dlls/wow64/virtual.c
+index 605abe1..7c09f50 100644
+--- a/dlls/wow64/virtual.c
++++ b/dlls/wow64/virtual.c
+@@ -117,8 +117,11 @@ static NTSTATUS mem_extended_parameters_32to64( MEM_EXTENDED_PARAMETER **ret_par
+     {
+         if (req32->LowestStartingAddress > highest_user_address) return STATUS_INVALID_PARAMETER;
+         if (req32->HighestEndingAddress > highest_user_address) return STATUS_INVALID_PARAMETER;
+-        req->LowestStartingAddress = ULongToPtr( req32->LowestStartingAddress );
+-        req->HighestEndingAddress  = ULongToPtr( req32->HighestEndingAddress );
++        /* limits, not pointers: the unix side maps them to the low window; with no
++         * address given, no upper limit still means within the 32-bit address space */
++        req->LowestStartingAddress = (void *)(ULONG_PTR)req32->LowestStartingAddress;
++        req->HighestEndingAddress  = (void *)(ULONG_PTR)req32->HighestEndingAddress;
++        if (!req->HighestEndingAddress && set_limit) req->HighestEndingAddress = (void *)highest_user_address;
+         req->Alignment             = req32->Alignment;
+     }
+     else if (set_limit)
+@@ -159,13 +162,13 @@ NTSTATUS WINAPI wow64_NtAllocateVirtualMemory( UINT *args )
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPreVirtualAlloc,
+                                                       addr, size, 3, type, protect, 0 );
+-    else if (pBTCpuNotifyMemoryAlloc) pBTCpuNotifyMemoryAlloc( addr, size, type, protect, FALSE, 0 );
++    else if (pBTCpuNotifyMemoryAlloc) pBTCpuNotifyMemoryAlloc( wow64_guest_ptr( addr ), size, type, protect, FALSE, 0 );
+ 
+     status = NtAllocateVirtualMemory( process, &addr, get_zero_bits( zero_bits ), &size, type, protect );
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPostVirtualAlloc,
+                                                       addr, size, 3, type, protect, status );
+-    else if (pBTCpuNotifyMemoryAlloc) pBTCpuNotifyMemoryAlloc( addr, size, type, protect, TRUE, status );
++    else if (pBTCpuNotifyMemoryAlloc) pBTCpuNotifyMemoryAlloc( wow64_guest_ptr( addr ), size, type, protect, TRUE, status );
+ 
+     if (!status)
+     {
+@@ -204,13 +207,13 @@ NTSTATUS WINAPI wow64_NtAllocateVirtualMemoryEx( UINT *args )
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPreVirtualAlloc,
+                                                       addr, size, 3, type, protect, 0 );
+-    else if (pBTCpuNotifyMemoryAlloc) pBTCpuNotifyMemoryAlloc( addr, size, type, protect, FALSE, 0 );
++    else if (pBTCpuNotifyMemoryAlloc) pBTCpuNotifyMemoryAlloc( wow64_guest_ptr( addr ), size, type, protect, FALSE, 0 );
+ 
+     status = NtAllocateVirtualMemoryEx( process, &addr, &size, type, protect, params64, count );
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPostVirtualAlloc,
+                                                       addr, size, 3, type, protect, status );
+-    else if (pBTCpuNotifyMemoryAlloc) pBTCpuNotifyMemoryAlloc( addr, size, type, protect, TRUE, status );
++    else if (pBTCpuNotifyMemoryAlloc) pBTCpuNotifyMemoryAlloc( wow64_guest_ptr( addr ), size, type, protect, TRUE, status );
+ 
+     if (!status)
+     {
+@@ -274,7 +277,7 @@ NTSTATUS WINAPI wow64_NtFlushInstructionCache( UINT *args )
+ 
+     if (RtlIsCurrentProcess( process ))
+     {
+-        if (pBTCpuFlushInstructionCache2) pBTCpuFlushInstructionCache2( addr, size );
++        if (pBTCpuFlushInstructionCache2) pBTCpuFlushInstructionCache2( wow64_guest_ptr( addr ), size );
+     }
+     else send_cross_process_notification( process, CrossProcessFlushCache, addr, size, 0 );
+ 
+@@ -325,13 +328,13 @@ NTSTATUS WINAPI wow64_NtFreeVirtualMemory( UINT *args )
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPreVirtualFree,
+                                                       addr, size, 2, type, 0 );
+-    else if (pBTCpuNotifyMemoryFree) pBTCpuNotifyMemoryFree( addr, size, type, FALSE, 0 );
++    else if (pBTCpuNotifyMemoryFree) pBTCpuNotifyMemoryFree( wow64_guest_ptr( addr ), size, type, FALSE, 0 );
+ 
+     status = NtFreeVirtualMemory( process, &addr, &size, type );
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPostVirtualFree,
+                                                       addr, size, 2, type, status );
+-    else if (pBTCpuNotifyMemoryFree) pBTCpuNotifyMemoryFree( addr, size, type, TRUE, status );
++    else if (pBTCpuNotifyMemoryFree) pBTCpuNotifyMemoryFree( wow64_guest_ptr( addr ), size, type, TRUE, status );
+ 
+     if (!status)
+     {
+@@ -453,7 +456,7 @@ static void notify_map_view_of_section( HANDLE handle, void *addr, SIZE_T size,
+     if (info.Machine != current_machine) return;
+     init_image_mapping( addr );
+     if (!pBTCpuNotifyMapViewOfSection) return;
+-    status = pBTCpuNotifyMapViewOfSection( NULL, addr, NULL, size, alloc, protect );
++    status = pBTCpuNotifyMapViewOfSection( NULL, wow64_guest_ptr( addr ), NULL, size, alloc, protect );
+     if (NT_SUCCESS(status)) return;
+     NtUnmapViewOfSection( GetCurrentProcess(), addr );
+     *ret_status = status;
+@@ -560,13 +563,13 @@ NTSTATUS WINAPI wow64_NtProtectVirtualMemory( UINT *args )
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPreVirtualProtect,
+                                                       addr, size, 2, new_prot, 0 );
+-    else if (pBTCpuNotifyMemoryProtect) pBTCpuNotifyMemoryProtect( addr, size, new_prot, FALSE, 0 );
++    else if (pBTCpuNotifyMemoryProtect) pBTCpuNotifyMemoryProtect( wow64_guest_ptr( addr ), size, new_prot, FALSE, 0 );
+ 
+     status = NtProtectVirtualMemory( process, &addr, &size, new_prot, old_prot );
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPostVirtualProtect,
+                                                       addr, size, 2, new_prot, status );
+-    else if (pBTCpuNotifyMemoryProtect) pBTCpuNotifyMemoryProtect( addr, size, new_prot, TRUE, status );
++    else if (pBTCpuNotifyMemoryProtect) pBTCpuNotifyMemoryProtect( wow64_guest_ptr( addr ), size, new_prot, TRUE, status );
+ 
+     if (!status)
+     {
+@@ -597,7 +600,7 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+     case MemoryBasicInformation:  /* MEMORY_BASIC_INFORMATION */
+         if (len < sizeof(MEMORY_BASIC_INFORMATION32))
+             status = STATUS_INFO_LENGTH_MISMATCH;
+-        else if ((ULONG_PTR)addr > highest_user_address)
++        else if ((ULONG_PTR)wow64_guest_ptr( addr ) > highest_user_address)
+             status = STATUS_INVALID_PARAMETER;
+         else
+         {
+@@ -613,8 +616,8 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+                 info32->State = info.State;
+                 info32->Protect = info.Protect;
+                 info32->Type = info.Type;
+-                if ((ULONG_PTR)info.BaseAddress + info.RegionSize > highest_user_address)
+-                    info32->RegionSize = highest_user_address - (ULONG_PTR)info.BaseAddress + 1;
++                if (info32->BaseAddress + info.RegionSize > highest_user_address)
++                    info32->RegionSize = highest_user_address - info32->BaseAddress + 1;
+             }
+         }
+         res_len = sizeof(MEMORY_BASIC_INFORMATION32);
+@@ -642,7 +645,7 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+     {
+         if (len < sizeof(MEMORY_REGION_INFORMATION32))
+             status = STATUS_INFO_LENGTH_MISMATCH;
+-        else if ((ULONG_PTR)addr > highest_user_address)
++        else if ((ULONG_PTR)wow64_guest_ptr( addr ) > highest_user_address)
+             status = STATUS_INVALID_PARAMETER;
+         else
+         {
+@@ -658,8 +661,8 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+                 info32->CommitSize = info.CommitSize;
+                 info32->PartitionId = info.PartitionId;
+                 info32->NodePreference = info.NodePreference;
+-                if ((ULONG_PTR)info.AllocationBase + info.RegionSize > highest_user_address)
+-                    info32->RegionSize = highest_user_address - (ULONG_PTR)info.AllocationBase + 1;
++                if (info32->AllocationBase + info.RegionSize > highest_user_address)
++                    info32->RegionSize = highest_user_address - info32->AllocationBase + 1;
+             }
+         }
+         res_len = sizeof(MEMORY_REGION_INFORMATION32);
+@@ -689,7 +692,7 @@ NTSTATUS WINAPI wow64_NtQueryVirtualMemory( UINT *args )
+     {
+         if (len < sizeof(MEMORY_IMAGE_INFORMATION32)) return STATUS_INFO_LENGTH_MISMATCH;
+ 
+-        if ((ULONG_PTR)addr > highest_user_address) status = STATUS_INVALID_PARAMETER;
++        if ((ULONG_PTR)wow64_guest_ptr( addr ) > highest_user_address) status = STATUS_INVALID_PARAMETER;
+         else
+         {
+             MEMORY_IMAGE_INFORMATION info;
+@@ -851,9 +854,9 @@ NTSTATUS WINAPI wow64_NtUnmapViewOfSection( UINT *args )
+     BOOL is_current = RtlIsCurrentProcess( process );
+     NTSTATUS status;
+ 
+-    if (is_current && pBTCpuNotifyUnmapViewOfSection) pBTCpuNotifyUnmapViewOfSection( addr, FALSE, 0 );
++    if (is_current && pBTCpuNotifyUnmapViewOfSection) pBTCpuNotifyUnmapViewOfSection( wow64_guest_ptr( addr ), FALSE, 0 );
+     status = NtUnmapViewOfSection( process, addr );
+-    if (is_current && pBTCpuNotifyUnmapViewOfSection) pBTCpuNotifyUnmapViewOfSection( addr, TRUE, status );
++    if (is_current && pBTCpuNotifyUnmapViewOfSection) pBTCpuNotifyUnmapViewOfSection( wow64_guest_ptr( addr ), TRUE, status );
+     return status;
+ }
+ 
+@@ -870,9 +873,9 @@ NTSTATUS WINAPI wow64_NtUnmapViewOfSectionEx( UINT *args )
+     BOOL is_current = RtlIsCurrentProcess( process );
+     NTSTATUS status;
+ 
+-    if (is_current && pBTCpuNotifyUnmapViewOfSection) pBTCpuNotifyUnmapViewOfSection( addr, FALSE, 0 );
++    if (is_current && pBTCpuNotifyUnmapViewOfSection) pBTCpuNotifyUnmapViewOfSection( wow64_guest_ptr( addr ), FALSE, 0 );
+     status = NtUnmapViewOfSectionEx( process, addr, flags );
+-    if (is_current && pBTCpuNotifyUnmapViewOfSection) pBTCpuNotifyUnmapViewOfSection( addr, TRUE, status );
++    if (is_current && pBTCpuNotifyUnmapViewOfSection) pBTCpuNotifyUnmapViewOfSection( wow64_guest_ptr( addr ), TRUE, status );
+     return status;
+ }
+ 
+diff --git a/dlls/wow64/wow64_private.h b/dlls/wow64/wow64_private.h
+index e7c17fc..1787de6 100644
+--- a/dlls/wow64/wow64_private.h
++++ b/dlls/wow64/wow64_private.h
+@@ -77,6 +77,33 @@ static inline TEB32 *NtCurrentTeb32(void)
+     return (TEB32 *)((char *)NtCurrentTeb() + NtCurrentTeb()->WowTebOffset);
+ }
+ 
++/* Where the 32-bit address space is in the 64-bit view. Normally at 0, but a host
++ * that cannot map the low 4GB (macOS on arm64) puts it in a 4GB-aligned window
++ * higher up, with the 32-bit TEB inside it; the 32-bit code still sees it at 0. */
++static inline ULONG_PTR wow64_low_base(void)
++{
++    return (ULONG_PTR)NtCurrentTeb32() & ~(ULONG_PTR)0xffffffff;
++}
++
++/* 32-bit pointer -> 64-bit pointer. Values below 64K (atoms, resource ids, booleans)
++ * and from 0xfffe0000 up (window procedure handles, -1) are not real addresses. */
++static inline void *wow64_ptr( ULONG ul )
++{
++    return (ul >= 0x10000 && ul < 0xfffe0000) ? (void *)(wow64_low_base() + ul) : (void *)(ULONG_PTR)ul;
++}
++#undef ULongToPtr
++#undef UlongToPtr
++#define ULongToPtr(ul) wow64_ptr( (ULONG)(ul) )
++#define UlongToPtr(ul) wow64_ptr( (ULONG)(ul) )
++
++/* 64-bit pointer -> the address the 32-bit code uses, as the CPU backend (BTCpu*)
++ * expects it: pointers into the 32-bit address space are below 4GB on Windows */
++static inline void *wow64_guest_ptr( const void *ptr )
++{
++    ULONG_PTR base = wow64_low_base(), p = (ULONG_PTR)ptr;
++    return (void *)(p - base < 0x100000000ULL ? p - base : p);
++}
++
+ static inline ULONG get_ulong( UINT **args ) { return *(*args)++; }
+ static inline HANDLE get_handle( UINT **args ) { return LongToHandle( *(*args)++ ); }
+ static inline void *get_ptr( UINT **args ) { return ULongToPtr( *(*args)++ ); }
+diff --git a/dlls/wow64win/user.c b/dlls/wow64win/user.c
+index 0d549da..69ec233 100644
+--- a/dlls/wow64win/user.c
++++ b/dlls/wow64win/user.c
+@@ -3856,7 +3856,7 @@ NTSTATUS WINAPI wow64_NtUserMessageCall( UINT *args )
+             } *params32 = result_info;
+             struct ime_driver_call_params params;
+             if (msg == WINE_IME_POST_UPDATE) ERR( "Unexpected WINE_IME_POST_UPDATE message\n" );
+-            params.himc = UlongToPtr( params32->himc );
++            params.himc = LongToHandle( params32->himc );
+             params.state = UlongToPtr( params32->state );
+             params.compstr = UlongToPtr( params32->compstr );
+             params.key_consumed = UlongToPtr( params32->key_consumed );
+@@ -4191,7 +4191,7 @@ NTSTATUS WINAPI wow64_NtUserRegisterRawInputDevices( UINT *args )
+         devices64[i].usUsagePage = devices32[i].usUsagePage;
+         devices64[i].usUsage = devices32[i].usUsage;
+         devices64[i].dwFlags = devices32[i].dwFlags;
+-        devices64[i].hwndTarget = UlongToPtr( devices32[i].hwndTarget );
++        devices64[i].hwndTarget = LongToHandle( devices32[i].hwndTarget );
+     }
+ 
+     return NtUserRegisterRawInputDevices( devices64, count, sizeof(*devices64) );
+diff --git a/dlls/wow64win/wow64win_private.h b/dlls/wow64win/wow64win_private.h
+index 956e386..83957c4 100644
+--- a/dlls/wow64win/wow64win_private.h
++++ b/dlls/wow64win/wow64win_private.h
+@@ -47,6 +47,24 @@ typedef struct
+     ULONG SecurityQualityOfService;
+ } OBJECT_ATTRIBUTES32;
+ 
++/* Where the 32-bit address space is in the 64-bit view; see wow64_low_base() in wow64 */
++static inline ULONG_PTR wow64win_low_base(void)
++{
++    TEB *teb = NtCurrentTeb();
++    return ((ULONG_PTR)teb + teb->WowTebOffset) & ~(ULONG_PTR)0xffffffff;
++}
++
++/* 32-bit pointer -> 64-bit pointer. Values below 64K (atoms, resource ids) and from
++ * 0xfffe0000 up (window procedure handles, -1 and friends) are not real addresses. */
++static inline void *wow64win_ptr( ULONG ul )
++{
++    return (ul >= 0x10000 && ul < 0xfffe0000) ? (void *)(wow64win_low_base() + ul) : (void *)(ULONG_PTR)ul;
++}
++#undef ULongToPtr
++#undef UlongToPtr
++#define ULongToPtr(ul) wow64win_ptr( (ULONG)(ul) )
++#define UlongToPtr(ul) wow64win_ptr( (ULONG)(ul) )
++
+ static inline ULONG get_ulong( UINT **args ) { return *(*args)++; }
+ static inline HANDLE get_handle( UINT **args ) { return LongToHandle( *(*args)++ ); }
+ static inline void *get_ptr( UINT **args ) { return ULongToPtr( *(*args)++ ); }
+diff --git a/include/wine/unixlib.h b/include/wine/unixlib.h
+index 5c77d0c..4b22708 100644
+--- a/include/wine/unixlib.h
++++ b/include/wine/unixlib.h
+@@ -34,6 +34,31 @@ typedef UINT64 unixlib_module_t;
+ 
+ typedef NTSTATUS (*unixlib_entry_t)( void *args );
+ 
++#if defined(__APPLE__) && defined(__aarch64__)
++/* On macOS arm64 Windows code runs in a Hypervisor.framework VM (see ntdll/unix/hvf.c).
++ * The host cannot map anything below 4GB, so memory that Windows sees at an address
++ * below 4GB (the 32-bit address space of WoW64 processes) lives at
++ * WINE_LOW_WINDOW_BASE + address on the host, and the VM maps it at both addresses.
++ * The base is a multiple of 4GB: truncating a host pointer gives the Windows address. */
++#define WINE_LOW_WINDOW_BASE 0xe000000000ULL
++
++/* Windows address -> host address. Values below 64K (atoms, resource ids, booleans) and
++ * from 0xfffe0000 up (blocked on WoW64; window procedure handles, -1) are left alone. */
++static inline void *wine_low_window_ptr( ULONG_PTR addr )
++{
++    if (addr >= 0x10000 && addr < 0xfffe0000) addr += WINE_LOW_WINDOW_BASE;
++    return (void *)addr;
++}
++
++/* 32-bit pointers from WoW64 structures are Windows addresses */
++#undef ULongToPtr
++#undef UlongToPtr
++#define ULongToPtr(ul) wine_low_window_ptr( (ULONG)(ul) )
++#define UlongToPtr(ul) wine_low_window_ptr( (ULONG)(ul) )
++#else
++static inline void *wine_low_window_ptr( ULONG_PTR addr ) { return (void *)addr; }
++#endif
++
+ extern DECLSPEC_EXPORT NTSTATUS __wine_unix_lib_init(void);
+ extern DECLSPEC_EXPORT const unixlib_entry_t __wine_unix_call_funcs[];
+ extern DECLSPEC_EXPORT const unixlib_entry_t __wine_unix_call_wow64_funcs[];
+diff --git a/include/winnt.h b/include/winnt.h
+index 4b684fc..5730fcc 100644
+--- a/include/winnt.h
++++ b/include/winnt.h
+@@ -2726,6 +2726,14 @@ static FORCEINLINE struct _TEB * WINAPI NtCurrentTeb(void)
+ {
+     return (struct _TEB *)__readfsdword( 0x18 );
+ }
++#elif defined(__aarch64__) && defined(__APPLE__) && defined(WINE_UNIX_LIB)
++/* macOS reserves x18 and the kernel clobbers it: Windows code runs in a
++ * Hypervisor.framework VM, the host side keeps the TEB in thread-local storage. */
++extern struct _TEB *__wine_unix_current_teb(void);
++static FORCEINLINE struct _TEB * WINAPI NtCurrentTeb(void)
++{
++    return __wine_unix_current_teb();
++}
+ #elif (defined(__aarch64__) || defined(__arm64ec__)) && defined(__GNUC__)
+ register struct _TEB *__wine_current_teb __asm__("x18");
+ static FORCEINLINE struct _TEB * WINAPI NtCurrentTeb(void)
+diff --git a/loader/wine.inf.in b/loader/wine.inf.in
+index 9288b58..410a6c6 100644
+--- a/loader/wine.inf.in
++++ b/loader/wine.inf.in
+@@ -35,7 +35,7 @@ AddReg=Wow64
+ 
+ [PreInstall.ntarm64]
+ WineFakeDlls=FakeDllsPreInstall
+-AddReg=Wow64
++AddReg=Wow64,Wow64Emulators.ntarm64
+ 
+ [PreInstall.Services]
+ AddService=MountMgr,0x800,MountMgrService
+@@ -1159,6 +1159,11 @@ HKLM,%Control%\ProductOptions,"ProductType",2,"WinNT"
+ HKLM,%Control%\Windows,"CSDVersion",0x10003,0
+ HKLM,%Control%\Session Manager\Environment,"OS",2,"Windows_NT"
+ 
++[Wow64Emulators.ntarm64]
++; x86 code runs through FEX: x86_64 via ARM64EC, 32-bit x86 via WoW64 (kept if already set)
++HKLM,Software\Microsoft\Wow64\amd64,,2,"libarm64ecfex.dll"
++HKLM,Software\Microsoft\Wow64\x86,,2,"libwow64fex.dll"
++
+ [Wow64]
+ ; Wow6432Node symlinks
+ HKLM,Software\Classes\Wow6432Node\AppId,"SymbolicLinkValue",0x60000,"\Registry\Machine\Software\Classes\AppId"
+diff --git a/server/mapping.c b/server/mapping.c
+index d1b0fc3..c13e917 100644
+--- a/server/mapping.c
++++ b/server/mapping.c
+@@ -253,7 +253,13 @@ void init_memory(void)
+ 
+     host_page_mask = sysconf( _SC_PAGESIZE ) - 1;
+     free_map_addr( 0x60000000, 0x1c000000 - ((random & 0xff) << 16) );
++#if defined(__APPLE__) && defined(__aarch64__)
++    /* Windows code runs in a VM that reaches the first 1TB (see ntdll/unix/hvf.c), and macOS
++     * keeps 64GB-448GB for itself: 64-bit DLLs go in 512GB-768GB */
++    free_map_addr( 0x8000000000, (0x4000000000 - ((mem_size_t)(random & 0xffff) << 16)) & ~granularity_mask );
++#else
+     free_map_addr( 0x600000000000, (0x100000000000 - ((mem_size_t)random << 8)) & ~granularity_mask );
++#endif
+ }
+ 
+ static void ranges_dump( struct object *obj, int verbose )
+@@ -283,11 +289,64 @@ static void shared_map_destroy( struct object *obj )
+     list_remove( &shared->entry );
+ }
+ 
++#if defined(__APPLE__) && defined(__aarch64__)
++/*
++ * On Apple Silicon Windows code runs in a Hypervisor.framework VM, which can
++ * only be given anonymous memory: file-backed pages can panic the kernel when
++ * mapped into the VM. Anonymous mappings (pagefile-backed sections) are
++ * therefore POSIX shared memory objects. They can't be read/written with
++ * pread/pwrite and their size can only be set once, so they are created with
++ * their final size and "growing" only succeeds within that size.
++ */
++#define USE_SHM_SECTIONS 1
++
++static int is_shm_fd( int unix_fd, off_t *size )
++{
++    struct stat st;
++
++    if (fstat( unix_fd, &st ) || (st.st_mode & S_IFMT)) return 0;  /* shm objects have no file type */
++    if (size) *size = st.st_size;
++    return 1;
++}
++
++static int create_shm_file( file_pos_t size )
++{
++    static unsigned int counter;
++    char name[32];
++    int fd;
++
++    snprintf( name, sizeof(name), "/wine-%x-%x", (int)getpid(), counter++ );
++    if ((fd = shm_open( name, O_RDWR | O_CREAT | O_EXCL, 0600 )) == -1)
++    {
++        file_set_error();
++        return -1;
++    }
++    shm_unlink( name );
++    if (ftruncate( fd, size ) == -1)
++    {
++        file_set_error();
++        close( fd );
++        return -1;
++    }
++    return fd;
++}
++#endif
++
+ /* extend a file beyond the current end of file */
+ int grow_file( int unix_fd, file_pos_t new_size )
+ {
+     static const char zero;
+     off_t size = new_size;
++#ifdef USE_SHM_SECTIONS
++    off_t shm_size;
++
++    if (is_shm_fd( unix_fd, &shm_size ))
++    {
++        if (new_size <= shm_size) return 1;
++        set_error( STATUS_SECTION_NOT_EXTENDED );
++        return 0;
++    }
++#endif
+ 
+     if (sizeof(new_size) > sizeof(size) && size != new_size)
+     {
+@@ -1166,7 +1225,11 @@ static bool mapping_init( struct object *obj, const void *init_data )
+         }
+         if ((data->flags & SEC_RESERVE) && !(mapping->committed = create_ranges())) return false;
+         mapping->size = round_size( mapping->size, page_mask );
++#ifdef USE_SHM_SECTIONS
++        if ((unix_fd = create_shm_file( mapping->size )) == -1) goto error;
++#else
+         if ((unix_fd = create_temp_file( mapping->size )) == -1) goto error;
++#endif
+         if (!(mapping->fd = create_anonymous_fd( &mapping_fd_ops, unix_fd, &mapping->obj,
+                                                  FILE_SYNCHRONOUS_IO_NONALERT ))) goto error;
+         allow_fd_caching( mapping->fd );
+@@ -1297,8 +1360,14 @@ static client_ptr_t assign_exe_map_address( struct mapping *mapping )
+ 
+     if (mapping->image.base >> 32)
+     {
++#if defined(__APPLE__) && defined(__aarch64__)
++        /* below the VM's 1TB limit, see init_memory() */
++        start = 0xd000000000;
++        end   = 0xd800000000;
++#else
+         start = 0x7ff600000000;
+         end   = 0x7ff800000000;
++#endif
+         if (size >= end - start) return 0;
+         end -= size;
+     }
+@@ -1390,7 +1459,12 @@ size_t get_page_size(void)
+ struct mapping *create_session_mapping( struct object *root, struct unicode_str name,
+                                         unsigned int attr, const struct security_descriptor *sd )
+ {
++#ifdef USE_SHM_SECTIONS
++    /* shm objects can't grow: leave room now, pages are only allocated when touched */
++    size_t size = max( sizeof(*shared_session) + sizeof(object_shm_t) * 512, 16 << 20 );
++#else
+     size_t size = max( sizeof(*shared_session) + sizeof(object_shm_t) * 512, 0x10000 );
++#endif
+     struct mapping_init_data data = { .size = round_size( size, host_page_mask ), .flags = SEC_COMMIT,
+                                       .file_access = FILE_READ_DATA | FILE_WRITE_DATA };
+     struct object_params params = { .ops = &mapping_ops, .root = root, .name = name,
+@@ -1744,6 +1818,14 @@ DECL_HANDLER(map_image_view)
+                 current->process->machine = req->machine;
+         }
+ 
++#if defined(__APPLE__) && defined(__aarch64__)
++        /* a 32-bit image is mapped in the low window of the host (see hvf_low_ptr in ntdll),
++         * its Windows address is the host address truncated to 32 bits */
++        if (!is_machine_64bit( view->image.machine ) &&
++            (unsigned int)view->base == (unsigned int)((mapping->image.map_addr ? mapping->image.map_addr : mapping->image.base) + req->offset))
++            ;
++        else
++#endif
+         if (view->base != (mapping->image.map_addr ? mapping->image.map_addr : mapping->image.base) + req->offset)
+             set_error( STATUS_IMAGE_NOT_AT_BASE );
+         if (req->machine != current->process->machine)

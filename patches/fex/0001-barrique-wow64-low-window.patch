@@ -1,0 +1,133 @@
+diff --git a/Source/Windows/Common/InvalidationTracker.cpp b/Source/Windows/Common/InvalidationTracker.cpp
+index 155403d..6e56cdc 100644
+--- a/Source/Windows/Common/InvalidationTracker.cpp
++++ b/Source/Windows/Common/InvalidationTracker.cpp
+@@ -104,6 +104,15 @@ void InvalidationTracker::HandleProcessExecuteFlagsChange(ULONG Flags) {
+ 
+     while (VirtualQuery(reinterpret_cast<LPCVOID>(Address), &Info, sizeof(Info))) {
+       uint64_t BaseAddress = reinterpret_cast<uint64_t>(Info.BaseAddress);
++      const uint64_t NextAddress = BaseAddress + Info.RegionSize;
++      if (ToGuestAddress) {
++        // Only the guest's 32-bit address space matters, as guest code knows it
++        BaseAddress = ToGuestAddress(BaseAddress);
++        if (BaseAddress >= 0x100000000ULL) {
++          Address = NextAddress;
++          continue;
++        }
++      }
+       if (Info.State == MEM_COMMIT && ProtIsReadable(Info.Protect) && !ProtHasExec(Info.Protect)) {
+         const auto AlignedBase = BaseAddress & FEXCore::Utils::FEX_PAGE_MASK;
+         const auto AlignedSize = (BaseAddress - AlignedBase + Info.RegionSize + FEXCore::Utils::FEX_PAGE_SIZE - 1) & FEXCore::Utils::FEX_PAGE_MASK;
+@@ -116,7 +125,7 @@ void InvalidationTracker::HandleProcessExecuteFlagsChange(ULONG Flags) {
+         DEPPromotedIntervals.Insert(ProtInterval);
+       }
+ 
+-      Address = BaseAddress + Info.RegionSize;
++      Address = NextAddress;
+     }
+   } else {
+     for (const auto& Interval : DEPPromotedIntervals) {
+@@ -173,13 +182,21 @@ InvalidationTracker::InvalidateContainingSectionResult InvalidationTracker::Inva
+   if (NtQueryVirtualMemory(NtCurrentProcess(), reinterpret_cast<void*>(Address), MemoryBasicInformation, &Info, sizeof(Info), nullptr)) {
+     return {Address, 0};
+   }
++  // Not a mapping (e.g. unmapping a bad address): a free region has no allocation base, and taking
++  // 0 as the section base would drop everything below the region from the executable ranges.
++  if (Info.State == MEM_FREE || !Info.AllocationBase) {
++    return {Address, 0};
++  }
+ 
+-  const auto SectionBase = reinterpret_cast<uint64_t>(Info.AllocationBase);
+-  auto SectionSize = reinterpret_cast<uint64_t>(Info.BaseAddress) + Info.RegionSize - SectionBase;
++  auto ToGuest = [this](const void* Ptr) {
++    return ToGuestAddress ? ToGuestAddress(reinterpret_cast<uint64_t>(Ptr)) : reinterpret_cast<uint64_t>(Ptr);
++  };
++  const auto SectionBase = ToGuest(Info.AllocationBase);
++  auto SectionSize = ToGuest(Info.BaseAddress) + Info.RegionSize - SectionBase;
+ 
+   while (!NtQueryVirtualMemory(NtCurrentProcess(), reinterpret_cast<void*>(SectionBase + SectionSize), MemoryBasicInformation, &Info,
+                                sizeof(Info), nullptr) &&
+-         reinterpret_cast<uint64_t>(Info.AllocationBase) == SectionBase) {
++         ToGuest(Info.AllocationBase) == SectionBase) {
+     SectionSize += Info.RegionSize;
+   }
+ 
+diff --git a/Source/Windows/Common/InvalidationTracker.h b/Source/Windows/Common/InvalidationTracker.h
+index d2a80bc..b1359ea 100644
+--- a/Source/Windows/Common/InvalidationTracker.h
++++ b/Source/Windows/Common/InvalidationTracker.h
+@@ -41,6 +41,10 @@ public:
+ 
+   FEXCore::HLE::ExecutableRangeInfo QueryExecutableRange(uint64_t Address);
+ 
++  // Maps an address returned by the 64-bit memory APIs to the one guest code uses,
++  // for hosts that keep the 32-bit address space in a window higher up (see WOW64/Module.cpp).
++  uint64_t (*ToGuestAddress)(uint64_t Address) {nullptr};
++
+ private:
+   void DetectMonoBackpatcherBlock(FEXCore::Core::InternalThreadState* Thread, uint64_t HostPC);
+   void DisableSMCDetection();
+diff --git a/Source/Windows/WOW64/Module.cpp b/Source/Windows/WOW64/Module.cpp
+index b998af8..7b59570 100644
+--- a/Source/Windows/WOW64/Module.cpp
++++ b/Source/Windows/WOW64/Module.cpp
+@@ -169,6 +169,22 @@ uint64_t GetWowTEB(void* TEB) {
+     *reinterpret_cast<LONG*>(reinterpret_cast<uintptr_t>(TEB) + WowTEBOffsetMemberOffset) + reinterpret_cast<uint64_t>(TEB));
+ }
+ 
++// A host that cannot map the low 4GB (macOS on arm64 under Wine's Hypervisor.framework
++// backend) puts the 32-bit address space in a 4GB-aligned window higher up, with the
++// 32-bit TEB inside it, and the guest also sees it at its 32-bit address. The 64-bit
++// side then hands out window addresses; the emulated code must use 32-bit ones.
++uint64_t ToGuestAddress(uint64_t Address) {
++  const uint64_t Base = GetWowTEB(NtCurrentTeb()) & ~0xffffffffULL;
++  return Address - Base < 0x100000000ULL ? Address - Base : Address;
++}
++
++// The other way round, for 32-bit pointers handed to the 64-bit side, which may pass
++// them on to the host. Values below 64K and from 0xfffe0000 up are not real addresses.
++void* ToHostAddress(uint32_t Address) {
++  const uint64_t Base = GetWowTEB(NtCurrentTeb()) & ~0xffffffffULL;
++  return reinterpret_cast<void*>(Address >= 0x10000 && Address < 0xfffe0000 ? Base + Address : Address);
++}
++
+ bool IsDispatcherAddress(uint64_t Address) {
+   const auto& Config = SignalDelegator->GetConfig();
+   return Address >= Config.DispatcherBegin && Address < Config.DispatcherEnd;
+@@ -503,7 +519,7 @@ public:
+ 
+       Context::FlushThreadStateContext();
+       Context::UnlockJITContext();
+-      ReturnRAX = static_cast<uint64_t>(WineUnixCall(StackArgs->Handle, StackArgs->ID, ULongToPtr(StackArgs->Args)));
++      ReturnRAX = static_cast<uint64_t>(WineUnixCall(StackArgs->Handle, StackArgs->ID, ToHostAddress(StackArgs->Args)));
+       Context::LockJITContext();
+       Frame->State.gregs[FEXCore::X86State::REG_RAX] = ReturnRAX;
+     } else if (Frame->State.rip == (uint64_t)BridgeInstrs::Syscall) {
+@@ -598,13 +614,14 @@ void BTCpuProcessInit() {
+   CTX->InitCore();
+   Context::HandlerConfig.emplace(*CTX);
+   InvalidationTracker.emplace(*CTX, Threads);
++  InvalidationTracker->ToGuestAddress = ToGuestAddress;
+   ImageTracker.emplace(*CTX, false);
+ 
+   auto MainModule = reinterpret_cast<__TEB*>(NtCurrentTeb())->Peb->ImageBaseAddress;
+-  HandleImageMap(reinterpret_cast<uint64_t>(MainModule), true);
++  HandleImageMap(ToGuestAddress(reinterpret_cast<uint64_t>(MainModule)), true);
+ 
+   auto NtDllX86 = reinterpret_cast<SYSTEM_DLL_INIT_BLOCK*>(GetProcAddress(NtDll, "LdrSystemDllInitBlock"))->ntdll_handle;
+-  HandleImageMap(NtDllX86);
++  HandleImageMap(ToGuestAddress(NtDllX86));
+ 
+   CPUFeatures.emplace(*CTX);
+ 
+@@ -612,8 +629,9 @@ void BTCpuProcessInit() {
+   SIZE_T Size = 4;
+   void* Addr = nullptr;
+   NtAllocateVirtualMemory(NtCurrentProcess(), &Addr, (1U << 31) - 1, &Size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+-  InvalidationTracker->HandleMemoryProtectionNotification(reinterpret_cast<uint64_t>(Addr), Size, PAGE_EXECUTE);
+   *reinterpret_cast<uint32_t*>(Addr) = 0x2ecd2ecd;
++  Addr = reinterpret_cast<void*>(ToGuestAddress(reinterpret_cast<uint64_t>(Addr)));
++  InvalidationTracker->HandleMemoryProtectionNotification(reinterpret_cast<uint64_t>(Addr), Size, PAGE_EXECUTE);
+   BridgeInstrs::Syscall = Addr;
+   BridgeInstrs::UnixCall = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(Addr) + 2);
+ 
