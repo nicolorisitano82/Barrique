@@ -65,10 +65,24 @@ Lavoro fatto (2026-11-14):
 
 ## Fase 3: prestazioni e avvio
 
-- ⬜ **[MS]** `dnsapi`: togliere la ricerca DNS multicast del nome `.local` del Mac all'avvio di ogni processo (5 secondi di timeout, pagati due volte a ogni avvio a freddo).
-- ⬜ **[MS]** Suite di benchmark sul modello di `run-bench.sh` (int, fp, mem, atomic, order, jit, CPython), con checksum confrontati col nativo e le stesse colonne (ARM64 / x86-64 / i386), così il confronto con i loro numeri su M4 è diretto.
-- ⬜ Misurare quanto guadagna davvero il TSO hardware. Con LRCPC su M4 l'emulazione software costa poco (il loro test "order" va a 0,94 volte il nativo): il guadagno va misurato, non dato per scontato.
-- ⬜ Ridurre il costo delle uscite dalla VM (circa 0,7µs a syscall): gestire alcune syscall frequenti direttamente nella VM, senza uscire, e misurare l'avvio a freddo e a caldo.
+Misure con `tests/pe/bench.c` (stesso sorgente nativo macOS / ARM64 / x86-64 / i386, checksum confrontati col nativo; risultati in `tests/results/bench-*.txt`), in ms:
+
+| Prova | Nativo | ARM64 (VM) | x86-64 (FEX) | i386 (FEX) |
+|---|---|---|---|---|
+| int | 173–191 | 178 | 274 | 218–223 |
+| fp | 322–334 | 327 | 355–360 | 348–365 |
+| mem | 26–28 | 116 → **71** | 113 → **73** | 115 → **75** |
+| atomic | 89–95 | 170 (llvm-mingw senza LSE) | 91–96 | 92 |
+| order | 155–233 | (test non valido su ARM) | 270–307 | 181–221 |
+| syscall (1M) | 104–114 | **1917–2050** | 2016–2083 | 2148–2208 |
+
+- ✅ **[MS]** `dnsapi`: su macOS un nome `.local` non passa più dal DNS multicast (`getaddrinfo`); gli indirizzi arrivano da `getifaddrs`. Su questo Mac la ricerca costava solo 20 ms, ma senza rete o con un nome cambiato può attendere 5 secondi a ogni avvio.
+- ✅ **[MS]** Suite di benchmark (`bench.c`: int, fp, mem, atomic, order, syscall). Codice tradotto da FEX: interi 1,1–1,4×, virgola mobile 1,05–1,1×, atomici come il nativo.
+- ✅ TSO hardware misurato: sul test `order` il risultato oscilla da un lancio all'altro (x86-64: −12% in un giro, +25% nell'altro), quindi il guadagno è sotto il rumore di questo test; gli altri test non cambiano. Come previsto da MetalSharp, su M-series l'emulazione software costa poco.
+- ✅ **Fault-around**: al primo accesso la VM mappa l'intero blocco allineato da 64K (16 pagine) leggendo le protezioni con un solo lock; memoria nuova da 4,4× a 2,8× il nativo. Il resto è il controllo di sicurezza delle pagine host prima di darle alla VM (protezione dal kernel panic), che resta per pagina.
+- ✅ Avvio: `hello32` 0,58 s a freddo / 0,08 s a caldo, `hello64` 0,51–0,56 / 0,04 s.
+- ⬜ **Syscall: circa 2 µs contro 0,1 µs nativi.** Oltre all'uscita dalla VM, ogni syscall copia ~140 registri uno per uno (`hvf_get_user_regs`/`hvf_set_user_regs`, 31 interi + 32 SIMD). Idee: non copiare i registri SIMD sulle syscall (restano nel vCPU, da leggere solo quando servono: contesti, eccezioni, callback); gestire alcune syscall frequenti senza uscire dalla VM.
+- ⬜ ARM64: compilare con LSE (`-march=armv8.1-a` o superiore) le DLL di Wine, così gli atomici non usano i cicli LL/SC.
 
 ## Fase 4: validazione
 

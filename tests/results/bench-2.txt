@@ -1,0 +1,46 @@
+== native
+int          173.1 ms  checksum 86e557f7
+fp           322.4 ms  checksum b9670889
+mem           25.7 ms  checksum 0a000000
+atomic        89.0 ms  checksum 02faf080
+order        154.9 ms  checksum a9596240
+syscall      103.8 ms  checksum 000f4240
+== arm64
+int          179.5 ms  checksum 86e557f7
+fp           327.9 ms  checksum b9670889
+mem           70.8 ms  checksum 0a000000
+atomic       170.1 ms  checksum 02faf080
+order        231.0 ms  checksum a959623b
+syscall     1916.8 ms  checksum 000f4240
+== x86-64 (new FEX)
+int          273.6 ms  checksum 86e557f7
+fp           355.0 ms  checksum b9670889
+mem           72.8 ms  checksum 0a000000
+atomic        90.9 ms  checksum 02faf080
+order        288.1 ms  checksum a9596240
+syscall     2016.1 ms  checksum 000f4240
+== i386 (new FEX)
+int          223.3 ms  checksum 86e557f7
+fp           364.7 ms  checksum b9670889
+mem           74.7 ms  checksum 0a000000
+atomic        92.9 ms  checksum 02faf080
+order        214.8 ms  checksum a9596240
+syscall     2203.5 ms  checksum 000f4240
+== x86-64 (old FEX)
+int          274.9 ms  checksum 86e557f7
+fp           356.5 ms  checksum b9670889
+mem          101.4 ms  checksum 0a000000
+atomic        93.1 ms  checksum 02faf080
+order        230.7 ms  checksum a9596240
+syscall     2024.3 ms  checksum 000f4240
+== i386 (old FEX)
+int          221.1 ms  checksum 86e557f7
+fp           355.0 ms  checksum b9670889
+mem           85.3 ms  checksum 0a000000
+atomic        91.7 ms  checksum 02faf080
+order        180.8 ms  checksum a9596240
+syscall     2148.6 ms  checksum 000f4240
+== startup (cold = wineserver not running, warm = running)
+hello32 cold 0.58 s, warm 0.08 s
+hello64 cold 0.56 s, warm 0.04 s
+BENCH-DONE

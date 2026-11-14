@@ -1,0 +1,62 @@
+== native
+int          190.9 ms  checksum 86e557f7
+fp           333.8 ms  checksum b9670889
+mem           27.7 ms  checksum 0a000000
+atomic        94.8 ms  checksum 02faf080
+order        233.1 ms  checksum a9596240
+syscall      113.8 ms  checksum 000f4240
+== arm64
+Wine cannot find the FreeType font library.  To enable Wine to
+use TrueType fonts please install a version of FreeType greater than
+or equal to 2.0.5.
+http://www.freetype.org
+Wine cannot find the FreeType font library.  To enable Wine to
+use TrueType fonts please install a version of FreeType greater than
+or equal to 2.0.5.
+http://www.freetype.org
+Wine cannot find the FreeType font library.  To enable Wine to
+use TrueType fonts please install a version of FreeType greater than
+or equal to 2.0.5.
+http://www.freetype.org
+Wine cannot find the FreeType font library.  To enable Wine to
+use TrueType fonts please install a version of FreeType greater than
+or equal to 2.0.5.
+http://www.freetype.org
+int          178.4 ms  checksum 86e557f7
+fp           327.2 ms  checksum b9670889
+mem          115.8 ms  checksum 0a000000
+atomic       173.9 ms  checksum 02faf080
+order        159.9 ms  checksum a959623a
+syscall     2049.5 ms  checksum 000f4240
+== x86-64 (new FEX)
+int          275.2 ms  checksum 86e557f7
+fp           359.7 ms  checksum b9670889
+mem          113.2 ms  checksum 0a000000
+atomic        96.2 ms  checksum 02faf080
+order        269.5 ms  checksum a9596240
+syscall     2082.7 ms  checksum 000f4240
+== i386 (new FEX)
+int          218.3 ms  checksum 86e557f7
+fp           348.4 ms  checksum b9670889
+mem          114.9 ms  checksum 0a000000
+atomic        92.1 ms  checksum 02faf080
+order        220.6 ms  checksum a9596240
+syscall     2208.2 ms  checksum 000f4240
+== x86-64 (old FEX)
+int          276.1 ms  checksum 86e557f7
+fp           358.7 ms  checksum b9670889
+mem          120.2 ms  checksum 0a000000
+atomic        95.1 ms  checksum 02faf080
+order        307.1 ms  checksum a9596240
+syscall     2145.9 ms  checksum 000f4240
+== i386 (old FEX)
+int          225.3 ms  checksum 86e557f7
+fp           358.2 ms  checksum b9670889
+mem          122.2 ms  checksum 0a000000
+atomic        92.5 ms  checksum 02faf080
+order        220.4 ms  checksum a9596240
+syscall     2160.2 ms  checksum 000f4240
+== startup (cold = wineserver not running, warm = running)
+hello32 cold 0.60 s, warm 0.08 s
+hello64 cold 0.51 s, warm 0.04 s
+BENCH-DONE
