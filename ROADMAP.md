@@ -112,7 +112,7 @@ Misure con `tests/pe/bench.c` (stesso sorgente nativo macOS / ARM64 / x86-64 / i
   - x86-64: ntdll da 239 a 206 fallimenti (`info` da 68 a 35); kernel32 `loader` non va più in crash (completa con 78 fallimenti, prima zero controlli contati), `debugger` da 61 a 27 fallimenti nei processi figli. Il runner segna `debugger` come crash perché i figli vanno in crash apposta: falso allarme. kernel32 sale da 143 a 223 solo perché `loader` ora conta i suoi controlli.
   - ARM64 e i386: invariati entro 2-6 controlli (i386 kernel32 da 174 a 168, `debugger` da 5 a 0).
   - Fallimenti solo x86 (FEX) da 17 a 6, solo x86-64 da 45 a 36, solo i386 da 37 a 32; comuni alle tre: 199, invariati.
-  - Da ricontrollare: kernel32 `pipe` x86-64, 2 fallimenti nuovi su `FlushFileBuffers` dopo la chiusura dell'altro capo (pipe.c:2878), probabilmente una gara di tempi; ARM64 e i386 passano.
+  - kernel32 `pipe` x86-64: i 2 fallimenti del giro 4 su `FlushFileBuffers` (pipe.c:2878) non si ripetono, 0 fallimenti in 5 esecuzioni di fila (`round4/pipe-recheck`): è una gara di tempi del test, non una regressione.
 
 ## Fase 5: grafica, audio e input
 
