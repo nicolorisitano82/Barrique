@@ -1,0 +1,5 @@
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BFDDE00000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BFDDE00000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BFDDE00000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BFDDE00000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BFDDE00000: builtin

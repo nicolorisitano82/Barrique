@@ -1,0 +1,16 @@
+unit	status	executed	failures	todo	skipped	seconds
+bitmap	ok	659	0	11	0	1
+bmpformat	ok	298	0	0	0	0
+converter	ok	20273	0	145	9	1
+ddsformat	ok	3854	0	30	0	0
+gifformat	ok	867	0	0	0	0
+icoformat	ok	44	0	2	0	0
+info	ok	1011	0	1	0	0
+jpegformat	ok	22	0	0	0	1
+metadata	ok	6808	0	43	0	0
+palette	ok	2882	0	0	0	0
+pngformat	ok	513	0	4	0	0
+propertybag	ok	49	0	0	0	0
+stream	ok	361	0	0	0	0
+tiffformat	ok	990	0	1	0	1
+wmpformat	ok	36	0	0	0	0

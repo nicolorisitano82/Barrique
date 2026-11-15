@@ -14,12 +14,21 @@ Valgono per ogni passo qui sotto.
 6. **Tre architetture sempre.** Ogni test grafico/audio gira come ARM64, x86-64 (ARM64EC) e i386 (WoW64). `classify.py` dice subito se un problema è di FEX, del lato ARM64EC, della finestra a 32 bit o comune.
 7. **Licenza controllata prima di scaricare o includere** (tabella in fondo).
 
-## Passo 0: base di partenza ⬜
+## Passo 0: base di partenza ✅
 
 - Compilare i test x86-64 dei moduli multimediali in `build-x64tests` (oggi ci sono solo ARM64 e i386): d3d8, d3d9, d3d10core, d3d11, d3d12, dxgi, ddraw, opengl32, mmdevapi, dsound, winmm, xaudio2_7, mf, mfplat, mfreadwrite, quartz, windowscodecs, dwrite, d2d1, dinput, xinput1_3, hid.
 - Giro 5 su questi moduli, tre architetture, con lo stato attuale (wined3d su OpenGL di Apple, CoreAudio, winedmo con FFmpeg di Homebrew). È la base di confronto per tutto il resto. I test grafici aprono finestre: va eseguito con la sessione grafica attiva.
 - Scrivere `tests/compare.py` (regola 2).
 - Esito atteso: numeri e crash annotati come in fase 4, divisi per causa.
+
+**Fatto il 2026-11-15** (giro 5, `tests/results/round5`: `summary.txt`, `classify.txt`, script `run.sh av|gpu`). Test x86-64 di 27 moduli compilati (d3d8 esiste solo a 32 bit); `run-conformance.sh` salta i moduli senza eseguibile; `tests/compare.py` scritto e provato sul giro 3 contro il giro 4. Nessun kernel panic.
+- **Audio pulito sulle tre architetture:** mmdevapi, dsound, xaudio2_7, xaudio2_8 a 0 fallimenti; winmm circa 280 (uguali ovunque). Anche windowscodecs, hid, xinput1_3 a 0.
+- **Media Foundation:** mfplat ok (4 fallimenti su i386). mf, mfreadwrite, evr, dxva2, mfmediaengine, wmvcore vanno in crash o timeout.
+- **dwrite:** crash sulle tre architetture, FreeType non caricato (passo 1).
+- **Grafica a 64 bit:** d3d9, d3d10core, d3d11, d3d12, dxgi, ddraw, opengl32, d2d1 in crash entro 2 s su ARM64 e x86-64. Causa trovata con un rilancio di d3d11 (`round5/diag`): `glGetString` restituisce al codice Windows un puntatore nella shared cache di macOS (`0x1E5D7090E`), memoria che la VM non mappa, e ucrtbase va in access violation leggendo la stringa. Nei processi WoW64 opengl32 copia già le stringhe in memoria del processo; a 64 bit no.
+- **Grafica a 32 bit:** i test d3d non vanno in crash ma saltano quasi tutti i controlli; opengl32 gira con 157 fallimenti.
+- **Bug collegato:** dopo l'access violation parte winedbg, e quel processo muore subito lato host con lo stack del thread in memoria non mappata (report `wine-*.ips` di macOS, un thread, solo `ntdll.so` caricato). Da capire: oggi ogni crash Windows non mostra il debugger.
+- Il passo 0 conta questi numeri come base. La grafica a 64 bit si potrà misurare davvero solo dopo la correzione delle stringhe GL e della mappatura dei buffer GL (passo 4: stesso problema dei puntatori dell'host, che la VM non vede).
 
 ## Passo 1: FreeType e font ⬜
 

@@ -1,0 +1,298 @@
+
+== d2d1 d2d1  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== d3d10core d3d10core  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== d3d11 d3d11  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== d3d12 d3d12  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== d3d9 d3d9ex  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== d3d9 device  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== d3d9 stateblock  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== d3d9 visual  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== ddraw d3d  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== ddraw ddraw1  aarch64=crash(0)  x86_64=crash(0)  i386=timeout(72)
+  [i386] 72
+     ddraw1.c:3184 Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+     ddraw1.c:3196 Expected surface width 1024, got 1512.
+     ddraw1.c:3198 Expected surface height 640, got 982.
+     ddraw1.c:3202 Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+     ddraw1.c:3217 Expected message 0x5, but didn't receive it.
+     ddraw1.c:3219 Expected screen size 960x600, got 0x0.
+     ... 66 more
+
+== ddraw ddraw2  aarch64=crash(0)  x86_64=crash(0)  i386=timeout(4)
+  [i386] 4
+     ddraw2.c:3381 Expected (0,0)-(960,600), got (-32000,-32000)-(-31840,-31880).
+     ddraw2.c:3398 Expected message 0x46, but didn't receive it.
+     ddraw2.c:3989 Expected (0,0)-(1512,982), got (0,-43)-(1512,939).
+     ddraw2.c:780 Got unexpected wparam 0x1 for message 0x5, expected 0.
+
+== ddraw ddraw4  aarch64=crash(0)  x86_64=crash(0)  i386=timeout(83)
+  [i386] 83
+     ddraw4.c:3506 Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+     ddraw4.c:3518 Expected surface width 1024, got 1512.
+     ddraw4.c:3520 Expected surface height 640, got 982.
+     ddraw4.c:3524 Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+     ddraw4.c:3539 Expected message 0x5, but didn't receive it.
+     ddraw4.c:3541 Expected screen size 960x600, got 0x0.
+     ... 77 more
+
+== ddraw ddraw7  aarch64=crash(0)  x86_64=crash(0)  i386=timeout(83)
+  [i386] 83
+     ddraw7.c:3374 Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+     ddraw7.c:3386 Expected surface width 1024, got 1512.
+     ddraw7.c:3388 Expected surface height 640, got 982.
+     ddraw7.c:3392 Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+     ddraw7.c:3407 Expected message 0x5, but didn't receive it.
+     ddraw7.c:3409 Expected screen size 960x600, got 0x0.
+     ... 77 more
+
+== ddraw ddrawmodes  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== ddraw dsurface  aarch64=crash(0)  x86_64=crash(0)  i386=fail(3)
+  [i386] 3
+     dsurface.c:2112 Got hr 0x80004005.
+     dsurface.c:797 Got hr 0x88760233.
+     dsurface.c:926 Got hr 0x80004001.
+
+== ddraw refcount  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== ddraw visual  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== dinput device8  aarch64=ok(0)  x86_64=fail(2)  i386=ok(0)
+  [x86_64] 2
+     hid.c:702 unexpected error 1114
+     hid.c:704 Failed to start service; probably your machine doesn't accept unsigned drivers.
+
+== dinput force_feedback  aarch64=ok(0)  x86_64=fail(2)  i386=ok(0)
+  [x86_64] 2
+     hid.c:702 unexpected error 1114
+     hid.c:704 Failed to start service; probably your machine doesn't accept unsigned drivers.
+
+== dinput hid  aarch64=ok(0)  x86_64=fail(2)  i386=ok(0)
+  [x86_64] 2
+     hid.c:702 unexpected error 1114
+     hid.c:704 Failed to start service; probably your machine doesn't accept unsigned drivers.
+
+== dinput hotplug  aarch64=ok(0)  x86_64=fail(2)  i386=ok(0)
+  [x86_64] 2
+     hid.c:702 unexpected error 1114
+     hid.c:704 Failed to start service; probably your machine doesn't accept unsigned drivers.
+
+== dinput joystick8  aarch64=fail(68)  x86_64=fail(2)  i386=ok(0)
+  [x86_64] 2
+     hid.c:702 unexpected error 1114
+     hid.c:704 Failed to start service; probably your machine doesn't accept unsigned drivers.
+  [aarch64] 68
+     joystick8.c:5652 GetRawInputDeviceList returned 0
+     joystick8.c:5735 GetRawInputDeviceList returned 0
+     joystick8.c:5752 got path L""
+     joystick8.c:5758 got error 3
+     joystick8.c:5764 state[0]: IOCTL_WINETEST_HID_SET_CONTEXT failed, last error 6
+     joystick8.c:5766 state[0]: ReadFile failed, error 6
+     ... 62 more
+
+== dwrite analyzer  aarch64=crash(1)  x86_64=crash(1)  i386=crash(1)
+  [all] 1
+     analyzer.c:515 Unexpected hr 0x88985002.
+
+== dwrite font  aarch64=crash(1)  x86_64=crash(1)  i386=crash(1)
+  [all] 1
+     font.c:8960 got 0x80004005
+
+== dwrite layout  aarch64=crash(174)  x86_64=crash(172)  i386=crash(173)
+  [all] 172
+     layout.c:1756 Unexpected hr 0x80004005.
+     layout.c:1757 got 0.00
+     layout.c:1771 Unexpected hr 0x80004005.
+     layout.c:1772 ellipsis sign draw test: the call sequence is not complete: expected GLYPH_RUN - actual EN
+     layout.c:1779 Failed to draw trimming sign, hr 0x80004005.
+     layout.c:1780 ellipsis sign draw with effect test: the call sequence is not complete: expected GLYPH_RUN
+     ... 166 more
+  [i386] 1
+     layout.c:2941 unexpected trimming sign width
+  [aarch64] 2
+     layout.c:2964 got 0
+     layout.c:3016 Unexpected trimming flag 0.
+
+== dxgi dxgi  aarch64=crash(0)  x86_64=crash(0)  i386=crash(3)
+  [i386] 3
+     dxgi.c:4125 Got unexpected hr 0x887a0004.
+     dxgi.c:4126 Got unexpected iface DEADBEEF.
+     dxgi.c:4129 Got unexpected hr 0x887a0004.
+
+== dxva2 dxva2  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== evr evr  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== mf mf  aarch64=crash(2)  x86_64=crash(2)  i386=crash(9)
+  [all] 2
+     mf.c:1794 Unexpected hr 0xc00d36c4.
+     mf.c:6352 MP4 media source is not supported, skipping tests.
+  [i386] 7
+     mf.c:8666 got hr 0x800c0008
+     mf.c:9136 Unexpected hr 0x80040154.
+     mf.c:9140 Unexpected hr 0x80040154.
+     mf.c:9145 Unexpected hr 0x80040154.
+     mf.c:9148 Unexpected hr 0x80040154.
+     mf.c:9151 Unexpected hr 0x80040154.
+     ... 1 more
+
+== mf topology  aarch64=crash(4)  x86_64=timeout(4)  i386=crash(13)
+  [all] 4
+     topology.c:3464 39: Unexpected node count 2.
+     topology.c:3473 39: Got src pref type hr 0x80070057.
+     topology.c:3489 39: Sink input sequence id not set.
+     topology.c:3523 39: Failed to get decoder in resolved topology, hr 0x80070057.
+  [i386] 9
+     topology.c:3532 39: Failed to get attribute, hr 0xc00d36bd.
+     topology.c:3533 39: Unexpected value.
+     topology.c:3537 39: Failed to get attribute, hr 0xc00d36bd.
+     topology.c:3538 39: Unexpected value.
+     topology.c:3542 39: Failed to get attribute, hr 0xc00d36bd.
+     topology.c:3543 39: Unexpected value.
+     ... 3 more
+
+== mf transform  aarch64=crash(3)  x86_64=crash(3)  i386=crash(3)
+  [all] 2
+     transform.c:2911 aacdec channels: AAC decoder transform is not available.
+     transform.c:3107 aacdec user_data: AAC decoder transform is not available.
+  [i386] 1
+     transform.c:8558 wmvdec: CoCreateInstance failed, hr 0x80040154.
+  [other:aarch64+x86_64] 1
+     transform.c:4426 h264enc: CoCreateInstance returned 0x80040154.
+
+== mfmediaengine mfmediaengine  aarch64=crash(0)  x86_64=crash(0)  i386=timeout(25)
+  [i386] 25
+     mfmediaengine.c:1658 Unexpected hr 0x80040154.
+     mfmediaengine.c:1663 Unexpected res 0x102.
+     mfmediaengine.c:1680 Unexpected hr 0xc00d36bb.
+     mfmediaengine.c:1692 Unexpected 56% diff
+     mfmediaengine.c:2261 Unexpected hr 0x80040154.
+     mfmediaengine.c:2263 Unexpected res 0x102.
+     ... 19 more
+
+== mfplat mfplat  aarch64=ok(4)  x86_64=ok(4)  i386=fail(4)
+  [all] 4
+     mfplat.c:1658 Unexpected hr 0xc00d36c4.
+     mfplat.c:1678 Unexpected hr 0xc00d36c4.
+     mfplat.c:1694 Unexpected hr 0xc00d36c4.
+     mfplat.c:1708 Unexpected hr 0xc00d36c4.
+
+== mfreadwrite mfplat  aarch64=crash(3)  x86_64=crash(3)  i386=crash(3)
+  [all] 3
+     mfplat.c:3081 vp 0 adv 0: Unexpected hr 0xc00d5212.
+     mfplat.c:3086 vp 0 adv 0: "MF_MT_SUBTYPE" mismatch, type 72, value {34363248-0000-0010-8000-00aa00389b71
+     mfplat.c:3091 vp 0 adv 0: Unexpected hr 0x80004002.
+
+== opengl32 opengl  aarch64=crash(4)  x86_64=crash(4)  i386=fail(124)
+  [all] 4
+     opengl.c:2851 DIB: got viewport (0,0)-(0,0)
+     opengl.c:2860 DDB: got 0x11665544
+     opengl.c:4498 Viewport not equal to client rect.
+     opengl.c:4503 Failed glClear, error 0x506.
+  [i386] 120
+     opengl.c:2396 wglCreateContext failed
+     opengl.c:2426 wglMakeCurrent failed
+     opengl.c:2674 DIB: wglCreateContext failed, error 6
+     opengl.c:2679 DIB: got wglGetExtensionsStringEXT 00000000
+     opengl.c:2681 DIB: got wglGetExtensionsStringARB 00000000
+     opengl.c:2684 DIB: got 0
+     ... 114 more
+
+== quartz colorconv  aarch64=ok(0)  x86_64=ok(0)  i386=crash(1)
+  [i386] 1
+     colorconv.c:868 Got hr 0x1.
+
+== quartz filtergraph  aarch64=crash(5)  x86_64=crash(5)  i386=fail(115)
+  [all] 5
+     filtergraph.c:4446 Got hr 0x80040218.
+     filtergraph.c:4448 Expected connection.
+     filtergraph.c:4458 Got 0x102.
+     filtergraph.c:4462 Expected MPEG sequence header.
+     filtergraph.c:4463 Expected MPEG sequence header.
+  [i386] 110
+     filtergraph.c:153 Got hr 0x80004002.
+     filtergraph.c:155 Got hr 0x80004002.
+     filtergraph.c:157 Got hr 0x80004002.
+     filtergraph.c:159 Got hr 0x80004002.
+     filtergraph.c:163 Got hr 0x80004002.
+     filtergraph.c:165 Got hr 0x80004002.
+     ... 104 more
+
+== quartz videorenderer  aarch64=fail(2)  x86_64=ok(0)  i386=ok(0)
+  [aarch64] 2
+     videorenderer.c:1811 Got active window 0000000000000000.
+     videorenderer.c:1828 Got active window 0000000000000000.
+
+== quartz vmr7  aarch64=crash(0)  x86_64=crash(0)  i386=fail(1)
+  [i386] 1
+     vmr7.c:3636 Compression 0x3231564e, depth 12: Got allocatesurface_count 1, prev_allocatesurface_count 
+
+== quartz vmr9  aarch64=crash(0)  x86_64=crash(0)  i386=crash(17)
+  [i386] 17
+     vmr9.c:123 Got hr 0x80040273.
+     vmr9.c:130 Got hr 0x80040273.
+     vmr9.c:140 Got hr 0x80040273.
+     vmr9.c:144 Got mode 0x1.
+     vmr9.c:147 Got hr 0x80040273.
+     vmr9.c:1702 Got hr 0x80040273 for subtype {e436eb7c-524f-11ce-9f53-0020af0ba770} and bpp 15.
+     ... 11 more
+
+== vulkan-1 vulkan  aarch64=fail(1)  x86_64=fail(1)  i386=fail(1)
+  [all] 1
+     vulkan.c:406 Got VkResult -3 for extension VK_KHR_xcb_surface.
+
+== winmm capture  aarch64=ok(0)  x86_64=fail(8)  i386=ok(0)
+  [x86_64] 8
+     capture.c:141 waveInOpen(2): format=48000x 8x1 flags=50004(CALLBACK_EVENT|WAVE_MAPPED) rc=MMSYSERR_ERROR
+     capture.c:462 waveInOpen(2): returned: MMSYSERR_ERROR(Errore esterno non definito.)
+     capture.c:481 waveInOpen(2): returned: MMSYSERR_ERROR(Errore esterno non definito.)
+     capture.c:506 waveInOpen(2): returned: MMSYSERR_ERROR(Errore esterno non definito.)
+     capture.c:531 waveInOpen(2): returned: MMSYSERR_ERROR(Errore esterno non definito.)
+     capture.c:556 waveInOpen(2): returned: MMSYSERR_ERROR(Errore esterno non definito.)
+     ... 2 more
+
+== winmm mci  aarch64=fail(49)  x86_64=fail(49)  i386=fail(49)
+  [all] 49
+     mci.c:1332 mci open tempfile.wav type MPEGVideo returned MCIERR_INTERNAL
+     mci.c:1428 mci open tempfile.wav returned MCIERR_INTERNAL
+     mci.c:1610 0: Got MCIERR_INTERNAL.
+     mci.c:1614 0: Got MCIERR_INVALID_DEVICE_ID.
+     mci.c:1620 0: Video window should be shown.
+     mci.c:1623 1: Got owner 0000000000000000, expected 0000000000030064.
+     ... 43 more
+
+== winmm midi  aarch64=ok(0)  x86_64=ok(0)  i386=fail(2)
+  [i386] 2
+     midi.c:311 midiOutGetVolume rc=MMSYSERR_NOERROR
+     midi.c:319 midiOutGetVolume(dev=0) rc=MMSYSERR_NOERROR
+
+== winmm wave  aarch64=fail(2)  x86_64=fail(3)  i386=fail(2)
+  [all] 2
+     wave.c:1281 waveOutOpen(WAVE_MAPPER): returned MMSYSERR_ERROR(Errore esterno non definito.)
+     wave.c:1310 waveOutOpen(WAVE_MAPPER): returned MMSYSERR_ERROR(Errore esterno non definito.)
+  [x86_64] 1
+     wave.c:1857 Expected ordinal 2 to be PlaySound function
+
+== wmvcore wmvcore  aarch64=timeout(0)  x86_64=crash(0)  i386=crash(0)
+
+Totals (distinct failing checks per bucket; crashes/timeouts per arch):
+  aarch64          72
+  all              250
+  crash:aarch64    32
+  crash:i386       11
+  crash:x86_64     32
+  i386             542
+  other:aarch64+x86_64 1
+  timeout:aarch64  1
+  timeout:i386     5
+  timeout:x86_64   1
+  x86_64           19

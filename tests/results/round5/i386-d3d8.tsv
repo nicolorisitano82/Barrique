@@ -1,0 +1,4 @@
+unit	status	executed	failures	todo	skipped	seconds
+device	ok	2	0	0	1	2
+stateblock	ok	0	0	0	1	1
+visual	ok	0	0	0	1	1

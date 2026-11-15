@@ -32,6 +32,7 @@ cd $BUILD
 for module in "$@"; do
     exe=dlls/$module/tests/$arch-windows/${module}_test.exe
     [[ $arch == x86_64 ]] && exe=$X64_BUILD/$exe
+    if [[ ! -f $exe ]]; then print "$arch $module: no test executable, skipped"; continue; fi
     tsv=$OUT/$arch-$module.tsv
     print "unit\tstatus\texecuted\tfailures\ttodo\tskipped\tseconds" > $tsv
     units=(${(f)"$(grep -o 'func_[a-z0-9_]*' dlls/$module/tests/testlist.c | sort -u | sed 's/func_//')"})

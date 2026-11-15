@@ -1,0 +1,7 @@
+unit	status	executed	failures	todo	skipped	seconds
+device8	ok	2600	0	92	7	4
+dinput	ok	2523	0	33	1	1
+force_feedback	ok	7	0	0	1	1
+hid	ok	7	0	0	1	0
+hotplug	ok	7	0	0	1	0
+joystick8	ok	7	0	0	1	0

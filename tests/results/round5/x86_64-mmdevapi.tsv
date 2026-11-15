@@ -1,0 +1,7 @@
+unit	status	executed	failures	todo	skipped	seconds
+capture	ok	9927	0	130	0	36
+dependency	ok	11	0	0	0	2
+mmdevenum	ok	72	0	0	0	0
+propstore	ok	81	0	4	0	0
+render	ok	5218	-	48	2	30
+spatialaudio	ok	451	0	12	0	0
