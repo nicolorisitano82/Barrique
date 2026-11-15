@@ -1,0 +1,248 @@
+
+== ntdll change  aarch64=fail(29)  x86_64=fail(29)  i386=fail(26)
+  [all] 26
+     change.c:115 event should be ready
+     change.c:117 information wrong
+     change.c:118 information wrong
+     change.c:122 action wrong
+     change.c:123 len wrong
+     change.c:124 name wrong
+     ... 20 more
+  [other:aarch64+x86_64] 3
+     change.c:121 offset wrong
+     change.c:229 offset wrong
+     change.c:246 offset wrong
+
+== ntdll exception  aarch64=crash(3)  x86_64=crash(0)  i386=crash(0)
+  [aarch64] 3
+     exception.c:8705 Got unexpected pc 000000700D9D0020.
+     exception.c:8781 got 000000700D9D0020.
+     exception.c:9211 unexpected pass 202626066
+
+== ntdll file  aarch64=fail(5)  x86_64=fail(5)  i386=fail(5)
+  [all] 5
+     file.c:2619 Link did not change casing on existing target file: got L"FooAD97.tmp"
+     file.c:483 open L"\\??\\C:\\windows\\SYSTEM32\\cmd.exe\\cmd.exe" failed c0000034
+     file.c:486 open L"\\??\\C:\\windows\\SYSTEM32\\cmd.exe\\cmd.exe" failed c0000034
+     file.c:4898 Missing VolumeSerialNumber
+     file.c:4899 expected 1, got 0
+
+== ntdll info  aarch64=fail(12)  x86_64=fail(20)  i386=ok(12)
+  [all] 3
+     info.c:1688 expected 4294967295 minutes remaining got 0 minutes
+     info.c:1956 Expected a WorkingSetSize > 0
+     info.c:1957 Expected a PagefileUsage > 0
+  [x86] 4
+     info.c:367 ProcessorLevel differs 6 / 0
+     info.c:369 ProcessorRevision differs a601 / 0
+     info.c:373 ProcessorFeatureBits differs e3f9ffff / 0
+     info.c:408 wrong bits 0 / e3f9ffff
+  [x86_64] 5
+     info.c:356 ProcessorArchitecture differs 9 / c
+     info.c:393 ProcessorLevel differs 6 / 0
+     info.c:395 ProcessorRevision differs a601 / 0
+     info.c:399 ProcessorFeatureBits differs e3f9ffff / 0
+     info.c:430 wrong feature 64: should be 0
+  [i386] 4
+     info.c:1975 Expected to be greater than 299732992, got 299732992
+     info.c:1992 Expected to be greater than 299737088, got 299737088
+     info.c:2788 Expected less than 100 debug events.
+     info.c:289 wrong limit fffffeffff
+  [other:aarch64+i386] 1
+     info.c:2003 Expected to equal to 503984742400, got 503984746496
+  [other:aarch64+x86_64] 8
+     info.c:2881 Expected STATUS_PARTIAL_COPY, got c0000005
+     info.c:3138 mbi.AllocationBase is 0x0000000000000000, expected 0x000000007FFE0000
+     info.c:3139 mbi.AllocationProtect is 0x0, expected 0x2
+     info.c:3140 mbi.State is 0x10000, expected 0x1000
+     info.c:3141 mbi.Protect is 0x1
+     info.c:3142 mbi.Type is 0x0, expected 0x20000
+     ... 2 more
+
+== ntdll path  aarch64=fail(1)  x86_64=fail(1)  i386=fail(1)
+  [all] 1
+     path.c:736 24: got c0000034 / c000003a for (null) + L"\\??\\C:\\windows\\system32\\kernel32.dll\\foo"
+
+== ntdll rtl  aarch64=crash(0)  x86_64=crash(0)  i386=ok(0)
+
+== ntdll virtual  aarch64=fail(33)  x86_64=timeout(33)  i386=fail(14)
+  [all] 14
+     virtual.c:1180 unexpected guard_size 4000, expected 1000, 2000 or 3000
+     virtual.c:2764 Unexpected status c0000018.
+     virtual.c:2767 Unexpected size 0000000000000FFF.
+     virtual.c:2768 Got addr 000000700D9F1001, addr1 000000700D9F0000.
+     virtual.c:2773 Unexpected status c0000018.
+     virtual.c:2775 Unexpected size 0000000000000FFF.
+     ... 8 more
+  [other:aarch64+x86_64] 19
+     virtual.c:1000 Unexpected addr 000000E000010000.
+     virtual.c:1096 Unexpected addr 000000E020000000.
+     virtual.c:1227 unexpected guard_size 4000, expected 1000, 2000 or 3000
+     virtual.c:1289 unexpected RegionSize 2000, expected 4000
+     virtual.c:1323 unexpected prot 0x4, expected 0x4
+     virtual.c:1336 unexpected RegionSize 2000, expected 1000
+     ... 13 more
+
+== ntdll wow64  aarch64=fail(7)  x86_64=fail(4)  i386=fail(18)
+  [all] 1
+     wow64.c:1333 4: wrong status c0000002
+  [i386] 17
+     wow64.c:1161 wrong Tib.ExceptionList e00014a000 / 0014A000
+     wow64.c:1163 wrong Tib.Self e000148000 / 00148000
+     wow64.c:1165 wrong StaticUnicodeString e000149268 / 00149268
+     wow64.c:1173 wrong ImageBaseAddress e000eb0000 / 00EB0000
+     wow64.c:2455 unknown module e000eb0000 L"ntdll_test.exe" found
+     wow64.c:2465 main module not found
+     ... 11 more
+  [aarch64] 3
+     wow64.c:1408 NtMapViewOfSection returned 4000000e
+     wow64.c:2191 xtaji64.dll not loaded
+     wow64.c:3439 wrong exit code 85
+  [other:aarch64+x86_64] 3
+     wow64.c:316 syswow64: wrong entry 000000000043B2B0 / 000000E00043B2B0
+     wow64.c:973 wrong peb 000000000014D000 / 000000E00014C000
+     wow64.c:986 wrong peb 000000E00014D000
+
+== kernel32 change  aarch64=fail(71)  x86_64=fail(71)  i386=fail(71)
+  [all] 71
+     change.c:1043 Missed parent notification
+     change.c:1045 Missed child notification
+     change.c:1075 Missed child notification
+     change.c:294 should be ready
+     change.c:297 should be ready
+     change.c:309 should be ready
+     ... 65 more
+
+== kernel32 console  aarch64=fail(7)  x86_64=fail(5)  i386=fail(7)
+  [all] 5
+     console.c:3925 GetConsoleFontSize failed; err = 3735928559
+     console.c:4114 got -16896, expected 9
+     console.c:4115 got 2, expected 0
+     console.c:5722 [12] Unexpected result 60 (0)
+     console.c:5737 [12] Unexpected result 60 (0)
+  [i386] 2
+     console.c:5864 test #5: Expecting child to be terminated
+     console.c:5871 test #5: Unexpected exit code 0x103, instead of 0
+  [aarch64] 2
+     console.c:5902 Expecting child to be terminated
+     console.c:5909 Unexpected exit code 0x103, instead of 0xc000013a
+
+== kernel32 debugger  aarch64=crash(5)  x86_64=crash(16)  i386=crash(3)
+  [x86_64] 15
+     debugger.c:1077 got 00
+     debugger.c:1444 ExceptionAddress != DbgBreakPoint
+     debugger.c:1716 unexpected instruction pointer 000000700E020400
+     debugger.c:1719 ExceptionCode = 80000003 expected 80000004
+     debugger.c:1720 ExceptionCode = 80000003 expected 80000004
+     debugger.c:1721 ExceptionCode = 80000003 expected 80000004
+     ... 9 more
+  [i386] 3
+     debugger.c:1979 dwDebugEventCode = 4
+     debugger.c:1980 dwDebugEventCode = 4 expected 1
+     debugger.c:268 unknown thread 3e8
+  [aarch64] 4
+     debugger.c:2231 CreateProcess failed, last error 0x2db.
+     debugger.c:2253 CreateProcess failed, last error 0x2db.
+     debugger.c:2350 exit code = c0000354
+     debugger.c:2379 TerminateProcess failed: 6
+  [other:aarch64+x86_64] 1
+     debugger.c:1258 Expecting more than 3 wow64*.dll
+
+== kernel32 file  aarch64=fail(8)  x86_64=fail(8)  i386=fail(8)
+  [all] 8
+     file.c:3515 WriteFile succeeded
+     file.c:3516 wrong error 998
+     file.c:3519 wrote 4000 bytes
+     file.c:3561 ReadFile succeeded
+     file.c:3565 read 4000 bytes
+     file.c:3572 ReadFile succeeded
+     ... 2 more
+
+== kernel32 loader  aarch64=timeout(1)  x86_64=fail(10)  i386=crash(1)
+  [x86_64] 10
+     loader.c:3473 LoadLibrary error 193
+     loader.c:3476 FreeLibrary error 6
+     loader.c:3479 winver.exe should not be unloaded
+     loader.c:3482 winver.exe should be unloaded
+     loader.c:4914 ntdll.dll:0: wrong OptionalHeader.AddressOfEntryPoint 110000 / 82860
+     loader.c:4918 ntdll.dll:0: wrong OptionalHeader.DataDirectory[i].VirtualAddress 15a2d7 / 14f620
+     ... 4 more
+  [i386] 1
+     loader.c:4966 got 0xc0000141
+  [aarch64] 1
+     loader.c:2440 7: got 0xc000007b.
+
+== kernel32 module  aarch64=fail(1)  x86_64=fail(1)  i386=fail(1)
+  [all] 1
+     module.c:1774 Dep 0 (L"advapi32.dll"): Got unexpected module L"user32.dll".
+
+== kernel32 pipe  aarch64=ok(0)  x86_64=fail(2)  i386=ok(0)
+  [x86_64] 2
+     pipe.c:2878 FlushFileBuffers should have failed
+     pipe.c:2879 FlushFileBuffers set error 0, expected 109
+
+== kernel32 process  aarch64=fail(6)  x86_64=crash(0)  i386=fail(8)
+  [i386] 2
+     process.c:2418 got 6
+     process.c:2419 got 42497
+  [other:aarch64+i386] 6
+     process.c:3715 nothing_gui[6] : StartupInfoA:hStdInputEncode expected 0x8, but got 0x2e
+     process.c:3716 nothing_gui[6] : StartupInfoA:hStdOutputEncode expected 0x8, but got 0x2e
+     process.c:3720 nothing_gui[6] : StartupInfoW:hStdInputEncode expected 0x8, but got 0x2e
+     process.c:3721 nothing_gui[6] : StartupInfoW:hStdOutputEncode expected 0x8, but got 0x2e
+     process.c:3723 nothing_gui[6] : TEB:hStdInputEncode expected 0x8, but got 0x2e
+     process.c:3724 nothing_gui[6] : TEB:hStdOutputEncode expected 0x8, but got 0x2e
+
+== kernel32 thread  aarch64=ok(0)  x86_64=fail(6)  i386=fail(4)
+  [x86] 2
+     thread.c:2204 expected 0x1f81027f got 0x1f800000
+     thread.c:2209 expected 0x1f81027f got 0x1f800000
+  [x86_64] 4
+     thread.c:2169 expected 0x1f80027f got 0x1f800000
+     thread.c:2179 expected 0x7000027f got 0x1f800000
+     thread.c:2190 expected 0x7000027f got 0x1f800000
+     thread.c:2198 expected 0x1f80027f got 0x1f800000
+  [i386] 2
+     thread.c:1388 wrong error 1
+     thread.c:2084 _statusfp() = 0
+
+== kernel32 toolhelp  aarch64=fail(2)  x86_64=fail(2)  i386=ok(0)
+  [other:aarch64+x86_64] 2
+     toolhelp.c:517 Module wow64cpu.dll is not listed
+     toolhelp.c:537 Module wow64cpu.dll is not listed
+
+== kernel32 version  aarch64=fail(3)  x86_64=fail(3)  i386=fail(4)
+  [all] 3
+     version.c:1090 Got unexpected ret 0, GetLastError() 2.
+     version.c:1093 Got unexpected result 0xffffffff.
+     version.c:1096 Got unexpected ret 0, GetLastError() 6.
+  [i386] 1
+     version.c:1097 Test 0 failed.
+
+== kernel32 virtual  aarch64=fail(63)  x86_64=ok(62)  i386=ok(61)
+  [all] 61
+     virtual.c:158 WriteProcessMemory succeeded
+     virtual.c:159 wrong error 3735928559
+     virtual.c:161 32768 bytes written
+     virtual.c:164 ReadProcessMemory succeeded
+     virtual.c:165 wrong error 3735928559
+     virtual.c:171 32768 bytes read
+     ... 55 more
+  [aarch64] 1
+     virtual.c:4828 expected write-read reordering with compiler barrier only (got 0 reorderings)
+  [other:aarch64+x86_64] 1
+     virtual.c:4266 0: (0000) got 0x10000 != expected 0x2000
+
+Totals (distinct failing checks per bucket; crashes/timeouts per arch):
+  aarch64          14
+  all              199
+  crash:aarch64    3
+  crash:i386       3
+  crash:x86_64     4
+  i386             32
+  other:aarch64+i386 7
+  other:aarch64+x86_64 37
+  timeout:aarch64  1
+  timeout:x86_64   1
+  x86              6
+  x86_64           36

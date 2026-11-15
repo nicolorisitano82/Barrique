@@ -108,9 +108,15 @@ Misure con `tests/pe/bench.c` (stesso sorgente nativo macOS / ARM64 / x86-64 / i
   - solo x86-64: rpcrt4 `cstub` (vtable dei delegati), dbghelp (stack walk), crypt32 `sip`, ntdll `info` (affinità, informazioni CPU emulate: atteso);
   - ntdll `exception` x86-64: dopo la correzione le eccezioni arrivano, ma lo srotolamento da pc 0 finisce in ricorsione (`RtlIsEcCode` con un pc non valido); va in crash anche su ARM64 e i386;
   - exe x64 senza rilocazioni con base sotto i 4GB: non caricabili (rari).
-- ⬜ Rilanciare ntdll e kernel32 sulle tre architetture con le correzioni di questa fase (i numeri x86-64 sopra sono di prima).
+- ✅ ntdll e kernel32 rilanciati sulle tre architetture con le correzioni (giro 4, `tests/results/round4`, `classify-ntdll-kernel32.txt`):
+  - x86-64: ntdll da 239 a 206 fallimenti (`info` da 68 a 35); kernel32 `loader` non va più in crash (completa con 78 fallimenti, prima zero controlli contati), `debugger` da 61 a 27 fallimenti nei processi figli. Il runner segna `debugger` come crash perché i figli vanno in crash apposta: falso allarme. kernel32 sale da 143 a 223 solo perché `loader` ora conta i suoi controlli.
+  - ARM64 e i386: invariati entro 2-6 controlli (i386 kernel32 da 174 a 168, `debugger` da 5 a 0).
+  - Fallimenti solo x86 (FEX) da 17 a 6, solo x86-64 da 45 a 36, solo i386 da 37 a 32; comuni alle tre: 199, invariati.
+  - Da ricontrollare: kernel32 `pipe` x86-64, 2 fallimenti nuovi su `FlushFileBuffers` dopo la chiusura dell'altro capo (pipe.c:2878), probabilmente una gara di tempi; ARM64 e i386 passano.
 
 ## Fase 5: grafica, audio e input
+
+Piano dettagliato di grafica, audio e video, con le regole contro le regressioni e lo studio di CrossOver e del Game Porting Toolkit: [FASE5-AV.md](FASE5-AV.md). D3DMetal escluso (solo x86_64 con Rosetta, licenza non commerciale).
 
 - ⬜ **[MS]** Direct3D su Metal in versione ARM64X, così un'unica build serve sia ai programmi ARM64 sia a quelli x86-64 (ARM64EC). Componenti da valutare:
   - D3D10/11/12 con un fork di DXMT (Mullion);
