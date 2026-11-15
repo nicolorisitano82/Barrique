@@ -1,0 +1,9 @@
+unit	status	executed	failures	todo	skipped	seconds
+cpp	ok	36	0	0	0	0
+environ	ok	120	0	0	0	1
+file	ok	524	0	4	0	0
+misc	ok	199112	0	1	0	0
+printf	ok	1954	0	0	0	0
+scanf	ok	381	0	9	0	0
+string	ok	787359	0	0	0	0
+thread	ok	60	0	0	0	0

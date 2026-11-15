@@ -20,6 +20,11 @@ The diff against upstream is also kept as `../patches/fex/0001-barrique-wow64-lo
 - `Source/Windows/Common/InvalidationTracker.*`: unmapping an address that is
   not a mapping no longer drops every executable range below it; the DEP
   change scan and the section lookup convert window addresses to 32-bit ones.
+- `Source/Windows/Common/TSOHandlerConfig.h`: asks Wine for the hardware TSO
+  bit (`ProcessFexHardwareTso`) when the Linux helper library is missing.
+- `Source/Windows/Common/CPUFeatures.cpp`: the processor count reported to
+  x86 code no longer has one processor too many (FEXCore already stores the
+  count, not count - 1, in CPUID 01.EBX[23:16]).
 
 ## Not for upstream
 

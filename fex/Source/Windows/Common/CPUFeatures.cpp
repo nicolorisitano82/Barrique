@@ -6,6 +6,7 @@
 #include <FEXCore/Core/HostFeatures.h>
 #include <FEXCore/fextl/fmt.h>
 
+#include <algorithm>
 #include <windows.h>
 
 #include "CPUFeatures.h"
@@ -134,8 +135,9 @@ CPUFeatures::CPUFeatures(FEXCore::Context::Context& CTX) {
   CpuInfo.ProcessorRevision = (FamilyIdentifier & 0xf0000) >> 4;                                // Extended Model
   CpuInfo.ProcessorRevision |= (FamilyIdentifier & 0xf0) << 4;                                  // Model
   CpuInfo.ProcessorRevision |= FamilyIdentifier & 0xf;                                          // Stepping
-  // 8-bits in CPUID 01.ebx for up to 256 cores.
-  CpuInfo.MaximumProcessors = ((CPUIDResult01.ebx >> 16) & 0xFF) + 1;
+  // 8-bits in CPUID 01.ebx for up to 255 cores. FEXCore stores the core count itself there
+  // (not count - 1), so adding one reported a processor that does not exist.
+  CpuInfo.MaximumProcessors = std::max<uint32_t>((CPUIDResult01.ebx >> 16) & 0xFF, 1);
 }
 
 bool CPUFeatures::IsFeaturePresent(uint32_t Feature) {

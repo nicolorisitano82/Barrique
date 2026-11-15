@@ -18,7 +18,7 @@ what is being fixed and what comes next.
 | `fex/` | FEX source (upstream commit `ab135df` plus the submodules the Windows build needs) with Barrique's changes; see `fex/BARRIQUE.md` |
 | `patches/fex/` | The same FEX changes as a diff against upstream |
 | `entitlements.plist` | Entitlements the Wine loader needs (`com.apple.security.hypervisor`) |
-| `tests/` | Conformance test runner, small PE test programs, latest i386 rerun summary |
+| `tests/` | Conformance test runner (aarch64, x86_64, i386) and failure classifier, small PE test programs, real-program probes (`apps/`), results |
 | `research/hvproto/` | Hypervisor.framework prototypes used to design the backend |
 
 ## Building (outline)

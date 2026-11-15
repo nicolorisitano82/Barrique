@@ -1,0 +1,14 @@
+unit	status	executed	failures	todo	skipped	seconds
+cpp	ok	624	0	2	0	0
+data	ok	16	0	0	0	0
+dir	ok	367	0	0	0	0
+environ	ok	102	0	0	2	0
+file	ok	1148	0	1	1	2
+heap	ok	1125	0	0	0	0
+locale	ok	450	0	0	1	0
+misc	ok	833	0	11	0	1
+printf	ok	1018	0	2	0	0
+scanf	ok	152	0	0	0	0
+signal	ok	15	0	0	0	0
+string	ok	410075	0	4	0	0
+time	ok	314	0	0	1	0

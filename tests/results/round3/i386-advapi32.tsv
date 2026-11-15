@@ -1,0 +1,13 @@
+unit	status	executed	failures	todo	skipped	seconds
+cred	crash	-	-	-	-	0
+crypt	ok	167	0	0	0	1
+crypt_lmhash	ok	75	0	0	0	0
+crypt_md4	ok	11	0	0	0	0
+crypt_md5	ok	5	0	0	0	1
+crypt_sha	ok	1	0	0	0	0
+eventlog	ok	290	0	115	3	0
+lsa	ok	74	0	0	1	0
+perf	ok	101	0	0	0	0
+registry	ok	7666	0	80	3	2
+security	fail	3476	2	171	34	1
+service	fail	766	11	27	0	1

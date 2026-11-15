@@ -1,0 +1,16 @@
+unit	status	executed	failures	todo	skipped	seconds
+base64	ok	4113	0	0	0	0
+cert	ok	653	0	0	0	1
+chain	ok	2952	0	7	0	2
+crl	ok	140	0	0	0	0
+ctl	ok	37	0	0	0	0
+encode	ok	6332	0	3	0	0
+main	ok	104	0	1	0	0
+message	ok	154	0	6	0	0
+msg	ok	1073	0	13	0	0
+object	ok	16	0	0	0	0
+oid	ok	176	0	0	0	1
+protectdata	ok	42	0	0	0	0
+sip	fail	50	2	0	0	0
+store	crash	-	-	-	-	0
+str	ok	1598	0	0	0	1

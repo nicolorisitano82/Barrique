@@ -1321,7 +1321,7 @@ index c80226f..173124f 100644
          {
              ext[count].Type = MemExtendedParameterImageMachine;
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
-index 02b6d57..922221a 100644
+index 02b6d57..fbfe7db 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
 +++ b/dlls/ntdll/unix/signal_arm64.c
 @@ -29,6 +29,8 @@
@@ -1571,7 +1571,7 @@ index 02b6d57..922221a 100644
  
  
  /***********************************************************************
-@@ -1966,4 +2110,428 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+@@ -1966,4 +2110,432 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
  __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
                        __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
  
@@ -1631,6 +1631,10 @@ index 02b6d57..922221a 100644
 +    regs.fpcr  = frame->fpcr;
 +    regs.fpsr  = frame->fpsr;
 +    memcpy( regs.v, frame->v, sizeof(regs.v) );
++    /* the flag only says a context was set: decide from where the frame now returns to,
++     * as usr2_handler does (call_user_exception_dispatcher sets a context in x64 code,
++     * then sends the thread to the native KiUserExceptionDispatcher) */
++    if (!is_emulated_code( frame->pc )) frame->restore_flags &= ~RESTORE_FLAGS_EMULATION;
 +    if (frame->restore_flags & RESTORE_FLAGS_EMULATION)
 +    {
 +        /* back to x64 code: hand the full context to the emulator, as usr2_handler does
@@ -2159,7 +2163,7 @@ index 829db1e..2091b1d 100644
  struct teb_data
  {
 diff --git a/dlls/ntdll/unix/virtual.c b/dlls/ntdll/unix/virtual.c
-index 84f2a39..f4623ef 100644
+index 84f2a39..b4dc53b 100644
 --- a/dlls/ntdll/unix/virtual.c
 +++ b/dlls/ntdll/unix/virtual.c
 @@ -92,6 +92,59 @@
@@ -2441,7 +2445,20 @@ index 84f2a39..f4623ef 100644
      if (vprot & VPROT_WRITE) flags |= MAP_SHARED;
      else if (vprot & VPROT_WRITECOPY) flags |= MAP_PRIVATE;
      else
-@@ -3172,6 +3380,14 @@ static NTSTATUS virtual_map_image( HANDLE mapping, void **addr_ptr, SIZE_T *size
+@@ -3114,7 +3322,12 @@ static NTSTATUS map_image_view( struct file_view **view_ret, struct pe_image_inf
+ 
+     /* then some appropriate address range */
+ 
++#ifdef WINE_HVF
++    /* below 4GB means the low window for a 64-bit image, keep it above (see virtual_map_image) */
++    if (image_info->base < limit_4g && !is_machine_64bit( image_info->machine ))
++#else
+     if (image_info->base < limit_4g)
++#endif
+     {
+         ULONG_PTR end = min( limit_4g - 1, get_wow_user_space_limit() );
+         if (limit_low < end && end < limit_high)
+@@ -3172,6 +3385,19 @@ static NTSTATUS virtual_map_image( HANDLE mapping, void **addr_ptr, SIZE_T *size
          SERVER_END_REQ;
      }
  
@@ -2451,12 +2468,17 @@ index 84f2a39..f4623ef 100644
 +    if (pe_mapping->image.map_addr &&
 +        is_beyond_limit( wine_server_get_ptr( pe_mapping->image.map_addr ), size, address_space_limit ))
 +        pe_mapping->image.map_addr = 0;
++    /* a 64-bit image below 4GB would live in the low window: the code would see it at
++     * the window address but relocated for (and entered at) the low one. Keep relocatable
++     * 64-bit images above 4GB, where both addresses are the same. */
++    if (is_machine_64bit( pe_mapping->image.machine ) && pe_mapping->image.map_addr < limit_4g)
++        pe_mapping->image.map_addr = 0;
 +#endif
 +
      server_enter_uninterrupted_section( &virtual_mutex, &sigset );
  
      status = map_image_view( &view, &pe_mapping->image, size, limit_low, limit_high, alloc_type );
-@@ -3376,6 +3592,11 @@ void virtual_init(void)
+@@ -3376,6 +3602,11 @@ void virtual_init(void)
      TRACE( "host page size: %uk\n", (UINT)host_page_size / 1024 );
  #endif
      host_addr_space_limit = get_host_addr_space_limit();
@@ -2468,7 +2490,7 @@ index 84f2a39..f4623ef 100644
      TRACE( "host addr space limit: %p\n", host_addr_space_limit );
  
      mem_areas = anon_mmap_alloc( mem_areas_size * sizeof(*mem_areas), PROT_READ | PROT_WRITE );
-@@ -3760,21 +3981,34 @@ static void set_large_address_space(void)
+@@ -3760,21 +3991,34 @@ static void set_large_address_space(void)
          char *end, *start = address_space_start;  /* low 64K */
          address_space_start = (void *)0x110000;
          end = min( address_space_start, main_module );
@@ -2505,7 +2527,7 @@ index 84f2a39..f4623ef 100644
          }
      }
      else if (!(main_image_info.ImageCharacteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE))
-@@ -3849,8 +4083,15 @@ struct thread_data *virtual_alloc_first_thread_data(void)
+@@ -3849,8 +4093,15 @@ struct thread_data *virtual_alloc_first_thread_data(void)
      size_t size = signal_stack_mask + 1 + kernel_stack_size;
      void *ptr;
  
@@ -2521,7 +2543,7 @@ index 84f2a39..f4623ef 100644
      if (status)
      {
          ERR( "wine: failed to map the shared user data: %08x\n", status );
-@@ -4286,12 +4527,24 @@ void virtual_map_user_shared_data(void)
+@@ -4286,12 +4537,24 @@ void virtual_map_user_shared_data(void)
          ERR( "failed to open the USD section: %08x\n", status );
          exit(1);
      }
@@ -2546,7 +2568,7 @@ index 84f2a39..f4623ef 100644
      if (needs_close) close( fd );
      NtClose( section );
  }
-@@ -4678,6 +4931,47 @@ BOOL virtual_is_valid_code_address( const void *addr, SIZE_T size )
+@@ -4678,6 +4941,47 @@ BOOL virtual_is_valid_code_address( const void *addr, SIZE_T size )
  }
  
  
@@ -2594,7 +2616,7 @@ index 84f2a39..f4623ef 100644
  /***********************************************************************
   *           virtual_check_buffer_for_read
   *
-@@ -5004,6 +5298,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
+@@ -5004,6 +5308,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
                                     MEM_PHYSICAL | MEM_LARGE_PAGES | MEM_WRITE_WATCH;
      ULONG_PTR limit;
  
@@ -2606,7 +2628,7 @@ index 84f2a39..f4623ef 100644
      TRACE("%p %p %08lx %x %08x\n", process, *ret, *size_ptr, type, protect );
  
      if (!*size_ptr) return STATUS_INVALID_PARAMETER;
-@@ -5148,6 +5447,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *s
+@@ -5148,6 +5457,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *s
      USHORT machine = 0;
      unsigned int status;
  
@@ -2618,7 +2640,7 @@ index 84f2a39..f4623ef 100644
      TRACE( "%p %p %08lx %x %08x %p %u\n",
            process, *ret, *size_ptr, type, protect, parameters, count );
  
-@@ -5206,6 +5510,11 @@ NTSTATUS WINAPI NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T *si
+@@ -5206,6 +5520,11 @@ NTSTATUS WINAPI NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T *si
      LPVOID addr = *addr_ptr;
      SIZE_T size = *size_ptr;
  
@@ -2630,7 +2652,7 @@ index 84f2a39..f4623ef 100644
      TRACE("%p %p %08lx %x\n", process, addr, size, type );
  
      if (process != NtCurrentProcess())
-@@ -5301,6 +5610,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
+@@ -5301,6 +5620,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
      LPVOID addr = *addr_ptr;
      DWORD old;
  
@@ -2642,7 +2664,7 @@ index 84f2a39..f4623ef 100644
      TRACE("%p %p %08lx %08x\n", process, addr, size, new_prot );
  
      if (!old_prot)
-@@ -5941,6 +6255,11 @@ NTSTATUS WINAPI NtQueryVirtualMemory( HANDLE process, LPCVOID addr,
+@@ -5941,6 +6265,11 @@ NTSTATUS WINAPI NtQueryVirtualMemory( HANDLE process, LPCVOID addr,
  {
      NTSTATUS status;
  
@@ -2654,7 +2676,7 @@ index 84f2a39..f4623ef 100644
      TRACE("(%p, %p, info_class=%d, %p, %ld, %p)\n",
            process, addr, info_class, buffer, len, res_len);
  
-@@ -6024,6 +6343,11 @@ NTSTATUS WINAPI NtLockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size,
+@@ -6024,6 +6353,11 @@ NTSTATUS WINAPI NtLockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size,
  {
      unsigned int status = STATUS_SUCCESS;
  
@@ -2666,7 +2688,7 @@ index 84f2a39..f4623ef 100644
      if (process != NtCurrentProcess())
      {
          union apc_call call;
-@@ -6062,6 +6386,11 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
+@@ -6062,6 +6396,11 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
  {
      unsigned int status = STATUS_SUCCESS;
  
@@ -2678,7 +2700,7 @@ index 84f2a39..f4623ef 100644
      if (process != NtCurrentProcess())
      {
          union apc_call call;
-@@ -6114,10 +6443,18 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
+@@ -6114,10 +6453,18 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
          return STATUS_INVALID_PARAMETER_4;
  
      /* If both addr_ptr and zero_bits are passed, they have match */
@@ -2697,7 +2719,7 @@ index 84f2a39..f4623ef 100644
  
      if (!is_win64 && !is_wow64())
      {
-@@ -6322,6 +6659,9 @@ done:
+@@ -6322,6 +6669,9 @@ done:
   */
  NTSTATUS WINAPI NtUnmapViewOfSection( HANDLE process, PVOID addr )
  {
@@ -2707,7 +2729,7 @@ index 84f2a39..f4623ef 100644
      return unmap_view_of_section( process, addr, 0 );
  }
  
-@@ -6333,6 +6673,11 @@ NTSTATUS WINAPI NtUnmapViewOfSectionEx( HANDLE process, PVOID addr, ULONG flags
+@@ -6333,6 +6683,11 @@ NTSTATUS WINAPI NtUnmapViewOfSectionEx( HANDLE process, PVOID addr, ULONG flags
  {
      static const ULONG type_mask = MEM_UNMAP_WITH_TRANSIENT_BOOST | MEM_PRESERVE_PLACEHOLDER;
  
@@ -2719,7 +2741,7 @@ index 84f2a39..f4623ef 100644
      if (flags & ~type_mask)
      {
          WARN( "Unsupported flags %#x.\n", flags );
-@@ -6473,6 +6818,9 @@ NTSTATUS WINAPI NtFlushVirtualMemory( HANDLE process, LPCVOID *addr_ptr,
+@@ -6473,6 +6828,9 @@ NTSTATUS WINAPI NtFlushVirtualMemory( HANDLE process, LPCVOID *addr_ptr,
      {
          if (!*size_ptr) *size_ptr = view->size;
          *addr_ptr = addr;
@@ -2729,7 +2751,7 @@ index 84f2a39..f4623ef 100644
  #ifdef MS_ASYNC
          if (msync( ROUND_ADDR( addr, host_page_mask ), ROUND_SIZE( addr, *size_ptr, host_page_mask ), MS_ASYNC ))
              status = STATUS_NOT_MAPPED_DATA;
-@@ -6493,6 +6841,11 @@ NTSTATUS WINAPI NtGetWriteWatch( HANDLE process, ULONG flags, PVOID base, SIZE_T
+@@ -6493,6 +6851,11 @@ NTSTATUS WINAPI NtGetWriteWatch( HANDLE process, ULONG flags, PVOID base, SIZE_T
      NTSTATUS status = STATUS_SUCCESS;
      sigset_t sigset;
  
@@ -2741,7 +2763,7 @@ index 84f2a39..f4623ef 100644
      size = ROUND_SIZE( base, size, page_mask );
      base = ROUND_ADDR( base, page_mask );
  
-@@ -6551,6 +6904,11 @@ NTSTATUS WINAPI NtResetWriteWatch( HANDLE process, PVOID base, SIZE_T size )
+@@ -6551,6 +6914,11 @@ NTSTATUS WINAPI NtResetWriteWatch( HANDLE process, PVOID base, SIZE_T size )
      NTSTATUS status = STATUS_SUCCESS;
      sigset_t sigset;
  
@@ -2753,7 +2775,7 @@ index 84f2a39..f4623ef 100644
      size = ROUND_SIZE( base, size, page_mask );
      base = ROUND_ADDR( base, page_mask );
  
-@@ -6579,6 +6937,11 @@ NTSTATUS WINAPI NtReadVirtualMemory( HANDLE process, const void *addr, void *buf
+@@ -6579,6 +6947,11 @@ NTSTATUS WINAPI NtReadVirtualMemory( HANDLE process, const void *addr, void *buf
  {
      unsigned int status;
  
@@ -2765,7 +2787,7 @@ index 84f2a39..f4623ef 100644
      if (!virtual_check_buffer_for_write( buffer, size ))
      {
          status = STATUS_ACCESS_VIOLATION;
-@@ -6623,6 +6986,11 @@ NTSTATUS WINAPI NtWriteVirtualMemory( HANDLE process, void *addr, const void *bu
+@@ -6623,6 +6996,11 @@ NTSTATUS WINAPI NtWriteVirtualMemory( HANDLE process, void *addr, const void *bu
  {
      unsigned int status;
  
@@ -2777,7 +2799,7 @@ index 84f2a39..f4623ef 100644
      if (virtual_check_buffer_for_read( buffer, size ))
      {
          SERVER_START_REQ( write_process_memory )
-@@ -6785,6 +7153,9 @@ NTSTATUS WINAPI NtSetInformationVirtualMemory( HANDLE process,
+@@ -6785,6 +7163,9 @@ NTSTATUS WINAPI NtSetInformationVirtualMemory( HANDLE process,
   */
  NTSTATUS WINAPI NtFlushInstructionCache( HANDLE handle, const void *addr, SIZE_T size )
  {
@@ -3181,10 +3203,73 @@ index e7c17fc..1787de6 100644
  static inline HANDLE get_handle( UINT **args ) { return LongToHandle( *(*args)++ ); }
  static inline void *get_ptr( UINT **args ) { return ULongToPtr( *(*args)++ ); }
 diff --git a/dlls/wow64win/user.c b/dlls/wow64win/user.c
-index 0d549da..69ec233 100644
+index 0d549da..f866db3 100644
 --- a/dlls/wow64win/user.c
 +++ b/dlls/wow64win/user.c
-@@ -3856,7 +3856,7 @@ NTSTATUS WINAPI wow64_NtUserMessageCall( UINT *args )
+@@ -1706,6 +1706,7 @@ NTSTATUS WINAPI wow64_NtUserCallHwndParam( UINT *args )
+         }
+ 
+     case NtUserCallHwndParam_GetClientRect:
++    case NtUserCallHwndParam_GetPresentRect:
+         {
+             struct
+             {
+@@ -1753,6 +1754,20 @@ NTSTATUS WINAPI wow64_NtUserCallHwndParam( UINT *args )
+             return NtUserCallHwndParam( hwnd, (UINT_PTR)&params, code );
+         }
+ 
++    /* pointer arguments: a 32-bit address is not the 64-bit one when the
++     * 32-bit address space lives in a window (see wow64win_ptr) */
++    case NtUserCallHwndParam_ClientToScreen:
++    case NtUserCallHwndParam_ScreenToClient:
++    case NtUserCallHwndParam_GetChildRect:
++    case NtUserCallHwndParam_GetWindowInfo:
++    case NtUserCallHwndParam_GetWindowThread:
++    /* structures with the same layout in 32 and 64 bits */
++    case NtUserCallHwndParam_GetPrivateData:
++    case NtUserCallHwndParam_SetPrivateData:
++    case NtUserCallHwndParam_ExposeWindowSurface:
++    case NtUserCallHwndParam_SetRawWindowPos:
++        return NtUserCallHwndParam( hwnd, (UINT_PTR)UlongToPtr( param ), code );
++
+     default:
+         return NtUserCallHwndParam( hwnd, param, code );
+     }
+@@ -1792,6 +1807,16 @@ NTSTATUS WINAPI wow64_NtUserCallOneParam( UINT *args )
+     ULONG_PTR arg = get_ulong( &args );
+     ULONG code = get_ulong( &args );
+ 
++    switch (code)
++    {
++    /* pointer arguments, see wow64_NtUserCallHwndParam */
++    case NtUserCallOneParam_GetPrimaryMonitorRect:
++    case NtUserCallOneParam_D3DKMTOpenAdapterFromGdiDisplayName:
++    case NtUserCallOneParam_GetAsyncKeyboardState:
++    case NtUserGetDeskPattern:
++        arg = (ULONG_PTR)UlongToPtr( arg );
++        break;
++    }
+     return NtUserCallOneParam( arg, code );
+ }
+ 
+@@ -1825,6 +1850,16 @@ NTSTATUS WINAPI wow64_NtUserCallTwoParam( UINT *args )
+             return TRUE;
+         }
+ 
++    /* pointer arguments, see wow64_NtUserCallHwndParam */
++    case NtUserCallTwoParam_GetMonitorInfo:
++    case NtUserCallTwoParam_SetIMECompositionRect:
++        return NtUserCallTwoParam( arg1, (UINT_PTR)UlongToPtr( arg2 ), code );
++    case NtUserCallTwoParam_MonitorFromRect:
++    case NtUserCallTwoParam_GetVirtualScreenRect:
++        return NtUserCallTwoParam( (UINT_PTR)UlongToPtr( arg1 ), arg2, code );
++    case NtUserCallTwoParam_AdjustWindowRect:
++        return NtUserCallTwoParam( (UINT_PTR)UlongToPtr( arg1 ), (UINT_PTR)UlongToPtr( arg2 ), code );
++
+     default:
+         return NtUserCallTwoParam( arg1, arg2, code );
+     }
+@@ -3856,7 +3891,7 @@ NTSTATUS WINAPI wow64_NtUserMessageCall( UINT *args )
              } *params32 = result_info;
              struct ime_driver_call_params params;
              if (msg == WINE_IME_POST_UPDATE) ERR( "Unexpected WINE_IME_POST_UPDATE message\n" );
@@ -3193,7 +3278,7 @@ index 0d549da..69ec233 100644
              params.state = UlongToPtr( params32->state );
              params.compstr = UlongToPtr( params32->compstr );
              params.key_consumed = UlongToPtr( params32->key_consumed );
-@@ -4191,7 +4191,7 @@ NTSTATUS WINAPI wow64_NtUserRegisterRawInputDevices( UINT *args )
+@@ -4191,7 +4226,7 @@ NTSTATUS WINAPI wow64_NtUserRegisterRawInputDevices( UINT *args )
          devices64[i].usUsagePage = devices32[i].usUsagePage;
          devices64[i].usUsage = devices32[i].usUsage;
          devices64[i].dwFlags = devices32[i].dwFlags;

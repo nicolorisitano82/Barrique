@@ -1,0 +1,12 @@
+unit	status	executed	failures	todo	skipped	seconds
+assoc	ok	26	-	0	1	0
+clist	ok	236	0	0	0	1
+clsid	ok	171	0	0	0	0
+generated	ok	0	0	0	0	0
+istream	ok	20880	0	1	0	2
+ordinal	ok	462	0	4	2	1
+path	ok	66838	0	9	0	0
+shreg	ok	63	0	0	0	0
+string	ok	34772	0	0	1	1
+thread	ok	14	0	0	0	0
+url	ok	93343	0	0	0	0

@@ -1,0 +1,7 @@
+unit	status	executed	failures	todo	skipped	seconds
+cstub	crash	-	-	-	-	1
+generated	ok	0	0	0	0	0
+ndr_marshall	ok	31859	0	12	0	1
+rpc	fail	16501	16	12	0	0
+rpc_async	ok	19	0	2	0	1
+server	ok	2227	-	13	0	3

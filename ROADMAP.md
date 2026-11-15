@@ -4,7 +4,7 @@ Obiettivo: Wine nativo arm64 su macOS, che esegue programmi Windows ARM64, x86-6
 
 Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalsharp/MetalSharp-Wine), da reimplementare (il loro codice è AGPL-3.0, Wine è LGPL: si prendono le idee, non il codice). Stato: ✅ fatto · 🔧 scritto, da provare · ⬜ da fare.
 
-## Stato attuale (2026-11-14)
+## Stato attuale (2026-11-15)
 
 | | Stato |
 |---|---|
@@ -86,10 +86,29 @@ Misure con `tests/pe/bench.c` (stesso sorgente nativo macOS / ARM64 / x86-64 / i
 - ➡️ Fase 7 — Uscita dalla VM (~1,7 µs per syscall contro 0,1 µs nativi): gestire alcune syscall frequenti senza uscire (per esempio quelle che leggono solo dati del processo); conta per i programmi con molte syscall (fino al 16% nelle misure).
 - ✅ **LSE**: le parti ARM64 e ARM64EC di Wine si compilano con `-march=armv8.1-a` (`aarch64_CFLAGS`/`arm64ec_CFLAGS`): atomici con istruzioni LSE invece dei cicli LL/SC. Nel benchmark gli incrementi atomici passano da 175 a 92 ms (nativo 89–95). Tutti gli Apple Silicon hanno LSE, e Windows 11 su ARM lo richiede.
 
-## Fase 4: validazione
+## Fase 4: validazione ✅ (chiusa il 2026-11-15)
 
-- ⬜ **[MS]** Test di conformità di Wine per tutte e tre le architetture, sul modello di `run-winetest.sh` (`ntdll`, `kernel32`, poi il resto), con un elenco delle cause di ogni fallimento.
-- ⬜ **[MS]** Programmi reali come test: CPython (pacchetti embeddable x64 e x86), Java (Temurin x64 e i386), MSI (7-Zip), i VC++ redistributable.
+- ✅ **[MS]** Test di conformità per tutte e tre le architetture (giro 3, `tests/results/round3`). I test x86-64 sono compilati come codice x64 in una build a parte (`build-x64tests`, `--enable-archs=aarch64,x86_64`) e girano sulla build principale attraverso ARM64EC; `run-conformance.sh` accetta `x86_64`. `tests/classify.py` divide i fallimenti per architettura: comuni a tutte (Wine/macOS/VM), solo x86 (FEX), solo i386 (WoW64 e finestra a 32 bit), solo x86-64 (lato ARM64EC), solo aarch64.
+  - 16 moduli oltre a ntdll e kernel32 (kernelbase, advapi32, msvcrt, ucrtbase, ole32, oleaut32, rpcrt4, shlwapi, version, crypt32, bcrypt, combase, dbghelp, user32, gdi32, ws2_32), circa 10 milioni di controlli per architettura: 966 fallimenti su ARM64, 1017 su x86-64, 1103 su i386 (`round3/summary.txt`, `classify-modules.txt`).
+  - 600 controlli falliscono uguali sulle tre architetture, quindi non dipendono da FEX. Solo 14 falliscono su entrambe le x86 e non su ARM64 (user32 `edit`/`listbox`, dopo le correzioni sotto). Il traduttore è quasi trasparente.
+  - msvcrt, ucrtbase (a 64 bit), shlwapi, bcrypt, combase e version: 0 fallimenti ovunque.
+- ✅ **Programmi reali** (`tests/apps/run-apps.sh`, prefix separati `prefix-apps` e `prefix-apps32`), tutti RESULT ok:
+  - CPython 3.13 embeddable x64 e x86: interprete, hashlib, zlib, json, sqlite3, ssl, ctypes, decimal, thread, subprocess, file (`tests/apps/probe.py`);
+  - Java Temurin 21 x64 e 8 x86: JIT, GC, pool di thread, gzip, SHA-256, file (`tests/apps/Probe.java`). Il JIT di Java tradotto da FEX: ciclo da 172 ms nativi a 616 ms (x64) e 206 ms (x86);
+  - 7-Zip 23.01 MSI x64 e x86: installazione silenziosa, compressione e decompressione confrontate col sorgente;
+  - VC++ 2015-2022 redistributable x64 e x86: installazione silenziosa ok. Su ARM64 il pacchetto x64 installa il runtime Arm64, come su Windows 11 ARM.
+- ✅ Correzioni trovate dai programmi e dai test:
+  - **Exe x64 con base sotto i 4GB** (7-Zip, ImageBase 0x400000): il server sceglieva un indirizzo dinamico basso, l'immagine finiva nella finestra (0xE0…) ma veniva rilocata ed eseguita all'indirizzo basso. Le immagini a 64 bit rilocabili ora stanno sopra i 4GB, come fa l'ASLR di Windows.
+  - **Eccezioni x64 rilanciate da FEX** (Java, 7-Zip, test `exception`): `hvf_restore_frame` si fidava del flag `RESTORE_FLAGS_EMULATION` lasciato da `NtSetContextThread`, e rientrava nell'emulatore invece di chiamare `KiUserExceptionDispatcher`. Ora decide in base a dove torna il frame, come `usr2_handler`.
+  - **FEX**: un processore in più riportato al codice x86 (15 su 14 core).
+  - **wow64win**: i thunk generici `NtUserCallHwndParam`/`OneParam`/`TwoParam` passavano i puntatori a 32 bit senza convertirli nella finestra (`GetWindowInfo`, `GetMonitorInfo`, `ClientToScreen`, `GetPrivateData`… ). user32 i386 da 18.893 fallimenti e 5 crash a 826 fallimenti senza crash: ora monitor, sysparams, win e clipboard danno gli stessi numeri di ARM64.
+- ➡️ Fase 5 — **FreeType non caricato**: `dlopen("libfreetype.6.dylib")` non trova `/opt/homebrew/lib`, quindi niente font TrueType e fallimenti nei test di font (gdi32 `font`, user32 `text`). Si risolve con le librerie dentro la `.app` (fase 6).
+- ➡️ Fase 7 — Resti dei test, per architettura:
+  - solo i386: ws2_32 `afd` (108, strutture AFD a 32 bit con puntatori), user32 `class` (classi cercate per `hInstance` a 32 bit), ole32 `dragdrop`, ucrtbase `misc` e kernel32 `thread` (flag di eccezione x87/SSE persi da FEX a 32 bit: la correzione MetalSharp della fase 2);
+  - solo x86-64: rpcrt4 `cstub` (vtable dei delegati), dbghelp (stack walk), crypt32 `sip`, ntdll `info` (affinità, informazioni CPU emulate: atteso);
+  - ntdll `exception` x86-64: dopo la correzione le eccezioni arrivano, ma lo srotolamento da pc 0 finisce in ricorsione (`RtlIsEcCode` con un pc non valido); va in crash anche su ARM64 e i386;
+  - exe x64 senza rilocazioni con base sotto i 4GB: non caricabili (rari).
+- ⬜ Rilanciare ntdll e kernel32 sulle tre architetture con le correzioni di questa fase (i numeri x86-64 sopra sono di prima).
 
 ## Fase 5: grafica, audio e input
 

@@ -1,0 +1,481 @@
+
+== kernelbase process  aarch64=fail(4)  x86_64=fail(4)  i386=fail(4)
+  [all] 4
+     process.c:158 VirtualFree failed to split the placeholder 487
+     process.c:162 MapViewOfFile3 did not map the file mapping 1132
+     process.c:165 UnmapViewOfFile failed 487
+     process.c:187 VirtualFree of remaining region failed: 487
+
+== advapi32 cred  aarch64=crash(1)  x86_64=crash(1)  i386=crash(1)
+  [all] 1
+     cred.c:293 CredEnumerateA failed with error 1168
+
+== advapi32 security  aarch64=fail(2)  x86_64=fail(2)  i386=fail(2)
+  [all] 2
+     security.c:8798 NtCreateToken failed, status 0x80000101.
+     security.c:8816 NtCreateToken failed, status 0x80000101.
+
+== advapi32 service  aarch64=fail(10)  x86_64=fail(10)  i386=fail(11)
+  [all] 10
+     service.c:2671 StartService failed: 731
+     service.c:2681 Got wrong SleepEx result: 0
+     service.c:2682 APC wasn't called
+     service.c:2689 NotifyServiceStatusChangeW failed: 1242
+     service.c:2728 ControlService failed: 1062
+     service.c:2733 APC wasn't called
+     ... 4 more
+  [i386] 1
+     service.c:2023 Got error 731.
+
+== ucrtbase misc  aarch64=ok(0)  x86_64=ok(0)  i386=fail(8)
+  [i386] 8
+     misc.c:1565 expected 3, got 0
+     misc.c:1570 expected 3, got 0
+     misc.c:1576 expected 3, got 0
+     misc.c:1596 Test 1: expected 1, got 0
+     misc.c:1600 Test 1: expected 1, got 0
+     misc.c:1634 Test 1: expected 1, got 0
+     ... 2 more
+
+== ole32 compobj  aarch64=fail(3)  x86_64=fail(3)  i386=fail(3)
+  [all] 3
+     compobj.c:1921 CoGetClassObject on local server object registered in different thread should return S_OK 
+     compobj.c:4369 Unexpected result 0.
+     compobj.c:4377 Unexpected id from another thread.
+
+== ole32 dragdrop  aarch64=fail(3)  x86_64=fail(3)  i386=fail(11)
+  [all] 3
+     dragdrop.c:414 unexpected call DS_GiveFeedback instead of DT_DragEnter
+     dragdrop.c:766 unexpected call DoDragDrop_ret instead of DT_Drop
+     dragdrop.c:767 DoDragDrop_effect_out: unexpected param 00000000 expected 00000001
+  [i386] 8
+     dragdrop.c:659 RegisterDragDrop failed with error 0x80040102
+     dragdrop.c:660 DropTarget refs should be at least one
+     dragdrop.c:663 expected IDropTarget pointer 0072E0B8, got 00000000
+     dragdrop.c:666 RegisterDragDrop with already registered hwnd should return DRAGDROP_E_ALREADYREGISTERED i
+     dragdrop.c:668 DropTarget refs should be at least one
+     dragdrop.c:694 got 0x80040102
+     ... 2 more
+
+== ole32 marshal  aarch64=crash(1)  x86_64=crash(1)  i386=crash(1)
+  [all] 1
+     marshal.c:4218 CoCreateInstance failed with error 0x80040154
+
+== ole32 moniker  aarch64=crash(18)  x86_64=crash(18)  i386=crash(18)
+  [all] 18
+     moniker.c:1000 Unexpected factory refcount 1.
+     moniker.c:1003 IRunningObjectTable_Revoke failed with error 0x80070057
+     moniker.c:1068 IRunningObjectTable_Register failed with error 0x800706ba
+     moniker.c:1071 IRunningObjectTable_Register should have returned MK_S_MONIKERALREADYREGISTERED instead of
+     moniker.c:1076 IRunningObjectTable_GetObject failed with error 0x800706ba
+     moniker.c:948 Failed to register interface, hr 0x800706ba.
+     ... 12 more
+
+== ole32 ole_server  aarch64=crash(2)  x86_64=crash(1)  i386=crash(1)
+  [all] 1
+     ole_server.c:507 CoCreateInstance(IID_IUnknown) error 0x80004002
+  [aarch64] 1
+     ole_server.c:434 expected REGDB_E_CLASSNOTREG, got 0
+
+== oleaut32 olefont  aarch64=fail(4)  x86_64=fail(2)  i386=fail(2)
+  [all] 2
+     olefont.c:115 default: IFont_get_Size: Lo=-1, Hi=0; expected Lo=180000, Hi=0.
+     olefont.c:1216 got charset 112
+  [aarch64] 2
+     olefont.c:1189 got charset 112
+     olefont.c:1202 got charset 112
+
+== oleaut32 varformat  aarch64=fail(2)  x86_64=fail(2)  i386=fail(2)
+  [all] 2
+     varformat.c:710 got L"74,50%"
+     varformat.c:717 got L"(74,50%)"
+
+== oleaut32 vartype  aarch64=fail(8)  x86_64=fail(8)  i386=ok(0)
+  [other:aarch64+x86_64] 8
+     vartype.c:3342 expected 2147483647ul 4294951488ul (2147483647,4294951488), got (2147483647,4294951936); h
+     vartype.c:3343 expected 2147483647ul 4294961488ul (2147483647,4294961488), got (2147483647,4294961152); h
+     vartype.c:3448 expected 2147483647ul 4294951488ul (2147483647,4294951488), got (2147483647,4294951936); h
+     vartype.c:3449 expected 2147483647ul 4294951488ul (2147483647,4294951488), got (2147483647,4294951936); h
+     vartype.c:3458 expected 2147483648ul 15808 (2147483648,15808), got (2147483648,15360); hres=0x00000000
+     vartype.c:3459 expected 2147483647ul 4294951488ul (2147483647,4294951488), got (2147483647,4294951936); h
+     ... 2 more
+
+== rpcrt4 cstub  aarch64=crash(1)  x86_64=crash(28)  i386=crash(1)
+  [all] 1
+     cstub.c:1394 got 0x80040154
+  [x86_64] 27
+     cstub.c:536 QueryInterfacevtbl 1 not updated 000000BF31C2B300 000000BF31C800B0
+     cstub.c:537 AddRefvtbl 1 not updated 000000BF31C2B468 000000BF31C80030
+     cstub.c:541 Invokevtbl 1 not updated 000000BF31C2B7C4 000000BF31C80090
+     cstub.c:542 IsIIDSupportedvtbl 1 not updated 000000BF31C2B930 000000BF31C800A0
+     cstub.c:544 DebugServerQueryInterfacevtbl 1 not updated 000000BF31C2BA90 000000BF31C80060
+     cstub.c:545 DebugServerReleasevtbl 1 not updated 000000BF31C2BAE0 000000BF31C80070
+     ... 21 more
+
+== rpcrt4 rpc  aarch64=fail(12)  x86_64=fail(12)  i386=fail(12)
+  [all] 12
+     rpc.c:1076 ncacn_np: RpcEpRegisterA failed with error 1722
+     rpc.c:1079 ncacn_np: RpcEpRegisterA failed with error 1722
+     rpc.c:1094 ncacn_np: RpcEpResolveBinding failed with error 1722
+     rpc.c:1107 ncacn_np: RpcEpUnregisterA failed with error 1753
+     rpc.c:272 RpcBindingSetAuthInfo failed (1747)
+     rpc.c:280 RpcBindingInqAuthInfo failed (1746)
+     ... 6 more
+
+== rpcrt4 server  aarch64=ok(1)  x86_64=ok(1)  i386=fail(1)
+  [all] 1
+     server.c:2135 RpcBindingSetAuthInfoExA failed 1747
+
+== crypt32 chain  aarch64=ok(0)  x86_64=ok(0)  i386=crash(3)
+  [i386] 3
+     chain.c:4549 chain->TrustStatus.dwErrorStatus = 10001
+     chain.c:4561 simple_chain->TrustStatus.dwErrorStatus = 10001
+     chain.c:4566 simple_chain->cElement = 1
+
+== crypt32 sip  aarch64=ok(0)  x86_64=fail(2)  i386=ok(0)
+  [x86_64] 2
+     sip.c:346 Expected function addresses to be from crypt32
+     sip.c:388 Expected function addresses to be from crypt32
+
+== crypt32 store  aarch64=crash(4)  x86_64=crash(4)  i386=crash(4)
+  [all] 4
+     store.c:3442 got 87
+     store.c:3475 got 87
+     store.c:3477 got 0
+     store.c:3480 got 2148081668
+
+== dbghelp dbghelp  aarch64=fail(7)  x86_64=fail(11)  i386=ok(1)
+  [x86_64] 4
+     dbghelp.c:142 got bad return address 0
+     dbghelp.c:1575 Couldn't find function table for "CreateFileMappingA"
+     dbghelp.c:1576 Expecting unique storage area
+     dbghelp.c:170 didn't find stack_walk_thread frame
+  [i386] 1
+     dbghelp.c:884 wait timed out
+  [other:aarch64+x86_64] 7
+     dbghelp.c:1006 Didn't find any native (ELF/Macho) modules
+     dbghelp.c:1068 Didn't find any native (ELF/Macho) modules
+     dbghelp.c:1391 [64/32 enum:+32bit wow64]: Unexpected sym.count_exe 2
+     dbghelp.c:1500 [64/32 enum:+32bit wow64]: Different sym/enum count32_bit (25/25)
+     dbghelp.c:1506 [64/32 enum:+32bit wow64]: Different sym/enum wowdir (24/24)
+     dbghelp.c:1508 [64/32 enum:+32bit wow64]: Different sym/enum exe (2/2)
+     ... 1 more
+
+== dbghelp minidump  aarch64=ok(0)  x86_64=crash(1)  i386=ok(0)
+  [x86_64] 1
+     minidump.c:218 process_tests[0]: Unexpected value
+
+== user32 class  aarch64=ok(0)  x86_64=fail(3)  i386=fail(10)
+  [x86] 1
+     class.c:733 Windows should be Unicode
+  [x86_64] 2
+     class.c:950 wrong ptr A 4 DefWindowProc: 000000BF7CB00540 / bf7caab5c0
+     class.c:952 wrong ptr W 4 DefWindowProc: 000000BF7CB00550 / bf7caab5ec
+  [i386] 9
+     class.c:385 Couldn't find class __test__ inst 7B250000
+     class.c:521 Class __test__ 7B250000 not found
+     class.c:522 Class __test__ 7B250000 not found
+     class.c:524 Couldn't find class __test__ inst 7B250000
+     class.c:532 Class __test__ 12345678 not found
+     class.c:534 Couldn't find class __test__ inst 12345678
+     ... 3 more
+
+== user32 clipboard  aarch64=fail(6)  x86_64=fail(6)  i386=fail(6)
+  [all] 6
+     clipboard.c:1128 wait failed
+     clipboard.c:1310 sequence diff 0
+     clipboard.c:1333 sequence diff 0
+     clipboard.c:1362 WM_RENDERFORMAT received 0000, expected 0001
+     clipboard.c:228 CreateProcess Z:\Users\nicolo\Work\wine\build-arm64ec\dlls\user32\tests\aarch64-windows\us
+     clipboard.c:231 No child process handle (CreateProcess failed?)
+
+== user32 combo  aarch64=fail(8)  x86_64=fail(7)  i386=fail(11)
+  [all] 6
+     combo.c:1021 style 0x13: Invalid rect (0,0)-(100,32767) vs (0,0)-(100,-729447620)
+     combo.c:412 clientrect height is 120 vs 36
+     combo.c:426 clientrect height is 120 vs 36
+     combo.c:798 Test 1, expected list height to be 0, got 0
+     combo.c:83 Invalid rect (0,0)-(100,199) vs (0,0)-(100,554115080)
+     combo.c:980 style 0x13: got 2, expected 1900632.
+  [i386] 4
+     combo.c:351 The dropdown list should have appeared after clicking the button.
+     combo.c:378 The dropdown list should still be visible.
+     combo.c:389 Current Selection: expected 4, got 0
+     combo.c:774 The dropdown list should have appeared after clicking the button.
+  [other:aarch64+x86_64] 1
+     combo.c:386 The dropdown list should have been rolled up.
+  [other:aarch64+i386] 1
+     combo.c:942 got equal rects (2,2)-(181,6).
+
+== user32 dce  aarch64=fail(17)  x86_64=fail(17)  i386=fail(17)
+  [all] 17
+     dce.c:243 invalid clip box (0,0)-(0,0)
+     dce.c:257 invalid clip box (0,0)-(0,0)
+     dce.c:277 invalid clip box (0,0)-(0,0)
+     dce.c:284 invalid clip box (0,0)-(0,0)
+     dce.c:289 invalid clip box (0,0)-(0,0)
+     dce.c:302 invalid clip box (0,0)-(0,0)
+     ... 11 more
+
+== user32 dde  aarch64=fail(9)  x86_64=fail(9)  i386=ok(0)
+  [other:aarch64+x86_64] 9
+     dde.c:137 Expected TestDDEService, got Pc�p
+     dde.c:157 Expected request, got 
+     dde.c:159 Expected executed, got poker
+     dde.c:877 Expected TestDDEServer, got i
+     dde.c:878 Expected 13, got 0
+     dde.c:882 Expected TestDDETopic, got i
+     ... 3 more
+
+== user32 dialog  aarch64=timeout(0)  x86_64=fail(1)  i386=fail(1)
+  [x86] 1
+     dialog.c:2356 type 0x1: got 1
+
+== user32 edit  aarch64=timeout(52)  x86_64=fail(35)  i386=fail(50)
+  [all] 21
+     edit.c:1190 0/0/0: expected 1 got 0
+     edit.c:1208 294/294/294: expected 1 got 65535
+     edit.c:1226 147/147/147: expected 1 got 0
+     edit.c:1245 0/0/0: expected 1 got 2
+     edit.c:1264 294/294/294: expected 1 got 65535
+     edit.c:2092 GetTextMetrics failed
+     ... 15 more
+  [x86] 9
+     edit.c:1485 Returned 10001, expected 0.
+     edit.c:2933 expected 11, got 9
+     edit.c:2941 expected 13, got 9
+     edit.c:2948 expected 13, got 9
+     edit.c:2953 expected 13, got 9
+     edit.c:2962 expected 11, got 9
+     ... 3 more
+  [x86_64] 5
+     edit.c:1878 The right border of the rectangle is wrong
+     edit.c:1898 The border of the rectangle has changed
+     edit.c:1901 The border of the rectangle has changed
+     edit.c:1904 The border of the rectangle has changed
+     edit.c:1907 The border of the rectangle has changed
+  [i386] 5
+     edit.c:1071 text should have been truncated to limit, expected 5, got 0
+     edit.c:1072 expected 1 EN_MAXTEXT notifications, got 2
+     edit.c:2647 mbi.fBarFocused = FALSE
+     edit.c:2648 mbi.fFocused = FALSE
+     edit.c:2660 mbi.fBarFocused = FALSE
+  [aarch64] 16
+     edit.c:1278 147/147/148: expected 0 or 1 got 2
+     edit.c:2110 wrong height expected -1575476228 got 0
+     edit.c:2111 wrong height expected -1575476228 got 0
+     edit.c:2112 wrong height expected -1575476228 got 0
+     edit.c:2113 wrong height expected -1575476228 got 0
+     edit.c:2164 wrong height expected -1575476228 got 0
+     ... 10 more
+  [other:aarch64+i386] 15
+     edit.c:2120 wrong height expected -1575476228 got 0
+     edit.c:2121 wrong height expected -1575476228 got 0
+     edit.c:2122 wrong height expected -1575476228 got 0
+     edit.c:2123 wrong vertical position expected 2 got 0
+     edit.c:2124 wrong vertical position expected 2 got 0
+     edit.c:2132 wrong height expected -1575476228 got 0
+     ... 9 more
+
+== user32 input  aarch64=fail(32)  x86_64=fail(32)  i386=fail(32)
+  [all] 32
+     input.c:2019 expected non-zero
+     input.c:2025 expected -1, got 0
+     input.c:2026 expected 122, got -559038737
+     input.c:2027 expected non-zero
+     input.c:2031 expected non-zero
+     input.c:2166 expected non-zero
+     ... 26 more
+
+== user32 listbox  aarch64=fail(15)  x86_64=fail(18)  i386=fail(18)
+  [all] 15
+     listbox.c:158 style 0, step click, field selected: expected 1, got 0
+     listbox.c:163 style 0, step step, field selected: expected 2, got 1
+     listbox.c:217 Can't read font metrics
+     listbox.c:223 Item height wrong, got 1, expecting 0
+     listbox.c:252 mi->itemHeight = 0
+     listbox.c:2572 expected (100,100)-(299,264), got (100,100)-(299,299)
+     ... 9 more
+  [x86] 3
+     listbox.c:230 itemHeight 0
+     listbox.c:232 itemHeight 0
+     listbox.c:234 itemHeight 0
+
+== user32 menu  aarch64=fail(9)  x86_64=fail(9)  i386=fail(9)
+  [all] 9
+     menu.c:2472 test 20
+     menu.c:410 got (4,120)-(4,234)
+     menu.c:413 got (4,120)-(4,234)
+     menu.c:418 got (4,120)-(4,234)
+     menu.c:421 got (4,120)-(4,234)
+     menu.c:426 MenuItemFromPoint returned -1
+     ... 3 more
+
+== user32 monitor  aarch64=fail(30)  x86_64=fail(30)  i386=fail(30)
+  [all] 30
+     monitor.c:1266 ChangeDisplaySettingsExA \\.\DISPLAY1 returned -2.
+     monitor.c:1277 Device \\.\DISPLAY1 test 0 expect dmPelsWidth 640, got 1512
+     monitor.c:1283 Device \\.\DISPLAY1 expect dmPelsWidth 800, got 1512
+     monitor.c:1297 Device \\.\DISPLAY1 expect dmPelsWidth 800, got 1512
+     monitor.c:1319 Device \\.\DISPLAY1 test 0 expect dmPelsWidth 640, got 1512
+     monitor.c:1329 Device \\.\DISPLAY1 test 0 expect dmPelsWidth 640, got 1512
+     ... 24 more
+
+== user32 msg  aarch64=timeout(43)  x86_64=timeout(43)  i386=timeout(43)
+  [all] 43
+     msg.c:10116 Failed to create child window
+     msg.c:10139 Failed to create child window
+     msg.c:10310 destroy child on thread exit: 0: the msg sequence is not complete: expected msg 0082 - act
+     msg.c:13920 WM_IME_CHAR: 1: the msg 0x0102 was expected, but got msg 0x0046 instead
+     msg.c:16074 37: ShowWindow(SW_RESTORE): 8: the msg 0x0047 was expected, but got msg 0x0046 instead
+     msg.c:17657 rcPaint (0,0)-(63,67) != listbox client rect (0,0)-(63,80)
+     ... 37 more
+
+== user32 sysparams  aarch64=fail(11)  x86_64=fail(11)  i386=fail(11)
+  [all] 11
+     sysparams.c:1019 SPI_{GET,SET}SCREENSAVEACTIVE: got 0 instead of 1
+     sysparams.c:1589 MenuHeight: 114 expected 390
+     sysparams.c:1592 CaptionHeight: 114 expected 0
+     sysparams.c:2805 font Tahoma should be enumerated
+     sysparams.c:2806 font Tahoma should be enumerated
+     sysparams.c:2807 font Tahoma should be enumerated
+     ... 5 more
+
+== user32 text  aarch64=timeout(78)  x86_64=timeout(78)  i386=fail(78)
+  [all] 78
+     text.c:112 DrawTextA error 6
+     text.c:115 In MM_TEXT, DrawText with DT_CALCRECT should return a positive rectangle bottom. (bot=0)
+     text.c:138 rectangle should be empty got (10,10)-(100,100)
+     text.c:139 Failed to get textheight from DrawTextExA
+     text.c:143 rectangle should be empty got (10,10)-(100,100)
+     text.c:144 Failed to get textheight from DrawTextA
+     ... 72 more
+
+== user32 win  aarch64=fail(64)  x86_64=fail(64)  i386=fail(64)
+  [all] 64
+     win.c:10689 transparent window didn't get WM_NCHITTEST message
+     win.c:10690 button under static window didn't get WM_LBUTTONUP
+     win.c:11028 assigned and retrieved update regions are different
+     win.c:11051 wrong update region
+     win.c:11808 expected 00000000010F00C8, got 00000000010F00C8
+     win.c:11836 expected 00000000010F00C8, got 00000000010F00C8
+     ... 58 more
+
+== gdi32 dc  aarch64=fail(4)  x86_64=fail(2)  i386=fail(4)
+  [all] 2
+     dc.c:455 GetBoundsRect returned (0,0)-(0,0) type 1 for display dc
+     dc.c:744 expected desc.nSize == sizeof(descr), got 140
+  [other:aarch64+i386] 2
+     dc.c:557 GetDeviceGammaRamp succeeded on printer dc (type 3)
+     dc.c:558 wrong error 3735928559 on printer dc
+
+== gdi32 dib  aarch64=fail(1)  x86_64=fail(1)  i386=fail(1)
+  [all] 1
+     dib.c:1462 8888 - bitfields: wide brushed pen: expected hash e4f110504dd3e4e34f960a39ba91a91c67bf26af
+
+== gdi32 font  aarch64=timeout(167)  x86_64=timeout(163)  i386=timeout(164)
+  [all] 156
+     font.c:1045 GdiGetCharDimensions should have set height to 20 instead of 1394627405
+     font.c:1087 LTR: GetCharABCWidthsI should have succeeded
+     font.c:1093 LTR: GetCharABCWidthsI should have succeeded
+     font.c:1099 LTR: GetCharABCWidthsW should have succeeded
+     font.c:1105 LTR: GetCharABCWidthsFloatW should have succeeded
+     font.c:1172 GetGlyphIndicesW should have returned 1
+     ... 150 more
+  [x86_64] 1
+     font.c:1106 LTR: abcfB should be positive
+  [i386] 3
+     font.c:2830 Unexpected ranges count.
+     font.c:6316 same glyph h:0 v:0
+     font.c:6816 expected 0, got 33
+  [other:aarch64+x86_64] 6
+     font.c:1088 RTL: abcB should be positive
+     font.c:1094 RTL: abcB should be positive
+     font.c:1100 RTL: abcB should be positive
+     font.c:6350 different glyph h:45501 v:48772
+     font.c:6801 expected 0, got -1360943896
+     font.c:6807 expected 1, got 0
+  [other:aarch64+i386] 5
+     font.c:1102 LTR: abcC's sign should be unchanged
+     font.c:1612 GetGlyphIndicesW count of glyphs should = 5 not -1
+     font.c:1613 GetGlyphIndicesW should have returned a nonexistent char not 0000
+     font.c:1616 GetGlyphIndicesW count of glyphs should = 5 not -1
+     font.c:6814 expected 1, got 191
+
+== gdi32 metafile  aarch64=fail(5)  x86_64=fail(5)  i386=fail(4)
+  [all] 4
+     metafile.c:11316 GetTextExtentPoint32W failed, error 1400
+     metafile.c:11318 GetTextExtentPoint32W failed, error 1400
+     metafile.c:214 GetCharWidthA error 0
+     metafile.c:8761 expected != 0
+  [other:aarch64+x86_64] 1
+     metafile.c:158 pass 0: dx[0] (0) didn't match 202632648
+
+== gdi32 pen  aarch64=ok(0)  x86_64=ok(0)  i386=fail(6)
+  [i386] 6
+     pen.c:653 wrong size 0
+     pen.c:654 wrong pen style cccccccc
+     pen.c:655 wrong brush style cccccccc
+     pen.c:656 wrong color cccccccc
+     pen.c:657 wrong hatch cccccccc/3e0004
+     pen.c:658 wrong entries cccccccc
+
+== ws2_32 afd  aarch64=fail(6)  x86_64=fail(6)  i386=timeout(114)
+  [all] 6
+     afd.c:1424 got flags 0x52
+     afd.c:437 got 0x102
+     afd.c:438 got flags 0x40
+     afd.c:477 got flags 0x48
+     afd.c:479 got flags 0x4a
+     afd.c:502 got flags 0x48
+  [i386] 108
+     afd.c:1495 got -1
+     afd.c:1498 wait timed out
+     afd.c:1499 got 0xdeadbeef
+     afd.c:1500 got 0xdeadbeef
+     afd.c:1501 got ""
+     afd.c:1523 got -1
+     ... 102 more
+
+== ws2_32 protocol  aarch64=fail(19)  x86_64=fail(19)  i386=fail(19)
+  [all] 19
+     protocol.c:1701 Wrong family 2 != 23
+     protocol.c:1703 Wrong socktype 2 != 1
+     protocol.c:1705 Wrong protocol 17 != 6
+     protocol.c:1707 Wrong addrlen 16 != 28
+     protocol.c:1709 Wrong address data
+     protocol.c:1720 Expected both addresses null (0000000000000000 != 000000700D9D8950)
+     ... 13 more
+
+== ws2_32 sock  aarch64=timeout(15)  x86_64=timeout(15)  i386=timeout(22)
+  [all] 15
+     sock.c:1413 TCP_NODELAY should be 1
+     sock.c:1424 TCP_NODELAY should be 1
+     sock.c:1435 TCP_NODELAY should be 1
+     sock.c:1573 i 25, level 41, optname 21: Unexpected setsockopt result -1.
+     sock.c:1574 i 25, level 41, optname 21: Unexpected WSAGetLastError() 10022.
+     sock.c:1656 i 15, level 6, optname 16: Unexpected setsockopt result 0.
+     ... 9 more
+  [i386] 7
+     sock.c:1043 send failed with error 10014
+     sock.c:1352 got -1
+     sock.c:1354 got -1
+     sock.c:1356 got -1
+     sock.c:1359 got -1, error 10014
+     sock.c:1361 got -1, error 10014
+     ... 1 more
+
+Totals (distinct failing checks per bucket; crashes/timeouts per arch):
+  aarch64          19
+  all              600
+  crash:aarch64    6
+  crash:i386       7
+  crash:x86_64     7
+  i386             163
+  other:aarch64+i386 23
+  other:aarch64+x86_64 32
+  timeout:aarch64  6
+  timeout:i386     4
+  timeout:x86_64   4
+  x86              14
+  x86_64           42

@@ -1,7 +1,10 @@
 #!/bin/zsh
 # Run Wine conformance test units one by one under the Hypervisor.framework backend.
 #
-#   run-conformance.sh <arch> <module>...     arch: aarch64 | i386
+#   run-conformance.sh <arch> <module>...     arch: aarch64 | i386 | x86_64
+#
+# x86_64 test programs come from a separate build ($X64_BUILD, configured with
+# --enable-archs=aarch64,x86_64) and run on the main build through ARM64EC.
 #
 # Each unit runs as its own process with a timeout. Results go to
 # tests/results/<arch>-<module>.tsv (one line per unit) and the full output
@@ -12,7 +15,8 @@ zmodload zsh/datetime   # EPOCHSECONDS
 arch=$1; shift
 WINE_ROOT=${WINE_ROOT:-$HOME/Work/wine}
 BUILD=$WINE_ROOT/build-arm64ec
-OUT=$WINE_ROOT/tests/results
+X64_BUILD=${X64_BUILD:-$WINE_ROOT/build-x64tests}
+OUT=${OUT:-$WINE_ROOT/tests/results}
 UNIT_TIMEOUT=${UNIT_TIMEOUT:-180}
 
 export WINEPREFIX=${WINEPREFIX:-$WINE_ROOT/prefix-tests}
@@ -27,6 +31,7 @@ cd $BUILD
 
 for module in "$@"; do
     exe=dlls/$module/tests/$arch-windows/${module}_test.exe
+    [[ $arch == x86_64 ]] && exe=$X64_BUILD/$exe
     tsv=$OUT/$arch-$module.tsv
     print "unit\tstatus\texecuted\tfailures\ttodo\tskipped\tseconds" > $tsv
     units=(${(f)"$(grep -o 'func_[a-z0-9_]*' dlls/$module/tests/testlist.c | sort -u | sed 's/func_//')"})
