@@ -1,0 +1,20 @@
+== aarch64-user32
+  clipboard: better fail(15) -> ok(0)
+  clipboard: 6 checks fixed
+  menu: better fail(1) -> ok(0)
+  menu: 1 checks fixed
+  msg: 1 failing checks not comparable (baseline timeout, now timeout)
+  msg: 8 checks fixed
+== x86_64-user32
+  clipboard: better fail(15) -> ok(0)
+  clipboard: 6 checks fixed
+  input: 1 checks fixed
+  msg: 13 checks fixed
+== i386-user32
+  clipboard: better fail(15) -> ok(0)
+  clipboard: 6 checks fixed
+  input: 3 checks fixed
+  msg: 8 checks fixed
+
+units worse 0, better 4; failing checks new 0, fixed 52
+NO REGRESSIONS

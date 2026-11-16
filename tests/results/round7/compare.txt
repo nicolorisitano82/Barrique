@@ -1,0 +1,109 @@
+== aarch64-dwrite
+  analyzer: better crash(-) -> ok(0)
+  analyzer: 1 checks fixed
+  font: better crash(-) -> ok(0)
+  font: 1 checks fixed
+  layout: better crash(-) -> fail(7)
+  layout: 7 failing checks not comparable (baseline crash, now fail)
+  layout: 174 checks fixed
+== aarch64-gdi32
+  dib: better fail(11) -> ok(0)
+  dib: 1 checks fixed
+  font: better timeout(-) -> fail(39)
+  font: 3 failing checks not comparable (baseline timeout, now fail)
+  font: 167 checks fixed
+  metafile: better fail(160) -> ok(0)
+  metafile: 5 checks fixed
+== aarch64-user32
+  combo: better fail(16) -> ok(0)
+  combo: 8 checks fixed
+  dialog: better fail(7) -> ok(0)
+  dialog: 1 checks fixed
+  edit: NEW edit.c:1485 Returned 10001, expected 0.
+  edit: 66 checks fixed
+  input: 1 checks fixed
+  listbox: better fail(85) -> ok(0)
+  listbox: 15 checks fixed
+  menu: 8 checks fixed
+  msg: 10 checks fixed
+  sysparams: 10 checks fixed
+  text: better timeout(124) -> ok(0)
+  text: 78 checks fixed
+== aarch64-usp10
+  usp10: better crash(-) -> ok(0)
+  usp10: 137 checks fixed
+== i386-dwrite
+  analyzer: better crash(-) -> ok(0)
+  analyzer: 1 checks fixed
+  font: better crash(-) -> timeout(-)
+  font: 1 checks fixed
+  layout: better crash(-) -> fail(7)
+  layout: 7 failing checks not comparable (baseline crash, now fail)
+  layout: 173 checks fixed
+== i386-gdi32
+  dib: better fail(11) -> ok(0)
+  dib: 1 checks fixed
+  font: better timeout(-) -> fail(39)
+  font: 3 failing checks not comparable (baseline timeout, now fail)
+  font: 164 checks fixed
+  metafile: better fail(46) -> ok(0)
+  metafile: 4 checks fixed
+== i386-user32
+  combo: better fail(50) -> ok(0)
+  combo: 11 checks fixed
+  dialog: better fail(7) -> ok(0)
+  dialog: 1 checks fixed
+  edit: 46 checks fixed
+  input: NEW input.c:2938 12: foreground process expected WM_INPUT message
+  input: NEW input.c:2939 12: foreground process expected RIM_INPUT message
+  input: 4 checks fixed
+  listbox: better fail(88) -> ok(0)
+  listbox: 18 checks fixed
+  menu: better fail(12) -> ok(0)
+  menu: 9 checks fixed
+  msg: 11 checks fixed
+  sysparams: 10 checks fixed
+  text: better fail(178) -> ok(0)
+  text: 78 checks fixed
+== i386-usp10
+  usp10: better crash(-) -> ok(0)
+  usp10: 134 checks fixed
+== x86_64-dwrite
+  analyzer: better crash(-) -> ok(0)
+  analyzer: 1 checks fixed
+  font: better crash(-) -> ok(0)
+  font: 1 checks fixed
+  layout: better crash(-) -> fail(7)
+  layout: 7 failing checks not comparable (baseline crash, now fail)
+  layout: 172 checks fixed
+== x86_64-gdi32
+  dib: better fail(11) -> ok(0)
+  dib: 1 checks fixed
+  font: better timeout(-) -> fail(39)
+  font: 3 failing checks not comparable (baseline timeout, now fail)
+  font: 163 checks fixed
+  metafile: better fail(139) -> ok(0)
+  metafile: 5 checks fixed
+== x86_64-user32
+  clipboard: NEW clipboard.c:1362 WM_RENDERFORMAT received 0000, expected 0001
+  combo: better fail(15) -> ok(0)
+  combo: 7 checks fixed
+  dialog: better fail(7) -> ok(0)
+  dialog: 1 checks fixed
+  edit: 34 checks fixed
+  input: NEW input.c:4635 got pt (66,69)
+  listbox: better fail(88) -> ok(0)
+  listbox: 18 checks fixed
+  menu: better fail(12) -> ok(0)
+  menu: 9 checks fixed
+  msg: 6 failing checks not comparable (baseline timeout, now timeout)
+  msg: 10 checks fixed
+  sysparams: 10 checks fixed
+  text: better timeout(124) -> ok(0)
+  text: 78 checks fixed
+== x86_64-usp10
+  usp10: better crash(-) -> ok(0)
+  usp10: 131 checks fixed
+
+units worse 0, better 35; failing checks new 5, fixed 1990
+REGRESSIONS

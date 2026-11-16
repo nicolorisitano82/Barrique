@@ -40,7 +40,7 @@ Tre bug, trovati con i rilanci in `round5/diag`:
 
 Più uno strumento: con `WINE_HVF` un'eccezione nel codice host scrive lo stack host nel log (`dump_host_backtrace` in `signal_arm64.c`, frame pointer + `dladdr`).
 
-Risultati ARM64 (aarch64): d3d11 completo e stabile, 3931 controlli, 17 fallimenti, 191 saltati (prima: crash in 2 s, poi blocco). opengl stabile in 3 s, 37 fallimenti, poi crash fisso in `test_framebuffer` (riga 3803): il test chiama `glGetFramebufferParameteriv` (GL 4.3) che nel profilo GL 2.1 legacy di Apple è un puntatore NULL. Limite del test con GL 2.1, non di Barrique; wined3d qui crea solo device di livello 9.x per lo stesso motivo (profilo legacy). Resta il crash host all'uscita dei processi (report `wine-*.ips` con stack non mappato), già annotato sopra.
+Risultati ARM64 (aarch64): d3d11 completo e stabile, 3931 controlli, 17 fallimenti, 191 saltati (prima: crash in 2 s, poi blocco). opengl stabile in 3 s, 37 fallimenti, poi crash fisso in `test_framebuffer` (riga 3803): il test chiama `glGetFramebufferParameteriv` (GL 4.3) che nel profilo GL 2.1 legacy di Apple è un puntatore NULL. Limite del test con GL 2.1, non di Barrique; wined3d qui crea solo device di livello 9.x per lo stesso motivo (profilo legacy). Il crash host all'uscita dei processi (report `wine-*.ips` con stack non mappato) era `fork()` da un thread Windows: corretto nel passo 1.
 
 **Giro 6 (2026-11-16, `tests/results/round6`, moduli grafici, tre architetture), confronto con il giro 5: nessuna regressione, 36 unità migliorate.**
 - ARM64 e x86-64 ora uguali: d3d11 3931 controlli e 17 fallimenti; d3d10core, d3d12, dxgi, d2d1 ok; d3d9 circa 390 000 controlli e 40 fallimenti; ddraw circa 90 000 controlli e 357 fallimenti (ddraw1 ancora in timeout). Prima: tutto in crash entro 2 s.
@@ -48,13 +48,32 @@ Risultati ARM64 (aarch64): d3d11 completo e stabile, 3931 controlli, 17 fallimen
 - i386 invariato (dxgi in crash anche nel giro 5, ddraw1/2/4/7 in timeout).
 - `compare.py` corretto: se l'unità del giro di base era in crash o timeout, i controlli falliti non sono confrontabili (il punto in cui si fermava dipende dai tempi), anche se l'unità resta in crash o timeout. Prima segnalava 218 falsi "nuovi".
 
-## Passo 1: FreeType e font ⬜
+## Passo 1: FreeType e font ✅
 
 Va prima di tutto il resto perché i fallimenti dei font sporcano i test di gdi32, user32 `text`, dwrite e d2d1, e nasconderebbero le regressioni vere.
 
 - Caricare FreeType senza dipendere da `/opt/homebrew/lib` (percorso `@rpath`, anticipo della fase 6).
 - Font: Liberation con i nomi di Arial, Times New Roman, Courier New; sostituzioni CJK verso i font di sistema.
 - Cancello: gdi32 `font`, user32 `text`, dwrite migliorano; regressioni zero sul resto.
+
+**Fatto (2026-11-16).**
+- `win32u/freetype.c`: su macOS prova prima `dlopen("@rpath/libfreetype.6.dylib")`; `win32u.so` ha l'rpath `@loader_path/../../deps` (albero di build: `build-arm64ec/deps`, installazione: `lib/deps`). Se non la trova, cade sul vecchio percorso.
+- `scripts/bundle-deps.sh <build o lib>`: copia in `deps/` FreeType 2.15.0 e libpng 1.6.59 di Homebrew, riscrive i nomi di installazione (`@rpath/…`, libpng accanto a FreeType con `@loader_path`), firma ad hoc e fallisce se resta un percorso esterno. **Le due librerie di Homebrew hanno minos 26.0**: per supportare macOS 15 vanno ricompilate dai sorgenti (fase 6).
+- Font Liberation non servono: macOS ha Arial, Times New Roman e Courier New in `/System/Library/Fonts/Supplemental`, che Wine carica già tramite CoreText. Le sostituzioni CJK non sono ancora valutate (nessun test le chiede oggi).
+
+**Giro 7 (`tests/results/round7`, gdi32 user32 dwrite d2d1 usp10, tre architetture), prima e dopo FreeType: 35 unità migliorate, nessuna peggiorata, 1990 controlli corretti.**
+- usp10: da crash a ok ovunque. dwrite: analyzer e font da crash a ok, layout da crash a 7 fallimenti.
+- gdi32: metafile e dib ok; font esce dal timeout (39 fallimenti su ARM64 e x86-64).
+- user32: text da timeout a ok (78 controlli corretti); combo, dialog, listbox, menu ok.
+- 5 controlli "nuovi" spiegati: `edit.c:1485` dipende dalla misura del font (falliva già nella base i386), `clipboard.c:1362` era già instabile nel giro 3, i due di `input.c` (focus) e `input.c:4635` (posizione del mouse) spariscono rilanciando.
+- `run-conformance.sh` corretto: non leggeva il riepilogo al singolare ("1 failure") e segnava ok l'unità. I tsv dei giri vecchi hanno lo stesso difetto (57 log); `tests/fixtsv.py` li sistema leggendo i log.
+
+**Correzione trovata dal test di fumo (regola 3): fork() da un thread Windows sotto HVF.** Gli installer VC++ fallivano ("Failed to create window"): la prima finestra la crea un thread secondario, Wine lancia `explorer.exe /desktop` e il figlio di `fork()` va in crash subito. La memoria Windows non è ereditata dai figli di `fork()` (`VM_INHERIT_NONE`, vedi `hvf.c`), e gli stack dei thread Windows sono memoria Windows. `ntdll/unix/process.c` ora ha `fork_child()`: sotto HVF fa `fork()` da un pthread host con gli argomenti copiati nella heap host; la usano `spawn_process`, `fork_and_exec` e `__wine_unix_spawnvp`. Era anche il "crash host all'uscita dei processi" (report `wine-*.ips` a un thread con stack non mappato): 108 report il 16/11 prima della correzione, nessuno dopo.
+
+Test di fumo dopo la correzione (`round7/smoke2`, `round7/apps2.out`):
+- app: Python 32/64, Java 21 e 8, 7-Zip x64/x86, VC++ x64/x86 tutti ok.
+- user32 e gdi32: nessuna regressione rispetto al giro 7 "dopo".
+- ntdll e kernel32 rispetto al giro 3: 64 controlli corretti; restano `i386 ntdll threadpool` (tempi, a volte fail a volte timeout) e `x86_64 kernel32 debugger` in crash (`c0000354`, single-step x86), stabile ma non legato a questo passo: da indagare a parte. `info.c:2003` è un contatore di memoria che cambia a ogni giro.
 
 ## Passo 2: audio ⬜
 
@@ -142,6 +161,7 @@ L'ordine segue il rischio e quello che fa CrossOver nella sua anteprima Arm64 (F
 | DXVK | zlib | sì |
 | FAudio, SDL2 | zlib | sì |
 | FreeType | FTL / GPL-2 | sì |
+| libpng | libpng-2.0 | sì |
 | Font Liberation | OFL-1.1 | sì |
 | Metal Shader Converter | Apple, ridistribuibile solo per la conversione degli shader, solo su hardware Apple | da decidere |
 | D3DMetal | Apple, non commerciale, niente modifiche | no |

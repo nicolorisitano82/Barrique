@@ -1,0 +1,25 @@
+== aarch64-ntdll
+  exception: 1 failing checks not comparable (baseline crash, now crash)
+  info: NEW info.c:2003 Expected to equal to 506807017472, got 506807021568
+== aarch64-kernel32
+  console: 3 checks fixed
+  debugger: 4 checks fixed
+== i386-ntdll
+  info: 12 checks fixed
+  threadpool: WORSE fail(1) -> timeout(-)
+== i386-kernel32
+  console: 3 checks fixed
+  debugger: 3 failing checks not comparable (baseline crash, now crash)
+  debugger: 5 checks fixed
+  process: 5 checks fixed
+== x86_64-ntdll
+  info: 19 checks fixed
+== x86_64-kernel32
+  console: 3 checks fixed
+  debugger: WORSE ok(0) -> crash(0)
+  debugger: NEW debugger.c:761 exit code = c0000354
+  debugger: 6 checks fixed
+  loader: 4 checks fixed
+
+units worse 2, better 0; failing checks new 2, fixed 64
+REGRESSIONS

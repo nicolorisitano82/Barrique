@@ -1,0 +1,17 @@
+python64       rc=0       4.5s  RESULT: ok
+python32       rc=0       2.9s  RESULT: ok
+java21-x64     rc=0       4.1s  RESULT: ok
+java8-x86-1    rc=0       1.8s  RESULT: ok
+java8-x86-2    rc=0       1.8s  RESULT: ok
+java8-x86-3    rc=0       1.8s  RESULT: ok
+7zip-msi-x64   rc=0       0.8s  
+7z-a-x64       rc=0       3.6s  
+7z-x-x64       rc=0       0.8s  
+7z roundtrip x64: RESULT: ok
+7zip-msi-x86   rc=0       2.8s  
+7z-a-x86       rc=0       3.1s  
+7z-x-x86       rc=0       0.7s  
+7z roundtrip x86: RESULT: ok
+vcredist-x64   rc=0       4.4s  
+vcredist-x86   rc=0       2.2s  
+APPS DONE

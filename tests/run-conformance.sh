@@ -51,7 +51,7 @@ for module in "$@"; do
         fi
         executed=$(print -r -- $summary | sed -n 's/.*: \([0-9]*\) tests executed.*/\1/p')
         todo=$(print -r -- $summary | sed -n 's/.*(\([0-9]*\) marked as todo.*/\1/p')
-        failures=$(print -r -- $summary | sed -n 's/.* \([0-9]*\) failures).*/\1/p')
+        failures=$(print -r -- $summary | sed -n 's/.* \([0-9]*\) failures\{0,1\}).*/\1/p')
         skipped=$(print -r -- $summary | sed -n 's/.*), \([0-9]*\) skipped.*/\1/p')
         [[ $st == done && ${failures:-0} -gt 0 ]] && st=fail
         [[ $st == done ]] && st=ok
