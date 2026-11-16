@@ -1,0 +1,100 @@
+aarch64 mf mf: crash (- tests, - failures, 41s)
+aarch64 mf topology: crash (- tests, - failures, 3s)
+aarch64 mf transform: crash (- tests, - failures, 2s)
+aarch64 mfplat mfplat: fail (5709235 tests, 4 failures, 10s)
+aarch64 mfreadwrite mfplat: crash (- tests, - failures, 1s)
+aarch64 mfmediaengine mfmediaengine: fail (787 tests, 56 failures, 60s)
+aarch64 quartz acmwrapper: ok (157 tests, 0 failures, 0s)
+aarch64 quartz avidec: ok (968 tests, 0 failures, 1s)
+aarch64 quartz avisplit: ok (0 tests, 0 failures, 0s)
+aarch64 quartz colorconv: ok (5446 tests, 0 failures, 0s)
+aarch64 quartz dsoundrender: ok (727 tests, 0 failures, 6s)
+aarch64 quartz filesource: ok (3377 tests, 0 failures, 0s)
+aarch64 quartz filtergraph: fail (6713 tests, 114 failures, 14s)
+aarch64 quartz filtermapper: ok (257 tests, 0 failures, 1s)
+aarch64 quartz memallocator: ok (488 tests, 0 failures, 0s)
+aarch64 quartz mpegaudio: ok (0 tests, 0 failures, 1s)
+aarch64 quartz mpeglayer3: ok (0 tests, 0 failures, 0s)
+aarch64 quartz mpegsplit: ok (0 tests, 0 failures, 1s)
+aarch64 quartz mpegvideo: ok (0 tests, 0 failures, 0s)
+aarch64 quartz passthrough: ok (23 tests, 0 failures, 0s)
+aarch64 quartz systemclock: ok (85 tests, 0 failures, 2s)
+aarch64 quartz videorenderer: fail (2512 tests, 2 failures, 11s)
+aarch64 quartz vmr7: ok (2123 tests, 0 failures, 12s)
+aarch64 quartz vmr9: ok (3909 tests, 0 failures, 16s)
+aarch64 quartz waveparser: ok (0 tests, 0 failures, 1s)
+aarch64 wmvcore wmvcore: timeout (- tests, - failures, 180s)
+x86_64 mf mf: crash (- tests, - failures, 40s)
+x86_64 mf topology: crash (- tests, - failures, 3s)
+x86_64 mf transform: crash (- tests, - failures, 3s)
+x86_64 mfplat mfplat: fail (5709235 tests, 4 failures, 12s)
+x86_64 mfreadwrite mfplat: crash (- tests, - failures, 0s)
+x86_64 mfmediaengine mfmediaengine: fail (787 tests, 56 failures, 59s)
+x86_64 quartz acmwrapper: ok (157 tests, 0 failures, 0s)
+x86_64 quartz avidec: ok (968 tests, 0 failures, 1s)
+x86_64 quartz avisplit: ok (0 tests, 0 failures, 0s)
+x86_64 quartz colorconv: ok (5446 tests, 0 failures, 1s)
+x86_64 quartz dsoundrender: ok (727 tests, 0 failures, 6s)
+x86_64 quartz filesource: ok (3377 tests, 0 failures, 1s)
+x86_64 quartz filtergraph: fail (6713 tests, 112 failures, 14s)
+x86_64 quartz filtermapper: ok (257 tests, 0 failures, 1s)
+x86_64 quartz memallocator: ok (488 tests, 0 failures, 1s)
+x86_64 quartz mpegaudio: ok (0 tests, 0 failures, 0s)
+x86_64 quartz mpeglayer3: ok (0 tests, 0 failures, 0s)
+x86_64 quartz mpegsplit: ok (0 tests, 0 failures, 1s)
+x86_64 quartz mpegvideo: ok (0 tests, 0 failures, 0s)
+x86_64 quartz passthrough: ok (23 tests, 0 failures, 1s)
+x86_64 quartz systemclock: ok (85 tests, 0 failures, 2s)
+x86_64 quartz videorenderer: fail (2512 tests, 2 failures, 10s)
+x86_64 quartz vmr7: ok (2123 tests, 0 failures, 12s)
+x86_64 quartz vmr9: fail (3909 tests, 2 failures, 17s)
+x86_64 quartz waveparser: ok (0 tests, 0 failures, 1s)
+x86_64 wmvcore wmvcore: crash (- tests, - failures, 0s)
+i386 mf mf: crash (- tests, - failures, 39s)
+i386 mf topology: crash (- tests, - failures, 3s)
+i386 mf transform: crash (- tests, - failures, 3s)
+i386 mfplat mfplat: fail (5708973 tests, 4 failures, 10s)
+i386 mfreadwrite mfplat: crash (- tests, - failures, 1s)
+i386 mfmediaengine mfmediaengine: timeout (- tests, - failures, 180s)
+i386 quartz acmwrapper: ok (157 tests, 0 failures, 3s)
+i386 quartz avidec: ok (968 tests, 0 failures, 0s)
+i386 quartz avisplit: ok (0 tests, 0 failures, 1s)
+i386 quartz colorconv: crash (- tests, - failures, 0s)
+i386 quartz dsoundrender: ok (727 tests, 0 failures, 8s)
+i386 quartz filesource: ok (3377 tests, 0 failures, 1s)
+i386 quartz filtergraph: fail (6714 tests, 115 failures, 14s)
+i386 quartz filtermapper: ok (159 tests, 0 failures, 1s)
+i386 quartz memallocator: ok (488 tests, 0 failures, 0s)
+i386 quartz mpegaudio: ok (0 tests, 0 failures, 1s)
+i386 quartz mpeglayer3: ok (0 tests, 0 failures, 0s)
+i386 quartz mpegsplit: ok (0 tests, 0 failures, 1s)
+i386 quartz mpegvideo: ok (0 tests, 0 failures, 0s)
+i386 quartz passthrough: ok (23 tests, 0 failures, 1s)
+i386 quartz systemclock: ok (85 tests, 0 failures, 2s)
+i386 quartz videorenderer: fail (2512 tests, 2 failures, 11s)
+i386 quartz vmr7: fail (1767 tests, 4 failures, 7s)
+i386 quartz vmr9: crash (- tests, - failures, 1s)
+i386 quartz waveparser: ok (0 tests, 0 failures, 3s)
+i386 wmvcore wmvcore: crash (- tests, - failures, 0s)
+mfplay aarch64 h264-aac.mp4 rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL audio frames 0/88200 rate 0/44100 ch 0/1 rms 0/2884 FAIL RESULT: FAILED 
+mfplay aarch64 hevc.mp4 rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL RESULT: FAILED 
+mfplay aarch64 mp3.mp3 rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 audio frames 0/88200 rate 0/44100 ch 0/1 rms 0/2751 FAIL RESULT: FAILED 
+mfplay aarch64 mpeg2.mpg rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL audio frames 0/88704 rate 0/44100 ch 0/1 rms 0/2887 FAIL RESULT: FAILED 
+mfplay aarch64 pcm.wav rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 audio frames 0/88200 rate 0/44100 ch 0/1 rms 0/2896 FAIL RESULT: FAILED 
+mfplay aarch64 vp9.webm rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL RESULT: FAILED 
+mfplay aarch64 wmv2-wma2.wmv rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/51 max dY 0.00 FAIL audio frames 0/88064 rate 0/44100 ch 0/1 rms 0/2864 FAIL RESULT: FAILED 
+mfplay x86_64 h264-aac.mp4 rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL audio frames 0/88200 rate 0/44100 ch 0/1 rms 0/2884 FAIL RESULT: FAILED 
+mfplay x86_64 hevc.mp4 rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL RESULT: FAILED 
+mfplay x86_64 mp3.mp3 rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 audio frames 0/88200 rate 0/44100 ch 0/1 rms 0/2751 FAIL RESULT: FAILED 
+mfplay x86_64 mpeg2.mpg rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL audio frames 0/88704 rate 0/44100 ch 0/1 rms 0/2887 FAIL RESULT: FAILED 
+mfplay x86_64 pcm.wav rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 audio frames 0/88200 rate 0/44100 ch 0/1 rms 0/2896 FAIL RESULT: FAILED 
+mfplay x86_64 vp9.webm rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL RESULT: FAILED 
+mfplay x86_64 wmv2-wma2.wmv rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/51 max dY 0.00 FAIL audio frames 0/88064 rate 0/44100 ch 0/1 rms 0/2864 FAIL RESULT: FAILED 
+mfplay i686 h264-aac.mp4 rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL audio frames 0/88200 rate 0/44100 ch 0/1 rms 0/2884 FAIL RESULT: FAILED 
+mfplay i686 hevc.mp4 rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL RESULT: FAILED 
+mfplay i686 mp3.mp3 rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 audio frames 0/88200 rate 0/44100 ch 0/1 rms 0/2751 FAIL RESULT: FAILED 
+mfplay i686 mpeg2.mpg rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL audio frames 0/88704 rate 0/44100 ch 0/1 rms 0/2887 FAIL RESULT: FAILED 
+mfplay i686 pcm.wav rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 audio frames 0/88200 rate 0/44100 ch 0/1 rms 0/2896 FAIL RESULT: FAILED 
+mfplay i686 vp9.webm rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/50 max dY 0.00 FAIL RESULT: FAILED 
+mfplay i686 wmv2-wma2.wmv rc=1 error - MFCreateSourceReaderFromURL 0xc00d36c4 video frames 0/51 max dY 0.00 FAIL audio frames 0/88064 rate 0/44100 ch 0/1 rms 0/2864 FAIL RESULT: FAILED 
+ROUND10 base DONE

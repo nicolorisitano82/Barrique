@@ -1,0 +1,4 @@
+error - MFCreateSourceReaderFromURL 0xc00d36c4
+video frames 0/51 max dY 0.00 FAIL
+audio frames 0/88064 rate 0/44100 ch 0/1 rms 0/2864 FAIL
+RESULT: FAILED

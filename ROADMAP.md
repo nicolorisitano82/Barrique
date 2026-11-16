@@ -118,12 +118,21 @@ Misure con `tests/pe/bench.c` (stesso sorgente nativo macOS / ARM64 / x86-64 / i
 
 Piano dettagliato di grafica, audio e video, con le regole contro le regressioni e lo studio di CrossOver e del Game Porting Toolkit: [FASE5-AV.md](FASE5-AV.md). D3DMetal escluso (solo x86_64 con Rosetta, licenza non commerciale).
 
+**d3dmetal-native (utmapp, MIT, valutato il 2026-11-17).** Fa da ospite a `D3DMetal.framework` fuori da Wine: implementa l'interfaccia `GFXT` (finestre, eventi, registro, memoria) che D3DMetal si aspetta dal Wine di Apple, e aggiunge risorse condivise tra processi via fd, risorse tiled di D3D12 su heap sparsi di Metal e `MTLResidencySet`. Non usabile in Barrique:
+- D3DMetal è solo x86_64 (verificato sulla 2.0: framework, `libdxcompiler`, `libmetalirconverter`, `libdxilconv`) e dovrebbe stare sul nostro lato host, che è arm64. Portare d3dmetal-native ad arm64 non serve finché il framework di Apple resta x86_64.
+- L'alternativa, un processo x86_64 sotto Rosetta a cui inoltrare ogni chiamata D3D, reintroduce Rosetta e aggiunge latenza a ogni draw call e un problema di memoria GPU condivisa (vedi passo 4 di FASE5-AV).
+- La licenza del Game Porting Toolkit non permette di includere il framework nella `.app` (lo dice anche il README).
+
+Riusabile (MIT, con attribuzione) per il nostro D3D su Metal (DXMT, passo 7): il disegno delle risorse e fence condivise, dei keyed mutex, delle risorse tiled su heap sparsi con budget, dei `MTLResidencySet`; i test (triangolo e cubo D3D11/D3D12, condivisione tra processi, stress multi-thread) come programmi per il banco di prova del passo 6. Da rivalutare solo se Apple pubblica un D3DMetal arm64 con una licenza che ne permette la distribuzione: allora servirebbe un'interfaccia `GFXT` nostra sul lato unix, e d3dmetal-native sarebbe il riferimento.
+
 Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 - ✅ Passo 0, base di partenza (giro 5, 2026-11-15).
 - ✅ Grafica a 64 bit sotto HVF: stringhe e buffer GL, blocco e use-after-free in winemac (giro 6, 2026-11-16).
 - ✅ Passo 1, FreeType e font (giro 7, 2026-11-16): FreeType incluso con `@rpath`, 35 unità migliorate. Dal test di fumo: `fork()` da un thread Windows sotto HVF (installer VC++, crash all'uscita dei processi), winedbg e wineserver col debugger.
 - 🔧 Passo 2, audio (giro 8, in corso): timer di coreaudio, salvataggio del registro in un processo figlio (via il buco audio di ~60 ms ogni 20 s). 96 kHz provato; resta il Bluetooth.
-- ⬜ Passi 3-7: video, memoria GPU, Vulkan/MoltenVK, banco di prova grafico, Direct3D.
+- 🔧 Passo 3, video (giro 10, in corso): GStreamer 1.28 con gst-libav sopra FFmpeg LGPL compilati da noi in `deps/`; Media Foundation decodifica H.264, HEVC, VP9, AAC, MP3, WMV2/WMA2 sulle tre architetture. Da verificare MPEG-2 e i386 in quartz.
+- ⬜ Passo 1b, qualità del testo (Retina, hinting, font con metriche di Windows, fallback DirectWrite).
+- ⬜ Passi 4-7: memoria GPU, Vulkan/MoltenVK, banco di prova grafico, Direct3D.
 
 - ⬜ **[MS]** Direct3D su Metal in versione ARM64X, così un'unica build serve sia ai programmi ARM64 sia a quelli x86-64 (ARM64EC). Componenti da valutare:
   - D3D10/11/12 con un fork di DXMT (Mullion);
@@ -131,7 +140,7 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
   - D3D12 con VKD3D-Proton.
 - ⬜ **[MS]** OpenGL 4.6 su Metal (WineMetalGL) al posto del GL 4.1 di Apple.
 - ⬜ **[MS]** MoltenVK con cache delle pipeline.
-- ⬜ **[MS]** FFmpeg (VideoToolbox/AudioToolbox) per `winedmo` / Media Foundation.
+- 🔧 **[MS]** FFmpeg (VideoToolbox/AudioToolbox) e GStreamer/gst-libav per `winedmo`, `winegstreamer`, Media Foundation e DirectShow (passo 3 di FASE5-AV).
 - ⬜ **[MS]** Controller: winebus con SDL2 + IOHID (XInput e DirectInput).
 - ⬜ **[MS]** Mouse raw con GCMouse e schermo intero nativo di macOS.
 - 🔧 **[MS]** Font:

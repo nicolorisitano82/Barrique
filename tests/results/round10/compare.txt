@@ -1,0 +1,128 @@
+== aarch64-mf
+  mf: better crash(-) -> fail(1)
+  mf: 8 checks fixed
+  topology: better crash(-) -> ok(0)
+  topology: 4 checks fixed
+  transform: 2 checks fixed
+== aarch64-mfmediaengine
+  mfmediaengine: better fail(56) -> ok(0)
+  mfmediaengine: 25 checks fixed
+== aarch64-mfplat
+  mfplat: better fail(4) -> ok(0)
+  mfplat: 4 checks fixed
+== aarch64-mfreadwrite
+  mfplat: better crash(-) -> fail(14)
+  mfplat: 12 failing checks not comparable (baseline crash, now fail)
+  mfplat: 3 checks fixed
+== aarch64-quartz
+  filtergraph: 109 checks fixed
+  mpegaudio: WORSE ok(0) -> fail(10)
+  mpegaudio: NEW mpegaudio.c:1007 Got valid size 286.
+  mpegaudio: NEW mpegaudio.c:1016 Got stop time 44687.
+  mpegsplit: WORSE ok(0) -> crash(-)
+  mpegsplit: NEW mpegsplit.c:2054 No video pin, hr 0x80040216.
+  mpegsplit: NEW mpegsplit.c:2056 No audio pin, hr 0x80040216.
+  mpegsplit: NEW mpegsplit.c:99 Got hr 0x80040207.
+  mpegvideo: WORSE ok(0) -> fail(7)
+  mpegvideo: NEW mpegvideo.c:960 Got stop time 0, expected 0.
+  videorenderer: better fail(2) -> ok(0)
+  videorenderer: 2 checks fixed
+== aarch64-wmvcore
+  wmvcore: better timeout(-) -> ok(0)
+== i386-mf
+  mf: better crash(-) -> fail(2)
+  mf: 8 checks fixed
+  topology: better crash(-) -> ok(0)
+  topology: 13 checks fixed
+  transform: 9 failing checks not comparable (baseline crash, now crash)
+  transform: 3 checks fixed
+== i386-mfmediaengine
+  mfmediaengine: better timeout(-) -> ok(0)
+  mfmediaengine: 25 checks fixed
+== i386-mfplat
+  mfplat: better fail(4) -> ok(0)
+  mfplat: 4 checks fixed
+== i386-mfreadwrite
+  mfplat: better crash(-) -> fail(14)
+  mfplat: 12 failing checks not comparable (baseline crash, now fail)
+  mfplat: 3 checks fixed
+== i386-quartz
+  colorconv: better crash(-) -> ok(0)
+  colorconv: 1 checks fixed
+  filtergraph: WORSE fail(115) -> timeout(-)
+  filtergraph: 115 checks fixed
+  mpegaudio: WORSE ok(0) -> timeout(-)
+  mpegaudio: NEW mpegaudio.c:1377 Got hr 0xd0000005.
+  mpegaudio: NEW mpegaudio.c:1379 Got hr 0xd0000005.
+  mpegaudio: NEW mpegaudio.c:1381 Got hr 0xd0000005.
+  mpegaudio: NEW mpegaudio.c:1382 Got 0 calls to Receive().
+  mpegaudio: NEW mpegaudio.c:1397 Got hr 0xd0000005.
+  mpegaudio: NEW mpegaudio.c:1399 Got hr 0xd0000005.
+  mpegaudio: NEW mpegaudio.c:1401 Got hr 0xd0000005.
+  mpegaudio: NEW mpegaudio.c:1402 Got 0 calls to Receive().
+  mpegaudio: NEW mpegaudio.c:1418 Got hr 0xd0000005.
+  mpegaudio: NEW mpegaudio.c:1420 Got hr 0xd0000005.
+  mpeglayer3: WORSE ok(0) -> timeout(-)
+  mpeglayer3: NEW mpeglayer3.c:1334 Got hr 0xd0000005.
+  mpeglayer3: NEW mpeglayer3.c:1336 Got hr 0xd0000005.
+  mpeglayer3: NEW mpeglayer3.c:1338 Got hr 0xd0000005.
+  mpeglayer3: NEW mpeglayer3.c:1339 Got 0 calls to Receive().
+  mpeglayer3: NEW mpeglayer3.c:1340 Got size 0.
+  mpeglayer3: NEW mpeglayer3.c:1342 Got valid size 0.
+  mpeglayer3: NEW mpeglayer3.c:1345 Got stop time 0.
+  mpeglayer3: NEW mpeglayer3.c:1359 Got hr 0xd0000005.
+  mpeglayer3: NEW mpeglayer3.c:1361 Got hr 0xd0000005.
+  mpeglayer3: NEW mpeglayer3.c:1363 Got hr 0xd0000005.
+  mpeglayer3: NEW mpeglayer3.c:1364 Got 0 calls to Receive().
+  mpeglayer3: NEW mpeglayer3.c:1365 Got size 0.
+  mpeglayer3: NEW mpeglayer3.c:1367 Got valid size 0.
+  mpeglayer3: NEW mpeglayer3.c:1369 Got start time 0.
+  mpeglayer3: NEW mpeglayer3.c:1371 Got stop time 0.
+  mpeglayer3: NEW mpeglayer3.c:1386 Got hr 0xd0000005.
+  mpeglayer3: NEW mpeglayer3.c:1388 Got hr 0xd0000005.
+  mpegsplit: WORSE ok(0) -> crash(-)
+  mpegsplit: NEW mpegsplit.c:2054 No video pin, hr 0x80040216.
+  mpegsplit: NEW mpegsplit.c:2056 No audio pin, hr 0x80040216.
+  mpegsplit: NEW mpegsplit.c:99 Got hr 0x80040207.
+  mpegvideo: WORSE ok(0) -> timeout(-)
+  mpegvideo: NEW mpegvideo.c:1256 Should not have called GetBuffer() twice here.
+  mpegvideo: NEW mpegvideo.c:1571 Got hr 0xd0000005.
+  videorenderer: better fail(2) -> ok(0)
+  videorenderer: 2 checks fixed
+== i386-wmvcore
+  wmvcore: better crash(-) -> ok(0)
+== x86_64-mf
+  mf: better crash(-) -> fail(1)
+  mf: 8 checks fixed
+  topology: better crash(-) -> ok(0)
+  topology: 4 checks fixed
+  transform: 2 checks fixed
+== x86_64-mfmediaengine
+  mfmediaengine: 24 checks fixed
+== x86_64-mfplat
+  mfplat: better fail(4) -> ok(0)
+  mfplat: 4 checks fixed
+== x86_64-mfreadwrite
+  mfplat: better crash(-) -> fail(14)
+  mfplat: 12 failing checks not comparable (baseline crash, now fail)
+  mfplat: 3 checks fixed
+== x86_64-quartz
+  filtergraph: 107 checks fixed
+  mpegaudio: WORSE ok(0) -> fail(10)
+  mpegaudio: NEW mpegaudio.c:1007 Got valid size 286.
+  mpegaudio: NEW mpegaudio.c:1016 Got stop time 44687.
+  mpegsplit: WORSE ok(0) -> crash(-)
+  mpegsplit: NEW mpegsplit.c:2054 No video pin, hr 0x80040216.
+  mpegsplit: NEW mpegsplit.c:2056 No audio pin, hr 0x80040216.
+  mpegsplit: NEW mpegsplit.c:99 Got hr 0x80040207.
+  mpegvideo: WORSE ok(0) -> fail(7)
+  mpegvideo: NEW mpegvideo.c:960 Got stop time 0, expected 0.
+  videorenderer: better fail(2) -> ok(0)
+  videorenderer: 2 checks fixed
+  vmr9: better fail(2) -> ok(0)
+  vmr9: 2 checks fixed
+== x86_64-wmvcore
+  wmvcore: better crash(-) -> ok(0)
+
+units worse 11, better 22; failing checks new 44, fixed 487
+REGRESSIONS

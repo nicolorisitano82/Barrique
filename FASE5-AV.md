@@ -94,6 +94,18 @@ Due bug di Wine trovati sotto (ci sono anche upstream), corretti:
 
 Test di fumo dopo le due correzioni (`round7/smoke3`, `apps3.out`), confronto con `smoke2`: app tutte ok; nessun controllo nuovo che non fosse già comparso nei giri precedenti (`menu.c:2472` i386, `input.c` da mouse su ARM64, `kernel32 loader` ARM64 che alterna crash e timeout con lo stesso dump di winedbg).
 
+## Passo 1b: qualità del testo ⬜
+
+Il difetto più visibile su un Mac non è FreeType ma la risoluzione: con `LogPixels=96` e senza `RetinaMode`, Wine disegna a 1× e macOS ingrandisce la finestra 2×, quindi ogni testo è sfocato. Ordine deciso (2026-11-17):
+1. **Retina nativo**: `HKCU\Software\Wine\Mac Driver` `RetinaMode=y` e `LogPixels=192` nei prefissi creati dalla `.app`. Da verificare: programmi che non dichiarano di gestire i DPI (li scala Wine), test user32 di finestre/DPI, app di prova.
+2. **Hinting e contrasto**: `FontSmoothing` in scala di grigi (ClearType subpixel non serve su Retina), `FontSmoothingGamma`, interprete TrueType di FreeType (`truetype:interpreter-version=35` contro il v40 predefinito), da scegliere confrontando le immagini.
+3. **Font con le metriche di Windows**: Selawik (Segoe UI, OFL), Carlito (Calibri, OFL), Caladea (Cambria, Apache) nella `.app` e nelle sostituzioni integrate di `win32u/font.c` come i CJK; `FontLink\SystemLink` di Segoe UI e Tahoma verso i font Apple per simboli e scritture non latine. Download da approvare.
+4. **DirectWrite**: lista di fallback di `dwrite` per macOS (PingFang, Hiragino, Apple Color Emoji, Apple Symbols), oggi pensata per Linux.
+
+Escluso: disegnare con CoreText invece di FreeType (metriche diverse da Windows, layout rotti, molto codice nostro).
+
+Misura: programma di prova `tests/av/textshot.exe` (tabella di font e dimensioni, GDI e DirectWrite, salvata in PNG) confrontato prima/dopo e, se disponibile, con un riferimento generato su Windows; test gdi32 `font`, user32 `text`, dwrite senza regressioni.
+
 ## Passo 2: audio 🔧
 
 **In corso (2026-11-16).** Giro di base (`tests/results/round8/base`), giro dopo la correzione di coreaudio (`after`, `compare.txt`: nessuna regressione, 6 unità migliorate) e giro col salvataggio del registro in un figlio (`fork`, `smoke`, `apps.out`). Restano da provare 96 kHz e un dispositivo Bluetooth.
@@ -119,7 +131,7 @@ Test di fumo dopo le due correzioni (`round7/smoke3`, `apps3.out`), confronto co
 - Cancello: test senza regressioni, `tone.exe` ok sulle tre architetture a 44,1 e 48 kHz, nessun periodo perso a 10 ms.
 - **Dispositivo a 96 kHz (2026-11-16, `round8/r96`, `run96.sh`)**: `tone.exe` con tutte e quattro le API, 20 s, a 44,1/48/96 kHz sulle tre architetture: 33 su 36 senza periodi persi; un periodo perso di ~31 ms in WASAPI aarch64 a 48 e 96 kHz (il buffer WASAPI è di 30 ms) e uno all'avvio in XAudio2 i686 a 44,1 kHz. Il periodo del dispositivo resta 10 ms. Test audio contro `fork`: nessuna regressione, tre `capture` migliorati (microfono dell'iPhone assente). Resta da provare un dispositivo Bluetooth.
 
-## Passo 3: video (Media Foundation e DirectShow) ⬜
+## Passo 3: video (Media Foundation e DirectShow) 🔧
 
 Upstream Wine ha già il backend FFmpeg (`winedmo`), che nella nostra build è compilato. GStreamer non lo usiamo: CrossOver lo include ma senza i plugin WMA (segnalato dagli utenti), è più grande e non serve.
 
@@ -130,6 +142,21 @@ Upstream Wine ha già il backend FFmpeg (`winedmo`), che nella nostra build è c
 - I fotogrammi decodificati in hardware sono IOSurface: vanno sempre **copiati** in memoria del processo, mai mappati nella VM (vedi passo 4).
 - Bink e altri codec proprietari: nessun file di prova libero. Si verificano coi primi giochi.
 - Cancello: mf, mfplat, mfreadwrite, quartz senza regressioni; `mfplay.exe` ok sulle tre architetture; nessuna dipendenza da Homebrew (`otool -L`).
+
+**Cambio di piano (2026-11-16): GStreamer con gst-libav.** In Wine 11.22 `winedmo` fa solo il demuxing: tutti i decoder di Media Foundation (`msmpeg2vdec`, `msauddecmft`, WMA/WMV) e di DirectShow/quartz sono involucri di winegstreamer, e `mfsrcsnk` sceglie di default il demuxer di GStreamer. Scelta la strada di CrossOver: GStreamer compilato da noi, sopra un FFmpeg LGPL.
+
+**Fatto (2026-11-16/17, in verifica).**
+- `scripts/build-gst.sh <sorgenti> [prefisso] [fasi]`: FFmpeg 9.0.2 (LGPL, VideoToolbox e AudioToolbox, solo decoder/demuxer, niente librerie esterne rilevate da sole), pcre2 10.49 statico, glib 2.90.1 (libffi e zlib dell'SDK), GStreamer 1.28.9 senza parser di pipeline (`gst_parse`, chiedeva bison ≥ 2.4 e Wine non lo usa), plugin base (playback, typefind, app, convert, resample), good (isomp4, matroska, avi, flv, wavparse, id3, audioparsers, deinterlace, videofilter), ugly (asf, realmedia), bad (mpegdemux, videoparsers), libav. Target macOS 15. pkg-config vede solo il prefisso. La fase `names` riscrive i nomi di installazione in `@rpath/<id>` e toglie da `gstreamer-1.0.pc` l'rpath assoluto. Sorgenti scaricati con le somme SHA-256 verificate.
+- `scripts/bundle-deps.sh`: copia anche lo stack media in `deps/` (librerie col nome del loro id, plugin in `deps/gstreamer-1.0`), firma ad hoc e controlla che non resti nessun percorso esterno. Oggi 73 librerie, circa 35 MB.
+- Wine: `winegstreamer.so` e `winedmo.so` con rpath `@loader_path/../../deps`. `winegstreamer/unixlib.c` (macOS): plugin cercati in `<dir del .so>/../../deps/gstreamer-1.0`, `GST_REGISTRY_FORK=no` (niente `gst-plugin-scanner`, niente `fork()` da un thread Windows, che sotto HVF va in crash). Configurazione: GStreamer e FFmpeg da `deps-gst` (`PKG_CONFIG_PATH`), bison di Homebrew nel PATH come prima.
+- Un prefisso creato senza GStreamer non ha `winegstreamer.dll` né le sue registrazioni (byte stream handler, MFT, filtri): serve `wineboot -u`. I prefissi della `.app` nascono già con GStreamer.
+- Plugin mancanti scoperti dai test: `deinterlace` e `videoflip` (Wine li crea per nome; senza, mfplat e gli altri si bloccavano), `mpegpsdemux` per MPEG-1/2.
+- Bug WoW64 sotto HVF: `wg_sample_data()` (winegstreamer) e la copia dei pacchetti in `winedmo` convertivano l'indirizzo Windows del buffer con un cast diretto; sotto i 4 GB quella memoria sta a `WINE_LOW_WINDOW_BASE` + indirizzo sull'host. Ora passano da `wine_low_window_ptr()`. Corretto, da verificare.
+- Prova: `tests/av/mfplay.c` (IMFSourceReader, un reader per flusso; NV12 e PCM 16 bit), `mkref.py` (riferimento con l'ffmpeg dell'host: luminanza media per fotogramma, campioni e RMS dell'audio; le somme `framemd5` non servono perché la conversione di colore non è esatta), `cmpref.py` (fotogrammi ±1, luminanza ±2, campioni ±3%, RMS ±5%). File di prova generati in locale: H.264+AAC, HEVC, VP9, MP3, WMV2+WMA2, MPEG-2+MP2, PCM.
+
+**Giro 10 (`tests/results/round10`).** Base: nessun file si apre (`MFCreateSourceReaderFromURL` 0xc00d36c4), mf e mfreadwrite in crash. Dopo (con deinterlace e videoflip, prima di MPEG e della correzione WoW64): `mfplay` ok su 6 file su 7 sulle tre architetture (manca MPEG-2); 23 unità migliorate, 487 controlli corretti: mfplat ok (5,7 milioni di controlli), mf `topology` ok, mfmediaengine ok, wmvcore ok, mf `mf` da crash a 1-2 fallimenti, mfreadwrite da crash a 14. Resta mf `transform` in crash all'avvio. I peggioramenti sono solo in quartz: `mpegsplit`, `mpegaudio`, `mpegvideo`, `mpeglayer3` erano saltati nella base (filtro assente) e ora girano: falliscono per il demuxer MPEG mancante e, su i386, per il bug WoW64 qui sopra (0xd0000005 e timeout). Il giro di verifica delle due correzioni è da fare.
+
+Aperti: verifica del giro 10 con MPEG e WoW64; mf `transform`; i 14 fallimenti di mfreadwrite; gli avvisi di GStreamer (`gst_video_info_from_caps`, `gst_object_unref`) e `video_frame_wrap_buffer` di mfplat; HEVC e H.264 con VideoToolbox (oggi decoder software di FFmpeg, da misurare); copia degli IOSurface (passo 4).
 
 ## Passo 4: memoria della GPU e la VM, esperimento ⬜ ⚠️
 
