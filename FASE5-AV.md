@@ -75,6 +75,18 @@ Test di fumo dopo la correzione (`round7/smoke2`, `round7/apps2.out`):
 - user32 e gdi32: nessuna regressione rispetto al giro 7 "dopo".
 - ntdll e kernel32 rispetto al giro 3: 64 controlli corretti; restano `i386 ntdll threadpool` (tempi, a volte fail a volte timeout) e `x86_64 kernel32 debugger` in crash (`c0000354`, single-step x86), stabile ma non legato a questo passo: da indagare a parte. `info.c:2003` è un contatore di memoria che cambia a ogni giro.
 
+### `x86_64 kernel32 debugger` (2026-11-16)
+
+Non era una regressione: anche nel giro 3 il processo del test moriva alla riga 1796, ma il runner aveva preso il riepilogo di un processo figlio ("9 tests executed") e l'aveva segnato ok. Il runner prende ancora l'ultima riga "tests executed", che può essere di un figlio: da correggere.
+
+Due bug di Wine trovati sotto (ci sono anche upstream), corretti:
+- **winedbg**: se capstone non decodifica l'istruzione al PC (codice x64 in un processo ARM64EC letto come ARM64), usava lo stesso `insn[0]` e andava in crash (`strlen`). Ora stampa `.word 0x…` (`be_arm64.c`) o `(bad)` (`memory.c`, x86). Il controllo `debugger.c:761` (codice di uscita del figlio che va in crash) passa.
+- **wineserver**: con `DBG_REPLY_LATER` su un thread sospeso ripassava anche gli eventi già rimandati e chiamava `resume_process` una seconda volta; un evento rimandato non tiene il processo sospeso, quindi `assert(process->suspend > 0)` fermava il server. `server/debugger.c` salta gli eventi `EVENT_DELAYED`.
+
+**Limite noto, breakpoint x64 sotto FEX.** Su x64 Windows il debugger vede Rip dopo `int3` (+1) e il −1 si applica solo passando l'eccezione ai gestori del programma. FEX nel ramo ARM64EC (`RaiseException` in `Source/Windows/ARM64EC/Module.cpp`) fa `Pc -= 1` prima di `NtRaiseException`, cioè prima del debugger (il commento dice che Windows ARM64EC fa lo stesso). Il debugger vede il PC sull'`int3`, continuando lo riesegue, e i test di single-step e dei breakpoint dei thread si sfasano: il test arriva alla riga 1980 e muore (contesto di un thread nullo). Nel ramo WoW64 FEX lascia il −1 a wow64.dll e i386 passa quasi tutto. Uguale con Wine upstream e FEX su Linux; FEX non si tocca. Si potrebbe compensare in `NtRaiseException` di Wine (PC+1 verso il debugger per i breakpoint x64 ARM64EC), da valutare se un debugger x64 reale ne ha bisogno.
+
+Test di fumo dopo le due correzioni (`round7/smoke3`, `apps3.out`), confronto con `smoke2`: app tutte ok; nessun controllo nuovo che non fosse già comparso nei giri precedenti (`menu.c:2472` i386, `input.c` da mouse su ARM64, `kernel32 loader` ARM64 che alterna crash e timeout con lo stesso dump di winedbg).
+
 ## Passo 2: audio ⬜
 
 È il passo a rischio più basso: `winecoreaudio.drv` è già codice Wine nativo arm64 e i buffer audio sono memoria normale del processo.

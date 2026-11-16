@@ -1,0 +1,21 @@
+== aarch64-kernel32
+  loader: WORSE timeout(-) -> crash(-)
+== aarch64-user32
+  input: NEW input.c:1929 expected to get 64 mouse move points but got -1
+  input: NEW input.c:1940 expected to get 64 mouse move points but got -1
+  input: NEW input.c:3221 6: Unexpected cursor movement
+  msg: 1 checks fixed
+== i386-ntdll
+  threadpool: 1 failing checks not comparable (baseline timeout, now timeout)
+== i386-user32
+  menu: WORSE ok(0) -> fail(1)
+  menu: NEW menu.c:2472 test 25
+  msg: 1 failing checks not comparable (baseline timeout, now timeout)
+== x86_64-kernel32
+  debugger: 4 failing checks not comparable (baseline crash, now crash)
+  debugger: 1 checks fixed
+  loader: better crash(-) -> fail(78)
+  loader: 6 failing checks not comparable (baseline crash, now fail)
+
+units worse 2, better 1; failing checks new 4, fixed 2
+REGRESSIONS

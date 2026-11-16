@@ -4306,6 +4306,57 @@ index 9288b58..410a6c6 100644
  [Wow64]
  ; Wow6432Node symlinks
  HKLM,Software\Classes\Wow6432Node\AppId,"SymbolicLinkValue",0x60000,"\Registry\Machine\Software\Classes\AppId"
+diff --git a/programs/winedbg/be_arm64.c b/programs/winedbg/be_arm64.c
+index 20e76fd..de29351 100644
+--- a/programs/winedbg/be_arm64.c
++++ b/programs/winedbg/be_arm64.c
+@@ -251,6 +251,14 @@ void be_arm64_disasm_one_insn(ADDRESS64 *addr, int display)
+         }
+         cs_option( handle, CS_OPT_DETAIL, CS_OPT_ON );
+         count = cs_disasm( handle, buffer, len, addr->Offset, 0, &insn );
++        /* Barrique: not an ARM64 instruction (e.g. x86-64 code in an ARM64EC process) */
++        if (!count)
++        {
++            if (len == sizeof(buffer)) dbg_printf( ".word 0x%08x", *(UINT *)buffer );
++            else dbg_printf( "???" );
++            addr->Offset += 4;
++            return;
++        }
+         dbg_printf( "%s %s", insn[0].mnemonic, insn[0].op_str );
+         if (insn[0].id == ARM64_INS_B || insn[0].id == ARM64_INS_BL)
+         {
+diff --git a/programs/winedbg/memory.c b/programs/winedbg/memory.c
+index 3da70e1..bad31e2 100644
+--- a/programs/winedbg/memory.c
++++ b/programs/winedbg/memory.c
+@@ -791,6 +791,13 @@ void memory_disasm_one_x86_insn(ADDRESS64 *addr, int display)
+     cs_option( handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT );
+     cs_option( handle, CS_OPT_DETAIL, CS_OPT_ON );
+     count = cs_disasm( handle, buffer, len, addr->Offset, 0, &insn );
++    /* Barrique: undecodable bytes, don't use the missing instruction */
++    if (!count)
++    {
++        if (display) dbg_printf( "(bad)" );
++        addr->Offset++;
++        return;
++    }
+ 
+     if (display)
+     {
+diff --git a/server/debugger.c b/server/debugger.c
+index ebecb2e..746ac48 100644
+--- a/server/debugger.c
++++ b/server/debugger.c
+@@ -357,6 +357,9 @@ static int continue_debug_event( struct debug_obj *debug_obj, struct process *pr
+             LIST_FOR_EACH_ENTRY( event, &debug_obj->event_queue, struct debug_event, entry )
+             {
+                 if (event->sender != thread) continue;
++                /* Barrique: a delayed event holds no process suspend, delaying
++                 * it again must not resume the process a second time */
++                if (event->state == EVENT_DELAYED) continue;
+                 if (thread->suspend)
+                 {
+                     delay_event( debug_obj, event );
 diff --git a/server/mapping.c b/server/mapping.c
 index d1b0fc3..c13e917 100644
 --- a/server/mapping.c
