@@ -53,6 +53,11 @@ for module in "$@"; do
         todo=$(print -r -- $summary | sed -n 's/.*(\([0-9]*\) marked as todo.*/\1/p')
         failures=$(print -r -- $summary | sed -n 's/.* \([0-9]*\) failures\{0,1\}).*/\1/p')
         skipped=$(print -r -- $summary | sed -n 's/.*), \([0-9]*\) skipped.*/\1/p')
+        # the main process exits with its failure count (at most 255): when rc differs,
+        # the last summary is a child's and the main process died (e.g. crash code & 0xff)
+        if [[ $st == done ]] && (( rc != (${failures:-0} > 255 ? 255 : ${failures:-0}) )); then
+            st=crash
+        fi
         [[ $st == done && ${failures:-0} -gt 0 ]] && st=fail
         [[ $st == done ]] && st=ok
         print "$unit\t$st\t${executed:--}\t${failures:--}\t${todo:--}\t${skipped:--}\t$secs" >> $tsv

@@ -77,7 +77,7 @@ Test di fumo dopo la correzione (`round7/smoke2`, `round7/apps2.out`):
 
 ### `x86_64 kernel32 debugger` (2026-11-16)
 
-Non era una regressione: anche nel giro 3 il processo del test moriva alla riga 1796, ma il runner aveva preso il riepilogo di un processo figlio ("9 tests executed") e l'aveva segnato ok. Il runner prende ancora l'ultima riga "tests executed", che può essere di un figlio: da correggere.
+Non era una regressione: anche nel giro 3 il processo del test moriva alla riga 1796, ma il runner aveva preso il riepilogo di un processo figlio ("9 tests executed") e l'aveva segnato ok. Corretto il runner: il processo principale di un test esce con il numero dei suoi fallimenti (al massimo 255), quindi se il codice di uscita non coincide con i fallimenti dell'ultimo riepilogo quel riepilogo è di un figlio e l'unità è "crash". I tsv dei giri precedenti non hanno il codice di uscita e restano come sono.
 
 Due bug di Wine trovati sotto (ci sono anche upstream), corretti:
 - **winedbg**: se capstone non decodifica l'istruzione al PC (codice x64 in un processo ARM64EC letto come ARM64), usava lo stesso `insn[0]` e andava in crash (`strlen`). Ora stampa `.word 0x…` (`be_arm64.c`) o `(bad)` (`memory.c`, x86). Il controllo `debugger.c:761` (codice di uscita del figlio che va in crash) passa.
