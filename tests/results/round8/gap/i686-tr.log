@@ -1,0 +1,7 @@
+0104:err:coreaudio:unix_timer_loop timer: SetEvent 5.7 ms, sleep 10.6 ms (asked 10.6)
+0104:err:coreaudio:unix_timer_loop timer: SetEvent 54.8 ms, sleep 10.6 ms (asked 10.6)
+0104:err:coreaudio:unix_timer_loop timer: SetEvent 5.2 ms, sleep 10.4 ms (asked 10.4)
+tone: 44100 Hz, 20 s per API, 10 ms period, 32-bit
+wasapi   device period 10.00 ms (minimum 0.31 ms), buffer 1411 frames
+wasapi   open=00000000 periods=1869 misses=1 late=1 max_gap=65.3ms at 7163ms
+RESULT: FAILED

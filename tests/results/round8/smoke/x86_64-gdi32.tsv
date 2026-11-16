@@ -1,0 +1,15 @@
+unit	status	executed	failures	todo	skipped	seconds
+bitmap	ok	1548976	0	94	0	14
+brush	ok	699	0	0	0	0
+clipping	ok	129	0	3	0	1
+dc	fail	1657	3	6	4	1
+dib	ok	2369703	0	44	0	23
+font	fail	197027	39	158	129	2
+gdiobj	ok	170	0	4	0	0
+generated	ok	0	0	0	0	0
+icm	ok	53	0	2	0	1
+mapping	ok	477	0	0	0	0
+metafile	ok	33862	0	5	0	4
+palette	ok	1618	0	0	0	0
+path	ok	2152	0	0	0	1
+pen	ok	907	0	0	0	0

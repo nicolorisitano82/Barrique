@@ -1,0 +1,19 @@
+== aarch64-mmdevapi
+  render: better fail(1) -> ok(0)
+  render: 1 checks fixed
+== aarch64-winmm
+  capture: better fail(100) -> ok(0)
+  capture: 8 checks fixed
+== i386-mmdevapi
+  render: better fail(2) -> ok(0)
+  render: 2 checks fixed
+  spatialaudio: better fail(22) -> ok(0)
+  spatialaudio: 3 checks fixed
+== x86_64-mmdevapi
+  render: better fail(1) -> ok(0)
+  render: 1 checks fixed
+  spatialaudio: better fail(22) -> ok(0)
+  spatialaudio: 3 checks fixed
+
+units worse 0, better 6; failing checks new 0, fixed 18
+NO REGRESSIONS

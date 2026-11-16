@@ -1,0 +1,16 @@
+0114:err:coreaudio:unix_timer_loop timer late by 13.2 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 54.0 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 49.7 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 45.4 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 41.1 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 36.7 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 32.2 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 27.9 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 23.6 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 19.3 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 14.9 ms (period 10.7 ms)
+0114:err:coreaudio:unix_timer_loop timer late by 10.7 ms (period 10.7 ms)
+tone: 44100 Hz, 20 s per API, 10 ms period, 32-bit
+wasapi   device period 10.00 ms (minimum 0.31 ms), buffer 1411 frames
+wasapi   open=00000000 periods=1855 misses=1 late=2 max_gap=62.6ms at 16307ms
+RESULT: FAILED

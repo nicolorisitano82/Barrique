@@ -1,0 +1,6 @@
+00e0:err:wineusb:add_usb_device Failed to get configuration descriptor: Entity not found
+00c0:err:ntoskrnl:ZwLoadDriver failed to create driver L"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\winebth": c00000e5
+tone: 44100 Hz, 20 s per API, 10 ms period, 64-bit
+wasapi   device period 10.00 ms (minimum 0.31 ms), buffer 1411 frames
+wasapi   open=00000000 periods=1858 misses=0 late=0 max_gap=19.2ms at 18330ms
+RESULT: ok

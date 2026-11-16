@@ -1,0 +1,22 @@
+== aarch64-mmdevapi
+  render: better fail(1) -> ok(0)
+  render: 1 checks fixed
+== i386-dsound
+  capture: WORSE ok(0) -> timeout(-)
+  capture: NEW capture.c:671 Should not fail for 8 or 16 bits per sample
+== i386-mmdevapi
+  render: better fail(2) -> ok(0)
+  render: 2 checks fixed
+  spatialaudio: better fail(22) -> ok(0)
+  spatialaudio: 3 checks fixed
+== i386-winmm
+  capture: WORSE ok(0) -> timeout(-)
+  capture: NEW capture.c:141 waveInOpen(2): format=8000x 8x1 flags=50004(CALLBACK_EVENT|WAVE_MAPPED) rc=MMSYSERR_ERROR(
+== x86_64-mmdevapi
+  render: better fail(1) -> ok(0)
+  render: 1 checks fixed
+  spatialaudio: better fail(22) -> ok(0)
+  spatialaudio: 3 checks fixed
+
+units worse 2, better 5; failing checks new 2, fixed 10
+REGRESSIONS

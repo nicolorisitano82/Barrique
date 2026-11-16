@@ -1,0 +1,8 @@
+00fc:warn:coreaudio:dev_id_from_device Failed to get device ID for UID 7338559A-7E5A-4C0E-8125-B92600000003
+00fc:warn:coreaudio:unix_set_volumes Couldn't set master volume, applying it directly to the channels: 77686f3f
+00fc:warn:coreaudio:unix_set_volumes Couldn't set channel #1 volume: 77686f3f
+00fc:warn:coreaudio:unix_set_volumes Couldn't set channel #2 volume: 77686f3f
+tone: 44100 Hz, 20 s per API, 10 ms period, 64-bit
+wasapi   device period 10.00 ms (minimum 0.31 ms), buffer 1411 frames
+wasapi   open=00000000 periods=1872 misses=1 late=1 max_gap=71.6ms at 7170ms
+RESULT: FAILED

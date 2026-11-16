@@ -27,7 +27,7 @@ Valgono per ogni passo qui sotto.
 - **dwrite:** crash sulle tre architetture, FreeType non caricato (passo 1).
 - **Grafica a 64 bit:** d3d9, d3d10core, d3d11, d3d12, dxgi, ddraw, opengl32, d2d1 in crash entro 2 s su ARM64 e x86-64. Causa trovata con un rilancio di d3d11 (`round5/diag`): `glGetString` restituisce al codice Windows un puntatore nella shared cache di macOS (`0x1E5D7090E`), memoria che la VM non mappa, e ucrtbase va in access violation leggendo la stringa. Nei processi WoW64 opengl32 copia già le stringhe in memoria del processo; a 64 bit no.
 - **Grafica a 32 bit:** i test d3d non vanno in crash ma saltano quasi tutti i controlli; opengl32 gira con 157 fallimenti.
-- **Bug collegato:** dopo l'access violation parte winedbg, e quel processo muore subito lato host con lo stack del thread in memoria non mappata (report `wine-*.ips` di macOS, un thread, solo `ntdll.so` caricato). Da capire: oggi ogni crash Windows non mostra il debugger.
+- **Bug collegato:** dopo l'access violation parte winedbg, e quel processo muore subito lato host con lo stack del thread in memoria non mappata (report `wine-*.ips` di macOS, un thread, solo `ntdll.so` caricato). Da capire: oggi ogni crash Windows non mostra il debugger. *Corretto nel passo 1: era `fork()` da un thread Windows.*
 - Il passo 0 conta questi numeri come base. La grafica a 64 bit si potrà misurare davvero solo dopo la correzione delle stringhe GL e della mappatura dei buffer GL (passo 4: stesso problema dei puntatori dell'host, che la VM non vede).
 
 ### Correzioni grafica a 64 bit sotto HVF (2026-11-15, solo ARM64 provato)
@@ -87,7 +87,17 @@ Due bug di Wine trovati sotto (ci sono anche upstream), corretti:
 
 Test di fumo dopo le due correzioni (`round7/smoke3`, `apps3.out`), confronto con `smoke2`: app tutte ok; nessun controllo nuovo che non fosse già comparso nei giri precedenti (`menu.c:2472` i386, `input.c` da mouse su ARM64, `kernel32 loader` ARM64 che alterna crash e timeout con lo stesso dump di winedbg).
 
-## Passo 2: audio ⬜
+## Passo 2: audio 🔧
+
+**In corso (2026-11-16).** Giro di base (`tests/results/round8/base`), giro dopo la correzione di coreaudio (`after`, `compare.txt`: nessuna regressione, 6 unità migliorate) e giro col salvataggio del registro in un figlio (`fork`, `smoke`, `apps.out`). Restano da provare 96 kHz e un dispositivo Bluetooth.
+- `tests/av/tone.c` scritto e compilato per aarch64, x86_64, i686 (`samples/phase5/tone-*.exe`): WASAPI, waveOut, DirectSound, XAudio2, periodi persi e risvegli in ritardo, periodo del motore audio.
+- Base: `tone.exe` ok a 44,1 e 48 kHz sulle tre architetture tranne un periodo perso (buco di 73 ms) in WASAPI x86-64 a 44,1 kHz. DirectSound e XAudio2 si risvegliano entro 6-9 ms; WASAPI e waveOut ogni 20-25 ms, da confrontare col periodo del dispositivo (ora stampato da `tone.exe`).
+- Test: mmdevapi, dsound, xaudio2_7 quasi puliti. Fallimenti di base: `render.c:1282` (evento segnalato prima di `Start`, tre architetture), `xaudio2.c:1514` (voce WMA: serve il decoder, passo 3), `wave.c:1281` (formato a 4 canali: `MMSYSERR_ERROR` invece di `WAVERR_BADFORMAT`), winmm `mci` 274 (nessun dispositivo MCI), `spatialaudio` e `capture` che dipendono dal dispositivo di uscita (ora a 48 kHz) e dal microfono, cambiati rispetto al giro 5: la base del passo è il giro 8, non il 5.
+- Correzione `winecoreaudio.drv/coreaudio.c` (bug anche upstream): un `Start` fallito perché l'handle dell'evento mancava avviava comunque il timer, che poi segnalava l'evento prima del vero `Start`. Ora il timer parte solo se `Start` riesce.
+- **Buco periodico di 60-75 ms ogni ~20 s** (WASAPI 44,1 kHz, tutte le architetture; log in `round8/gap`). Tracciato: `NtSetEvent` dal thread timer di coreaudio resta bloccato ~55 ms nel wineserver. Il wineserver è a thread singolo e ogni 30 s salva il registro in modo sincrono (`system.reg` del prefisso di test è 4,3 MB): tutti i client aspettano. La priorità tempo reale Mach sul thread timer non serviva (provata e tolta).
+- Correzione `server/registry.c` (solo macOS): il salvataggio periodico gira in un processo figlio (`fork`), che scrive i rami sporchi ed esce; il padre li segna puliti e continua. Se il figlio fallisce, i rami tornano sporchi (`registry_save_child_exited`, chiamata dal `sigchld_callback` di `server/mach.c`, che prima era `assert(0)`). Un solo figlio alla volta; `flush_registry` (uscita del server) aspetta il figlio prima del salvataggio finale. Se `fork` fallisce si salva come prima.
+- Verifica (`round8/verify-fork.sh`): `tone.exe` WASAPI 44,1 kHz 20 s, 2 run per architettura: 5 su 6 senza periodi persi (salto massimo 17-27 ms), uno aarch64 con un solo buco di 38 ms (prima uno da ~62 ms ogni 20 s). Test audio contro la base (`compare-fork.txt`): 5 unità migliorate; i due peggioramenti sono `capture` i386 (dsound, winmm) col "Microfono di iPhone" (Continuity) comparso durante il giro, che fa fallire anche la base aarch64 winmm. Test di fumo contro `round7/smoke3` (`smoke-compare.txt`): i "crash" nuovi (kernel32 `virtual`, ntdll `info`) hanno gli stessi fallimenti della base, che era stata girata prima del controllo sul codice d'uscita del runner; `virtual.c:1697` aarch64 dipende dall'indirizzo assegnato. App tutte ok, nessun file temporaneo del registro rimasto, `system.reg` salvato.
+
 
 È il passo a rischio più basso: `winecoreaudio.drv` è già codice Wine nativo arm64 e i buffer audio sono memoria normale del processo.
 

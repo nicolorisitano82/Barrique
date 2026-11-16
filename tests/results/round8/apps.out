@@ -1,0 +1,19 @@
+python64       rc=0       4.5s  RESULT: ok
+python32       rc=0       2.9s  RESULT: ok
+java21-x64     rc=0       3.9s  RESULT: ok
+java8-x86-1    rc=0       1.7s  RESULT: ok
+java8-x86-2    rc=0       1.7s  RESULT: ok
+java8-x86-3    rc=0       1.7s  RESULT: ok
+7zip-msi-x64   rc=0       0.8s  
+7z-a-x64       rc=0       3.4s  
+7z-x-x64       rc=0       0.8s  
+7z roundtrip x64: RESULT: ok
+7zip-msi-x86   rc=0       2.8s  
+7z-a-x86       rc=0       3.1s  
+7z-x-x86       rc=0       0.6s  
+7z roundtrip x86: RESULT: ok
+vcredist-x64   rc=0       4.1s  
+vcredist-x86   rc=0       2.1s  
+-rw-r--r--  1 nicolo  staff  7012352 Nov 15 12:20 /Users/nicolo/Work/wine/prefix-apps/drive_c/windows/system32/msvcp140.dll
+-rw-r--r--  1 nicolo  staff  2445312 Nov 15 12:20 /Users/nicolo/Work/wine/prefix-apps/drive_c/windows/syswow64/msvcp140.dll
+APPS DONE

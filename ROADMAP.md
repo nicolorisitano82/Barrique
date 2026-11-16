@@ -102,21 +102,28 @@ Misure con `tests/pe/bench.c` (stesso sorgente nativo macOS / ARM64 / x86-64 / i
   - **Eccezioni x64 rilanciate da FEX** (Java, 7-Zip, test `exception`): `hvf_restore_frame` si fidava del flag `RESTORE_FLAGS_EMULATION` lasciato da `NtSetContextThread`, e rientrava nell'emulatore invece di chiamare `KiUserExceptionDispatcher`. Ora decide in base a dove torna il frame, come `usr2_handler`.
   - **FEX**: un processore in più riportato al codice x86 (15 su 14 core).
   - **wow64win**: i thunk generici `NtUserCallHwndParam`/`OneParam`/`TwoParam` passavano i puntatori a 32 bit senza convertirli nella finestra (`GetWindowInfo`, `GetMonitorInfo`, `ClientToScreen`, `GetPrivateData`… ). user32 i386 da 18.893 fallimenti e 5 crash a 826 fallimenti senza crash: ora monitor, sysparams, win e clipboard danno gli stessi numeri di ARM64.
-- ➡️ Fase 5 — **FreeType non caricato**: `dlopen("libfreetype.6.dylib")` non trova `/opt/homebrew/lib`, quindi niente font TrueType e fallimenti nei test di font (gdi32 `font`, user32 `text`). Si risolve con le librerie dentro la `.app` (fase 6).
+- ✅ Fase 5 passo 1 — **FreeType non caricato** (risolto il 2026-11-16, FreeType incluso con `@rpath`): `dlopen("libfreetype.6.dylib")` non trova `/opt/homebrew/lib`, quindi niente font TrueType e fallimenti nei test di font (gdi32 `font`, user32 `text`). Si risolve con le librerie dentro la `.app` (fase 6).
 - ➡️ Fase 7 — Resti dei test, per architettura:
   - solo i386: ws2_32 `afd` (108, strutture AFD a 32 bit con puntatori), user32 `class` (classi cercate per `hInstance` a 32 bit), ole32 `dragdrop`, ucrtbase `misc` e kernel32 `thread` (flag di eccezione x87/SSE persi da FEX a 32 bit: la correzione MetalSharp della fase 2);
   - solo x86-64: rpcrt4 `cstub` (vtable dei delegati), dbghelp (stack walk), crypt32 `sip`, ntdll `info` (affinità, informazioni CPU emulate: atteso);
   - ntdll `exception` x86-64: dopo la correzione le eccezioni arrivano, ma lo srotolamento da pc 0 finisce in ricorsione (`RtlIsEcCode` con un pc non valido); va in crash anche su ARM64 e i386;
   - exe x64 senza rilocazioni con base sotto i 4GB: non caricabili (rari).
 - ✅ ntdll e kernel32 rilanciati sulle tre architetture con le correzioni (giro 4, `tests/results/round4`, `classify-ntdll-kernel32.txt`):
-  - x86-64: ntdll da 239 a 206 fallimenti (`info` da 68 a 35); kernel32 `loader` non va più in crash (completa con 78 fallimenti, prima zero controlli contati), `debugger` da 61 a 27 fallimenti nei processi figli. Il runner segna `debugger` come crash perché i figli vanno in crash apposta: falso allarme. kernel32 sale da 143 a 223 solo perché `loader` ora conta i suoi controlli.
+  - x86-64: ntdll da 239 a 206 fallimenti (`info` da 68 a 35); kernel32 `loader` non va più in crash (completa con 78 fallimenti, prima zero controlli contati), `debugger` da 61 a 27 fallimenti nei processi figli. Il runner segnava `debugger` come crash perché i figli vanno in crash apposta; nel 2026-11-16 si è visto che il processo principale moriva davvero (limite dei breakpoint x64 sotto FEX, vedi FASE5-AV.md) e il runner ora lo distingue dal codice di uscita. kernel32 sale da 143 a 223 solo perché `loader` ora conta i suoi controlli.
   - ARM64 e i386: invariati entro 2-6 controlli (i386 kernel32 da 174 a 168, `debugger` da 5 a 0).
   - Fallimenti solo x86 (FEX) da 17 a 6, solo x86-64 da 45 a 36, solo i386 da 37 a 32; comuni alle tre: 199, invariati.
   - kernel32 `pipe` x86-64: i 2 fallimenti del giro 4 su `FlushFileBuffers` (pipe.c:2878) non si ripetono, 0 fallimenti in 5 esecuzioni di fila (`round4/pipe-recheck`): è una gara di tempi del test, non una regressione.
 
-## Fase 5: grafica, audio e input
+## Fase 5: grafica, audio e input 🔧 (in corso)
 
 Piano dettagliato di grafica, audio e video, con le regole contro le regressioni e lo studio di CrossOver e del Game Porting Toolkit: [FASE5-AV.md](FASE5-AV.md). D3DMetal escluso (solo x86_64 con Rosetta, licenza non commerciale).
+
+Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
+- ✅ Passo 0, base di partenza (giro 5, 2026-11-15).
+- ✅ Grafica a 64 bit sotto HVF: stringhe e buffer GL, blocco e use-after-free in winemac (giro 6, 2026-11-16).
+- ✅ Passo 1, FreeType e font (giro 7, 2026-11-16): FreeType incluso con `@rpath`, 35 unità migliorate. Dal test di fumo: `fork()` da un thread Windows sotto HVF (installer VC++, crash all'uscita dei processi), winedbg e wineserver col debugger.
+- 🔧 Passo 2, audio (giro 8, in corso): timer di coreaudio, salvataggio del registro in un processo figlio (via il buco audio di ~60 ms ogni 20 s). Da provare 96 kHz e Bluetooth.
+- ⬜ Passi 3-7: video, memoria GPU, Vulkan/MoltenVK, banco di prova grafico, Direct3D.
 
 - ⬜ **[MS]** Direct3D su Metal in versione ARM64X, così un'unica build serve sia ai programmi ARM64 sia a quelli x86-64 (ARM64EC). Componenti da valutare:
   - D3D10/11/12 con un fork di DXMT (Mullion);
@@ -127,9 +134,9 @@ Piano dettagliato di grafica, audio e video, con le regole contro le regressioni
 - ⬜ **[MS]** FFmpeg (VideoToolbox/AudioToolbox) per `winedmo` / Media Foundation.
 - ⬜ **[MS]** Controller: winebus con SDL2 + IOHID (XInput e DirectInput).
 - ⬜ **[MS]** Mouse raw con GCMouse e schermo intero nativo di macOS.
-- ⬜ **[MS]** Font:
-  - Liberation rinominati come Arial, Times New Roman e Courier New in `C:\windows\Fonts`;
-  - famiglie CJK di Windows associate ai font di sistema di macOS.
+- 🔧 **[MS]** Font:
+  - ✅ Arial, Times New Roman e Courier New: macOS li ha già in `/System/Library/Fonts/Supplemental` e Wine li carica tramite CoreText, Liberation non serve;
+  - ⬜ famiglie CJK di Windows associate ai font di sistema di macOS.
 - ⬜ **[MS]** Mono (arm64, x86, x86-64) e Gecko inclusi, invece della finestra che chiede di scaricarli.
 - ⬜ **[MS]** CEF/Chromium: `--in-process-gpu` automatico (senza, la pagina resta bianca).
 - ⬜ **[MS]** msync, sincronizzazione su memoria condivisa. Da verificare con la VM: la memoria condivisa `shm` nella VM è già provata.

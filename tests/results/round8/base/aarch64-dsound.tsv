@@ -1,0 +1,8 @@
+unit	status	executed	failures	todo	skipped	seconds
+capture	ok	4929	0	0	0	36
+ds3d	ok	8017	0	0	0	5
+ds3d8	ok	1525	0	0	0	5
+dsound	ok	7108	0	38	0	12
+dsound8	ok	8188	0	5	0	2
+duplex	ok	104	0	0	0	0
+propset	ok	82	0	0	0	1

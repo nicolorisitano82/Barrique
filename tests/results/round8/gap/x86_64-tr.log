@@ -1,0 +1,8 @@
+00e0:err:wineusb:add_usb_device Failed to get configuration descriptor: Entity not found
+00c0:err:ntoskrnl:ZwLoadDriver failed to create driver L"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\winebth": c00000e5
+00f4:err:coreaudio:unix_timer_loop timer: SetEvent 11.3 ms, sleep 6.4 ms (asked 6.4)
+00f4:err:coreaudio:unix_timer_loop timer: SetEvent 10.2 ms, sleep 10.5 ms (asked 10.5)
+tone: 44100 Hz, 20 s per API, 10 ms period, 64-bit
+wasapi   device period 10.00 ms (minimum 0.31 ms), buffer 1411 frames
+wasapi   open=00000000 periods=1873 misses=0 late=1 max_gap=20.8ms at 19567ms
+RESULT: ok

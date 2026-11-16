@@ -1,0 +1,6 @@
+tone: 44100 Hz, 3 s per API, 10 ms period, 64-bit
+wasapi   open=00000000 periods=148 misses=1 late=79 max_gap=72.7ms
+waveout  open=00000000 periods=300 misses=0 late=62 max_gap=24.7ms
+dsound   open=00000000 periods=294 misses=0 late=0 max_gap=6.4ms
+xaudio2  open=00000000 periods=301 misses=0 late=0 max_gap=6.3ms
+RESULT: FAILED

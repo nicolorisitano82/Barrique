@@ -1,0 +1,19 @@
+0104:err:coreaudio:unix_timer_loop timer late by 16.3 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 14.2 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 63.9 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 59.5 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 55.2 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 50.6 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 46.0 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 41.5 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 36.9 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 32.8 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 28.3 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 24.0 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 19.5 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 15.0 ms (period 10.7 ms)
+0104:err:coreaudio:unix_timer_loop timer late by 10.7 ms (period 10.7 ms)
+tone: 44100 Hz, 20 s per API, 10 ms period, 64-bit
+wasapi   device period 10.00 ms (minimum 0.31 ms), buffer 1411 frames
+wasapi   open=00000000 periods=1845 misses=1 late=2 max_gap=72.1ms at 7119ms
+RESULT: FAILED

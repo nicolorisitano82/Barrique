@@ -3724,6 +3724,22 @@ index de1a484..c83a235 100644
      switch (type)
      {
      case NtUserScrollBarWndProc:
+diff --git a/dlls/winecoreaudio.drv/coreaudio.c b/dlls/winecoreaudio.drv/coreaudio.c
+index 163faff..9497303 100644
+--- a/dlls/winecoreaudio.drv/coreaudio.c
++++ b/dlls/winecoreaudio.drv/coreaudio.c
+@@ -1747,7 +1747,10 @@ static NTSTATUS unix_start(void *args)
+     }
+ 
+     os_unfair_lock_unlock(&stream->lock);
+-    if (!stream->timer_thread) create_unix_thread( &stream->timer_thread, name, unix_timer_loop, stream );
++    /* Barrique: a failed Start (e.g. no event handle yet) must not start the
++     * timer, or it signals the event set later before the stream plays */
++    if (params->result == S_OK && !stream->timer_thread)
++        create_unix_thread( &stream->timer_thread, name, unix_timer_loop, stream );
+ 
+     return STATUS_SUCCESS;
+ }
 diff --git a/dlls/winemac.drv/cocoa_event.m b/dlls/winemac.drv/cocoa_event.m
 index 581449a..e0f128e 100644
 --- a/dlls/winemac.drv/cocoa_event.m
@@ -4357,6 +4373,31 @@ index ebecb2e..746ac48 100644
                  if (thread->suspend)
                  {
                      delay_event( debug_obj, event );
+diff --git a/server/mach.c b/server/mach.c
+index ec73dc6..771a929 100644
+--- a/server/mach.c
++++ b/server/mach.c
+@@ -27,6 +27,7 @@
+ #include <signal.h>
+ #include <stdarg.h>
+ #include <sys/types.h>
++#include <sys/wait.h>
+ #include <unistd.h>
+ #ifdef HAVE_SYS_SYSCTL_H
+ #include <sys/sysctl.h>
+@@ -52,7 +53,11 @@ static mach_port_t server_mach_port;
+ 
+ void sigchld_callback(void)
+ {
+-    assert(0);  /* should never be called on MacOS */
++    /* Barrique: the only children are the periodic registry saves (registry.c) */
++    pid_t pid;
++    int status;
++
++    while ((pid = waitpid( -1, &status, WNOHANG )) > 0) registry_save_child_exited( pid, status );
+ }
+ 
+ static void mach_set_error(kern_return_t mach_error)
 diff --git a/server/mapping.c b/server/mapping.c
 index d1b0fc3..c13e917 100644
 --- a/server/mapping.c
@@ -4495,3 +4536,118 @@ index d1b0fc3..c13e917 100644
          if (view->base != (mapping->image.map_addr ? mapping->image.map_addr : mapping->image.base) + req->offset)
              set_error( STATUS_IMAGE_NOT_AT_BASE );
          if (req->machine != current->process->machine)
+diff --git a/server/object.h b/server/object.h
+index 3c19d15..6219b73 100644
+--- a/server/object.h
++++ b/server/object.h
+@@ -292,6 +292,9 @@ extern unsigned short supported_machines[8];
+ extern unsigned short native_machine;
+ extern void init_registry(void);
+ extern void flush_registry(void);
++#ifdef __APPLE__
++extern void registry_save_child_exited( pid_t pid, int status );
++#endif
+ 
+ static inline int is_machine_32bit( unsigned short machine )
+ {
+diff --git a/server/registry.c b/server/registry.c
+index e71d023..6175bd3 100644
+--- a/server/registry.c
++++ b/server/registry.c
+@@ -36,6 +36,7 @@
+ #include <stdlib.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
++#include <sys/wait.h>
+ #include <unistd.h>
+ #ifdef HAVE_SYS_PERSONALITY_H
+ #include <sys/personality.h>
+@@ -2082,6 +2083,68 @@ done:
+     return ret;
+ }
+ 
++#ifdef __APPLE__
++/* Barrique: writing a big registry branch takes the single-threaded server
++ * 50 ms or more, and every client waits meanwhile (audio events arrive late
++ * and the device underruns). The periodic save runs in a forked child, which
++ * writes the snapshot of the registry taken by fork(); the server goes on.
++ * flush_registry() still saves synchronously, after waiting for the child. */
++static pid_t save_pid;                    /* child doing a periodic save */
++static unsigned int save_pid_branches;    /* branches it saves (bit mask) */
++
++/* the save child exited: if it failed, its branches must be saved again */
++void registry_save_child_exited( pid_t pid, int status )
++{
++    int i;
++
++    if (!save_pid || pid != save_pid) return;
++    save_pid = 0;
++    if (WIFEXITED(status) && !WEXITSTATUS(status)) return;
++    for (i = 0; i < save_branch_count; i++)
++        if (save_pid_branches & (1u << i)) make_dirty( save_branch_info[i].key );
++}
++
++static void wait_save_child(void)
++{
++    int status;
++    pid_t pid;
++
++    while (save_pid)
++    {
++        pid = waitpid( save_pid, &status, 0 );
++        if (pid == save_pid) registry_save_child_exited( pid, status );
++        else if (pid == -1 && errno != EINTR) save_pid = 0;  /* already reaped */
++    }
++}
++
++static int fork_periodic_save(void)
++{
++    unsigned int branches = 0;
++    pid_t pid;
++    int i, ok = 1;
++
++    if (save_pid) return 1;  /* the previous save is still running */
++    for (i = 0; i < save_branch_count; i++)
++        if (save_branch_info[i].key->flags & KEY_DIRTY) branches |= 1u << i;
++    if (!branches) return 1;
++
++    if ((pid = fork()) == -1) return 0;
++    if (!pid)  /* child: write the snapshot and leave */
++    {
++        for (i = 0; i < save_branch_count; i++)
++            if ((branches & (1u << i)) && !save_branch( save_branch_info[i].key, save_branch_info[i].filename ))
++                ok = 0;
++        _exit( ok ? 0 : 1 );
++    }
++    /* the child has these contents: changes from now on dirty the keys again */
++    save_pid = pid;
++    save_pid_branches = branches;
++    for (i = 0; i < save_branch_count; i++)
++        if (branches & (1u << i)) make_clean( save_branch_info[i].key );
++    return 1;
++}
++#endif
++
+ /* periodic saving of the registry */
+ static void periodic_save( void *arg )
+ {
+@@ -2089,6 +2152,9 @@ static void periodic_save( void *arg )
+ 
+     if (fchdir( config_dir_fd ) == -1) return;
+     save_timeout_user = NULL;
++#ifdef __APPLE__
++    if (!fork_periodic_save())
++#endif
+     for (i = 0; i < save_branch_count; i++)
+         save_branch( save_branch_info[i].key, save_branch_info[i].filename );
+     if (fchdir( server_dir_fd ) == -1) fatal_error( "chdir to server dir: %s\n", strerror( errno ));
+@@ -2107,6 +2173,9 @@ void flush_registry(void)
+ {
+     int i;
+ 
++#ifdef __APPLE__
++    wait_save_child();  /* its older snapshot must not overwrite this save */
++#endif
+     if (fchdir( config_dir_fd ) == -1) return;
+     for (i = 0; i < save_branch_count; i++)
+     {

@@ -1,0 +1,27 @@
+== aarch64-kernel32
+  loader: better crash(-) -> timeout(-)
+== aarch64-ntdll
+  virtual: NEW virtual.c:1697 NtMapViewOfSection returned c0000220
+== aarch64-user32
+  input: 3 checks fixed
+  msg: 1 failing checks not comparable (baseline timeout, now timeout)
+== i386-kernel32
+  debugger: 1 failing checks not comparable (baseline crash, now crash)
+  debugger: 3 checks fixed
+  virtual: WORSE ok(0) -> crash(0)
+== i386-ntdll
+  info: WORSE ok(0) -> crash(0)
+  threadpool: better timeout(-) -> fail(1)
+  threadpool: 1 checks fixed
+== i386-user32
+  menu: better fail(1) -> ok(0)
+  menu: 1 checks fixed
+  msg: 4 failing checks not comparable (baseline timeout, now timeout)
+  msg: 24 checks fixed
+== x86_64-kernel32
+  virtual: WORSE ok(0) -> crash(0)
+== x86_64-user32
+  msg: 1 checks fixed
+
+units worse 3, better 3; failing checks new 1, fixed 33
+REGRESSIONS

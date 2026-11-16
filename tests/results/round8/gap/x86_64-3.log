@@ -1,0 +1,4 @@
+tone: 44100 Hz, 3 s per API, 10 ms period, 64-bit
+wasapi   device period 10.00 ms (minimum 0.31 ms), buffer 1411 frames
+wasapi   open=00000000 periods=276 misses=0 late=0 max_gap=15.7ms at 122ms
+RESULT: ok
