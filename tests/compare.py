@@ -73,9 +73,12 @@ def main():
             fixed = sorted(set(bc) - set(nc))
             # a unit that crashed in the baseline did not run all its checks:
             # failures after the crash point are not regressions
-            if bs in ("crash", "timeout") and ns not in ("crash", "timeout"):
+            # (also when both runs stopped early: how far each got is timing, so
+            # the failing checks are not comparable)
+            if bs in ("crash", "timeout"):
                 if added:
-                    lines.append(f"  {unit}: {len(added)} failing checks now reached (baseline {bs})")
+                    lines.append(f"  {unit}: {len(added)} failing checks not comparable "
+                                 f"(baseline {bs}, now {ns})")
                 added = []
             for key in added:
                 lines.append(f"  {unit}: NEW {key} {nc[key]}")

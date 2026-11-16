@@ -1,0 +1,28 @@
+aarch64-d2d1         ok=1 | 184 checks, 0 failures
+aarch64-d3d10core    ok=1 | 14 checks, 0 failures
+aarch64-d3d11        fail=1 | 3931 checks, 17 failures
+aarch64-d3d12        ok=1 | 3 checks, 0 failures
+aarch64-d3d9         fail=3 ok=1 | 390303 checks, 39 failures
+aarch64-ddraw        fail=3 timeout=1 ok=5 | 90238 checks, 357 failures
+aarch64-dxgi         ok=1 | 105 checks, 0 failures
+aarch64-opengl32     crash=1 | 0 checks, 0 failures
+aarch64-vulkan-1     fail=1 | 4 checks, 2 failures
+i386-d2d1            ok=1 | 170 checks, 0 failures
+i386-d3d10core       ok=1 | 0 checks, 0 failures
+i386-d3d11           ok=1 | 0 checks, 0 failures
+i386-d3d12           ok=1 | 3 checks, 0 failures
+i386-d3d8            ok=3 | 2 checks, 0 failures
+i386-d3d9            ok=4 | 15 checks, 0 failures
+i386-ddraw           fail=1 timeout=4 ok=4 | 2516 checks, 3 failures
+i386-dxgi            crash=1 | 0 checks, 0 failures
+i386-opengl32        fail=1 | 6458 checks, 157 failures
+i386-vulkan-1        fail=1 | 4 checks, 2 failures
+x86_64-d2d1          ok=1 | 184 checks, 0 failures
+x86_64-d3d10core     ok=1 | 14 checks, 0 failures
+x86_64-d3d11         fail=1 | 3931 checks, 17 failures
+x86_64-d3d12         ok=1 | 3 checks, 0 failures
+x86_64-d3d9          fail=3 ok=1 | 390329 checks, 41 failures
+x86_64-ddraw         fail=3 timeout=1 ok=5 | 90238 checks, 357 failures
+x86_64-dxgi          ok=1 | 105 checks, 0 failures
+x86_64-opengl32      crash=1 | 0 checks, 0 failures
+x86_64-vulkan-1      fail=1 | 4 checks, 2 failures

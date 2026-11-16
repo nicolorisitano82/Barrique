@@ -1,0 +1,10 @@
+unit	status	executed	failures	todo	skipped	seconds
+d3d	ok	2488	0	8	0	2
+ddraw1	timeout	-	-	-	-	180
+ddraw2	fail	25237	98	139	7	42
+ddraw4	fail	28387	129	167	7	46
+ddraw7	fail	32485	130	231	10	58
+ddrawmodes	ok	1542	0	0	0	7
+dsurface	ok	1168	-	0	0	1
+refcount	ok	96	0	10	0	1
+visual	ok	3	0	0	1	1

@@ -1,0 +1,78 @@
+== aarch64-d2d1
+  d2d1: better crash(-) -> ok(0)
+== aarch64-d3d10core
+  d3d10core: better crash(-) -> ok(0)
+== aarch64-d3d11
+  d3d11: better crash(-) -> fail(17)
+  d3d11: 4 failing checks not comparable (baseline crash, now fail)
+== aarch64-d3d12
+  d3d12: better crash(-) -> ok(0)
+== aarch64-d3d9
+  d3d9ex: better crash(-) -> fail(2)
+  d3d9ex: 1 failing checks not comparable (baseline crash, now fail)
+  device: better crash(-) -> fail(19)
+  device: 16 failing checks not comparable (baseline crash, now fail)
+  stateblock: better crash(-) -> ok(0)
+  visual: better crash(-) -> fail(18)
+  visual: 9 failing checks not comparable (baseline crash, now fail)
+== aarch64-ddraw
+  d3d: better crash(-) -> ok(0)
+  ddraw1: better crash(-) -> timeout(-)
+  ddraw1: 36 failing checks not comparable (baseline crash, now timeout)
+  ddraw2: better crash(-) -> fail(98)
+  ddraw2: 92 failing checks not comparable (baseline crash, now fail)
+  ddraw4: better crash(-) -> fail(129)
+  ddraw4: 94 failing checks not comparable (baseline crash, now fail)
+  ddraw7: better crash(-) -> fail(130)
+  ddraw7: 95 failing checks not comparable (baseline crash, now fail)
+  ddrawmodes: better crash(-) -> ok(0)
+  dsurface: better crash(-) -> ok(-)
+  dsurface: 1 failing checks not comparable (baseline crash, now ok)
+  refcount: better crash(-) -> ok(0)
+  visual: better crash(-) -> ok(0)
+== aarch64-dxgi
+  dxgi: better crash(-) -> ok(0)
+== aarch64-opengl32
+  opengl: 13 failing checks not comparable (baseline crash, now crash)
+== i386-ddraw
+  ddraw2: 79 failing checks not comparable (baseline timeout, now timeout)
+  ddraw2: 1 checks fixed
+== x86_64-d2d1
+  d2d1: better crash(-) -> ok(0)
+== x86_64-d3d10core
+  d3d10core: better crash(-) -> ok(0)
+== x86_64-d3d11
+  d3d11: better crash(-) -> fail(17)
+  d3d11: 4 failing checks not comparable (baseline crash, now fail)
+== x86_64-d3d12
+  d3d12: better crash(-) -> ok(0)
+== x86_64-d3d9
+  d3d9ex: better crash(-) -> fail(2)
+  d3d9ex: 1 failing checks not comparable (baseline crash, now fail)
+  device: better crash(-) -> fail(21)
+  device: 18 failing checks not comparable (baseline crash, now fail)
+  stateblock: better crash(-) -> ok(0)
+  visual: better crash(-) -> fail(18)
+  visual: 9 failing checks not comparable (baseline crash, now fail)
+== x86_64-ddraw
+  d3d: better crash(-) -> ok(0)
+  ddraw1: better crash(-) -> timeout(-)
+  ddraw1: 77 failing checks not comparable (baseline crash, now timeout)
+  ddraw2: better crash(-) -> fail(98)
+  ddraw2: 92 failing checks not comparable (baseline crash, now fail)
+  ddraw4: better crash(-) -> fail(129)
+  ddraw4: 94 failing checks not comparable (baseline crash, now fail)
+  ddraw7: better crash(-) -> fail(130)
+  ddraw7: 95 failing checks not comparable (baseline crash, now fail)
+  ddrawmodes: better crash(-) -> ok(0)
+  dsurface: better crash(-) -> ok(-)
+  dsurface: 1 failing checks not comparable (baseline crash, now ok)
+  refcount: better crash(-) -> ok(0)
+  visual: better crash(-) -> ok(0)
+== x86_64-dxgi
+  dxgi: better crash(-) -> ok(0)
+== x86_64-opengl32
+  opengl: 13 failing checks not comparable (baseline crash, now crash)
+
+units worse 0, better 36; failing checks new 0, fixed 1
+NO REGRESSIONS

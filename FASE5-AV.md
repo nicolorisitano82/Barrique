@@ -30,6 +30,24 @@ Valgono per ogni passo qui sotto.
 - **Bug collegato:** dopo l'access violation parte winedbg, e quel processo muore subito lato host con lo stack del thread in memoria non mappata (report `wine-*.ips` di macOS, un thread, solo `ntdll.so` caricato). Da capire: oggi ogni crash Windows non mostra il debugger.
 - Il passo 0 conta questi numeri come base. La grafica a 64 bit si potrà misurare davvero solo dopo la correzione delle stringhe GL e della mappatura dei buffer GL (passo 4: stesso problema dei puntatori dell'host, che la VM non vede).
 
+### Correzioni grafica a 64 bit sotto HVF (2026-11-15, solo ARM64 provato)
+
+Tre bug, trovati con i rilanci in `round5/diag`:
+
+1. **Puntatori dell'host al codice Windows (opengl32).** `glGetString`/`glGetStringi` restituivano stringhe nella shared cache; `glMapBuffer*` e `glGetBufferPointerv` restituivano mappe del driver. Con `WINE_HVF=1` i processi a 64 bit usano ora la stessa copia dei processi WoW64: stringhe copiate in un pool di `NtAllocateVirtualMemory` (cache per contenuto), buffer mappati con la copia di `wow64_map_buffer`. File: `unix_wgl.c`, `unix_private.h`, e **`unix_thunks.c` modificato a mano** (34 thunk): `make_opengl` non è aggiornato, rigenerarlo cancella la correzione.
+2. **Deadlock in winemac (`OnMainThread`).** `-[WineContentView viewWillDraw]` gira sul thread principale e chiama `macdrv_update_opengl_context`, che chiama `OnMainThread`: il blocco va in coda al thread principale e lo stesso thread aspetta il semaforo, per sempre. Bug anche in Wine upstream 11.22. Ora `OnMainThread` esegue subito il blocco se è già sul thread principale (`cocoa_event.m`). Causava i blocchi casuali del test opengl.
+3. **Use-after-free di `WineOpenGLContext` (winemac).** `-[NSOpenGLContext dealloc]` chiama `-setView:`/`-clearDrawable` sull'oggetto che si sta distruggendo; i nostri override catturavano `self` in un blocco per `OnMainThread`, il blocco faceva retain su un oggetto morto e la release sul thread principale finiva in memoria liberata (`objc_release`, trovato con `NSZombieEnabled` e una traccia di retain/release). Ora i blocchi usano un riferimento non trattenuto (`cocoa_opengl.m`). Il thread colpito veniva chiuso con `abort_thread` mentre teneva il lock `wined3d_cs`: da qui il blocco di d3d11.
+
+Più uno strumento: con `WINE_HVF` un'eccezione nel codice host scrive lo stack host nel log (`dump_host_backtrace` in `signal_arm64.c`, frame pointer + `dladdr`).
+
+Risultati ARM64 (aarch64): d3d11 completo e stabile, 3931 controlli, 17 fallimenti, 191 saltati (prima: crash in 2 s, poi blocco). opengl stabile in 3 s, 37 fallimenti, poi crash fisso in `test_framebuffer` (riga 3803): il test chiama `glGetFramebufferParameteriv` (GL 4.3) che nel profilo GL 2.1 legacy di Apple è un puntatore NULL. Limite del test con GL 2.1, non di Barrique; wined3d qui crea solo device di livello 9.x per lo stesso motivo (profilo legacy). Resta il crash host all'uscita dei processi (report `wine-*.ips` con stack non mappato), già annotato sopra.
+
+**Giro 6 (2026-11-16, `tests/results/round6`, moduli grafici, tre architetture), confronto con il giro 5: nessuna regressione, 36 unità migliorate.**
+- ARM64 e x86-64 ora uguali: d3d11 3931 controlli e 17 fallimenti; d3d10core, d3d12, dxgi, d2d1 ok; d3d9 circa 390 000 controlli e 40 fallimenti; ddraw circa 90 000 controlli e 357 fallimenti (ddraw1 ancora in timeout). Prima: tutto in crash entro 2 s.
+- opengl32 a 64 bit: ancora "crash", per la chiamata GL 4.3 del test (sopra).
+- i386 invariato (dxgi in crash anche nel giro 5, ddraw1/2/4/7 in timeout).
+- `compare.py` corretto: se l'unità del giro di base era in crash o timeout, i controlli falliti non sono confrontabili (il punto in cui si fermava dipende dai tempi), anche se l'unità resta in crash o timeout. Prima segnalava 218 falsi "nuovi".
+
 ## Passo 1: FreeType e font ⬜
 
 Va prima di tutto il resto perché i fallimenti dei font sporcano i test di gdi32, user32 `text`, dwrite e d2d1, e nasconderebbero le regressioni vere.

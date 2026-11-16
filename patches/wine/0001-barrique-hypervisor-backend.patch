@@ -1321,7 +1321,7 @@ index c80226f..173124f 100644
          {
              ext[count].Type = MemExtendedParameterImageMachine;
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
-index 02b6d57..fbfe7db 100644
+index 02b6d57..03fa507 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
 +++ b/dlls/ntdll/unix/signal_arm64.c
 @@ -29,6 +29,8 @@
@@ -1365,18 +1365,43 @@ index 02b6d57..fbfe7db 100644
  
      if (needed_flags & CONTEXT_INTEGER)
      {
-@@ -783,6 +796,10 @@ NTSTATUS get_thread_wow64_context( HANDLE handle, void *ctx, ULONG size )
+@@ -783,6 +796,35 @@ NTSTATUS get_thread_wow64_context( HANDLE handle, void *ctx, ULONG size )
  /***********************************************************************
   *           setup_raise_exception
   */
 +#ifdef WINE_HVF
 +static BOOL handle_syscall_fault( struct thread_data *data, ucontext_t *context, EXCEPTION_RECORD *rec );
++
++/* Barrique: log the host call chain of a fault in host code (frame pointer walk) */
++static void dump_host_backtrace( ucontext_t *sigcontext )
++{
++    void *pc = (void *)PC_sig(sigcontext), *lr = (void *)LR_sig(sigcontext);
++    void **fp = (void **)FP_sig(sigcontext);
++    Dl_info info;
++    int i;
++
++    for (i = 0; i < 40; i++)
++    {
++        if (dladdr( pc, &info ) && info.dli_fname)
++        {
++            const char *lib = strrchr( info.dli_fname, '/' );
++            ERR( "  #%02d %p %s %s+%#lx\n", i, pc, lib ? lib + 1 : info.dli_fname,
++                 info.dli_sname ? info.dli_sname : "?",
++                 (long)((char *)pc - (char *)(info.dli_saddr ? info.dli_saddr : info.dli_fbase)) );
++        }
++        else ERR( "  #%02d %p ?\n", i, pc );
++        if (i == 0 && lr) { pc = lr; lr = NULL; continue; }  /* leaf: caller still in lr */
++        if (!fp || ((ULONG_PTR)fp & 7) || !fp[1]) break;
++        pc = fp[1];
++        fp = fp[0];
++    }
++}
 +#endif
 +
  static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcontext,
                                     EXCEPTION_RECORD *rec, CONTEXT *context )
  {
-@@ -790,6 +807,14 @@ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcont
+@@ -790,6 +832,15 @@ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcont
      struct exc_stack_layout *stack;
      void *stack_ptr = (void *)(SP_sig(sigcontext) & ~15);
  
@@ -1385,13 +1410,14 @@ index 02b6d57..fbfe7db 100644
 +     * error back to the guest as the syscall result, never send the host into Windows code */
 +    if (handle_syscall_fault( data, sigcontext, rec )) return;
 +    ERR( "host exception %#x at %p outside a syscall\n", (int)rec->ExceptionCode, rec->ExceptionAddress );
++    dump_host_backtrace( sigcontext );
 +    abort_thread( 1 );
 +#endif
 +
      if (!chpe || !chpe->InSimulation)
      {
          NTSTATUS status = send_debug_event( data, rec, context, TRUE );
-@@ -1037,6 +1062,7 @@ __ASM_GLOBAL_FUNC( user_mode_abort_thread,
+@@ -1037,6 +1088,7 @@ __ASM_GLOBAL_FUNC( user_mode_abort_thread,
                     "bl " __ASM_NAME("abort_thread") )
  
  
@@ -1399,7 +1425,7 @@ index 02b6d57..fbfe7db 100644
  /***********************************************************************
   *           KeUserModeCallback
   */
-@@ -1071,6 +1097,7 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+@@ -1071,6 +1123,7 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
      if (!frame->prev_frame) return STATUS_NO_CALLBACK_ACTIVE;
      user_mode_callback_return( ret_ptr, ret_len, status, data->teb );
  }
@@ -1407,7 +1433,7 @@ index 02b6d57..fbfe7db 100644
  
  
  /***********************************************************************
-@@ -1078,11 +1105,89 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+@@ -1078,11 +1131,89 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
   *
   * Handle a page fault happening during a system call.
   */
@@ -1497,7 +1523,7 @@ index 02b6d57..fbfe7db 100644
      if (!is_inside_syscall( data, SP_sig(context) )) return FALSE;
  
      TRACE( "code=%x flags=%x addr=%p pc=%p\n",
-@@ -1392,6 +1497,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1392,6 +1523,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      ucontext_t *sigcontext = _sigcontext;
      struct thread_data *data = get_thread_data();
  
@@ -1509,7 +1535,7 @@ index 02b6d57..fbfe7db 100644
      if (is_inside_syscall( data, SP_sig(sigcontext) )) abort_thread(0);
      user_mode_abort_thread( 0, get_syscall_frame( data ));
  }
-@@ -1440,6 +1550,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1440,6 +1576,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      extern const ULONG_PTR __wine_unix_call_dispatcher_user_stack;
      extern const ULONG_PTR call_user_mode_callback_user_stack_ptr;
  
@@ -1545,7 +1571,7 @@ index 02b6d57..fbfe7db 100644
      /* if we're in a syscall dispatcher, but not yet on the syscall stack, construct
       * the frame now from the signal context. */
      if ((ULONG_PTR)__wine_syscall_dispatcher <= PC_sig(sigcontext) &&
-@@ -1509,6 +1648,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1509,6 +1674,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      struct syscall_frame *frame = get_syscall_frame( data );
      DWORD i;
  
@@ -1555,7 +1581,7 @@ index 02b6d57..fbfe7db 100644
      if (!is_inside_syscall( data, SP_sig(sigcontext) )) return;
      if (!frame) return;
  
-@@ -1691,6 +1833,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
+@@ -1691,6 +1859,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
  }
  
  
@@ -1563,7 +1589,7 @@ index 02b6d57..fbfe7db 100644
  /***********************************************************************
   *           signal_start_thread
   */
-@@ -1728,6 +1871,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
+@@ -1728,6 +1897,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
                     "mov sp, x4\n\t"
                     "bl " __ASM_NAME("init_syscall_frame") "\n\t"
                     "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
@@ -1571,7 +1597,7 @@ index 02b6d57..fbfe7db 100644
  
  
  /***********************************************************************
-@@ -1966,4 +2110,432 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+@@ -1966,4 +2136,432 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
  __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
                        __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
  
@@ -2809,6 +2835,475 @@ index 84f2a39..b4dc53b 100644
  #if defined(__x86_64__) || defined(__i386__)
      /* no-op */
  #elif defined(HAVE___CLEAR_CACHE)
+diff --git a/dlls/opengl32/unix_private.h b/dlls/opengl32/unix_private.h
+index a5b82cc..6b3bacc 100644
+--- a/dlls/opengl32/unix_private.h
++++ b/dlls/opengl32/unix_private.h
+@@ -83,6 +83,17 @@ static inline TEB *get_teb64( ULONG teb32 )
+ 
+ extern NTSTATUS return_wow64_string( const void *str, PTR32 *wow64_str );
+ 
++/* Barrique: with the Hypervisor.framework backend (WINE_HVF=1) Windows code runs in
++ * a VM that only sees Windows views, not host memory. Driver strings and driver
++ * buffer mappings are host pointers, so 64-bit processes go through the same
++ * copies as WoW64 processes. */
++extern BOOL hvf_copy;
++extern const void *hvf_string( const void *str );
++extern void hvf_glGetBufferPointerv( TEB *teb, GLenum target, GLenum pname, void **params,
++                                     PFN_glGetBufferPointerv p_glGetBufferPointerv );
++extern void hvf_glGetNamedBufferPointerv( TEB *teb, GLuint buffer, GLenum pname, void **params,
++                                          PFN_glGetNamedBufferPointerv p_glGetNamedBufferPointerv );
++
+ #endif
+ 
+ extern NTSTATUS process_attach( void *args );
+diff --git a/dlls/opengl32/unix_thunks.c b/dlls/opengl32/unix_thunks.c
+index 0ff25c6..38f15a8 100644
+--- a/dlls/opengl32/unix_thunks.c
++++ b/dlls/opengl32/unix_thunks.c
+@@ -1115,6 +1115,7 @@ static NTSTATUS gl_glGetString( void *args )
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glGetString) return STATUS_NOT_IMPLEMENTED;
+     params->ret = funcs->p_glGetString( params->name );
++    if (hvf_copy) params->ret = hvf_string( params->ret );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -4293,7 +4294,8 @@ static NTSTATUS ext_glBufferAttachMemoryNV( void *args )
+     struct glBufferAttachMemoryNV_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glBufferAttachMemoryNV) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glBufferAttachMemoryNV( params->target, params->memory, params->offset );
++    if (hvf_copy) wow64_glBufferAttachMemoryNV( params->teb, params->target, params->memory, params->offset, funcs->p_glBufferAttachMemoryNV );
++    else funcs->p_glBufferAttachMemoryNV( params->target, params->memory, params->offset );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -4302,7 +4304,8 @@ static NTSTATUS ext_glBufferData( void *args )
+     struct glBufferData_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glBufferData) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glBufferData( params->target, params->size, params->data, params->usage );
++    if (hvf_copy) wow64_glBufferData( params->teb, params->target, params->size, params->data, params->usage, funcs->p_glBufferData );
++    else funcs->p_glBufferData( params->target, params->size, params->data, params->usage );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -4311,7 +4314,8 @@ static NTSTATUS ext_glBufferDataARB( void *args )
+     struct glBufferDataARB_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glBufferDataARB) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glBufferDataARB( params->target, params->size, params->data, params->usage );
++    if (hvf_copy) wow64_glBufferData( params->teb, params->target, params->size, params->data, params->usage, funcs->p_glBufferDataARB );
++    else funcs->p_glBufferDataARB( params->target, params->size, params->data, params->usage );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -4356,7 +4360,8 @@ static NTSTATUS ext_glBufferStorage( void *args )
+     struct glBufferStorage_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glBufferStorage) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glBufferStorage( params->target, params->size, params->data, params->flags );
++    if (hvf_copy) wow64_glBufferStorage( params->teb, params->target, params->size, params->data, params->flags, funcs->p_glBufferStorage );
++    else funcs->p_glBufferStorage( params->target, params->size, params->data, params->flags );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -4365,7 +4370,8 @@ static NTSTATUS ext_glBufferStorageMemEXT( void *args )
+     struct glBufferStorageMemEXT_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glBufferStorageMemEXT) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glBufferStorageMemEXT( params->target, params->size, params->memory, params->offset );
++    if (hvf_copy) wow64_glBufferStorageMemEXT( params->teb, params->target, params->size, params->memory, params->offset, funcs->p_glBufferStorageMemEXT );
++    else funcs->p_glBufferStorageMemEXT( params->target, params->size, params->memory, params->offset );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -6353,7 +6359,8 @@ static NTSTATUS ext_glDeleteBuffers( void *args )
+     struct glDeleteBuffers_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glDeleteBuffers) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glDeleteBuffers( params->n, params->buffers );
++    if (hvf_copy) wow64_glDeleteBuffers( params->teb, params->n, params->buffers, funcs->p_glDeleteBuffers );
++    else funcs->p_glDeleteBuffers( params->n, params->buffers );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -6362,7 +6369,8 @@ static NTSTATUS ext_glDeleteBuffersARB( void *args )
+     struct glDeleteBuffersARB_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glDeleteBuffersARB) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glDeleteBuffersARB( params->n, params->buffers );
++    if (hvf_copy) wow64_glDeleteBuffers( params->teb, params->n, params->buffers, funcs->p_glDeleteBuffersARB );
++    else funcs->p_glDeleteBuffersARB( params->n, params->buffers );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -7748,7 +7756,8 @@ static NTSTATUS ext_glFlushMappedBufferRange( void *args )
+     struct glFlushMappedBufferRange_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glFlushMappedBufferRange) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glFlushMappedBufferRange( params->target, params->offset, params->length );
++    if (hvf_copy) wow64_glFlushMappedBufferRange( params->teb, params->target, params->offset, params->length, funcs->p_glFlushMappedBufferRange );
++    else funcs->p_glFlushMappedBufferRange( params->target, params->offset, params->length );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -7757,7 +7766,8 @@ static NTSTATUS ext_glFlushMappedBufferRangeAPPLE( void *args )
+     struct glFlushMappedBufferRangeAPPLE_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glFlushMappedBufferRangeAPPLE) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glFlushMappedBufferRangeAPPLE( params->target, params->offset, params->size );
++    if (hvf_copy) wow64_glFlushMappedBufferRange( params->teb, params->target, params->offset, params->size, funcs->p_glFlushMappedBufferRangeAPPLE );
++    else funcs->p_glFlushMappedBufferRangeAPPLE( params->target, params->offset, params->size );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -7766,7 +7776,8 @@ static NTSTATUS ext_glFlushMappedNamedBufferRange( void *args )
+     struct glFlushMappedNamedBufferRange_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glFlushMappedNamedBufferRange) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glFlushMappedNamedBufferRange( params->buffer, params->offset, params->length );
++    if (hvf_copy) wow64_glFlushMappedNamedBufferRange( params->teb, params->buffer, params->offset, params->length, funcs->p_glFlushMappedNamedBufferRange );
++    else funcs->p_glFlushMappedNamedBufferRange( params->buffer, params->offset, params->length );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -7775,7 +7786,8 @@ static NTSTATUS ext_glFlushMappedNamedBufferRangeEXT( void *args )
+     struct glFlushMappedNamedBufferRangeEXT_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glFlushMappedNamedBufferRangeEXT) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glFlushMappedNamedBufferRangeEXT( params->buffer, params->offset, params->length );
++    if (hvf_copy) wow64_glFlushMappedNamedBufferRange( params->teb, params->buffer, params->offset, params->length, funcs->p_glFlushMappedNamedBufferRangeEXT );
++    else funcs->p_glFlushMappedNamedBufferRangeEXT( params->buffer, params->offset, params->length );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -8997,7 +9009,8 @@ static NTSTATUS ext_glGetBufferPointerv( void *args )
+     struct glGetBufferPointerv_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glGetBufferPointerv) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glGetBufferPointerv( params->target, params->pname, params->params );
++    if (hvf_copy) hvf_glGetBufferPointerv( params->teb, params->target, params->pname, params->params, funcs->p_glGetBufferPointerv );
++    else funcs->p_glGetBufferPointerv( params->target, params->pname, params->params );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -9006,7 +9019,8 @@ static NTSTATUS ext_glGetBufferPointervARB( void *args )
+     struct glGetBufferPointervARB_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glGetBufferPointervARB) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glGetBufferPointervARB( params->target, params->pname, params->params );
++    if (hvf_copy) hvf_glGetBufferPointerv( params->teb, params->target, params->pname, params->params, funcs->p_glGetBufferPointervARB );
++    else funcs->p_glGetBufferPointervARB( params->target, params->pname, params->params );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -10234,7 +10248,8 @@ static NTSTATUS ext_glGetNamedBufferPointerv( void *args )
+     struct glGetNamedBufferPointerv_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glGetNamedBufferPointerv) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glGetNamedBufferPointerv( params->buffer, params->pname, params->params );
++    if (hvf_copy) hvf_glGetNamedBufferPointerv( params->teb, params->buffer, params->pname, params->params, funcs->p_glGetNamedBufferPointerv );
++    else funcs->p_glGetNamedBufferPointerv( params->buffer, params->pname, params->params );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -10243,7 +10258,8 @@ static NTSTATUS ext_glGetNamedBufferPointervEXT( void *args )
+     struct glGetNamedBufferPointervEXT_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glGetNamedBufferPointervEXT) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glGetNamedBufferPointervEXT( params->buffer, params->pname, params->params );
++    if (hvf_copy) hvf_glGetNamedBufferPointerv( params->teb, params->buffer, params->pname, params->params, funcs->p_glGetNamedBufferPointervEXT );
++    else funcs->p_glGetNamedBufferPointervEXT( params->buffer, params->pname, params->params );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -11370,6 +11386,7 @@ static NTSTATUS ext_glGetStringi( void *args )
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glGetStringi) return STATUS_NOT_IMPLEMENTED;
+     params->ret = funcs->p_glGetStringi( params->name, params->index );
++    if (hvf_copy) params->ret = hvf_string( params->ret );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -13893,7 +13910,7 @@ static NTSTATUS ext_glMapBuffer( void *args )
+     struct glMapBuffer_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glMapBuffer) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glMapBuffer( params->target, params->access );
++    params->ret = hvf_copy ? wow64_glMapBuffer( params->teb, params->target, params->access, funcs->p_glMapBuffer ) : funcs->p_glMapBuffer( params->target, params->access );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -13902,7 +13919,7 @@ static NTSTATUS ext_glMapBufferARB( void *args )
+     struct glMapBufferARB_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glMapBufferARB) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glMapBufferARB( params->target, params->access );
++    params->ret = hvf_copy ? wow64_glMapBuffer( params->teb, params->target, params->access, funcs->p_glMapBufferARB ) : funcs->p_glMapBufferARB( params->target, params->access );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -13911,7 +13928,7 @@ static NTSTATUS ext_glMapBufferRange( void *args )
+     struct glMapBufferRange_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glMapBufferRange) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glMapBufferRange( params->target, params->offset, params->length, params->access );
++    params->ret = hvf_copy ? wow64_glMapBufferRange( params->teb, params->target, params->offset, params->length, params->access, funcs->p_glMapBufferRange ) : funcs->p_glMapBufferRange( params->target, params->offset, params->length, params->access );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -13947,7 +13964,7 @@ static NTSTATUS ext_glMapNamedBuffer( void *args )
+     struct glMapNamedBuffer_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glMapNamedBuffer) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glMapNamedBuffer( params->buffer, params->access );
++    params->ret = hvf_copy ? wow64_glMapNamedBuffer( params->teb, params->buffer, params->access, funcs->p_glMapNamedBuffer ) : funcs->p_glMapNamedBuffer( params->buffer, params->access );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -13956,7 +13973,7 @@ static NTSTATUS ext_glMapNamedBufferEXT( void *args )
+     struct glMapNamedBufferEXT_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glMapNamedBufferEXT) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glMapNamedBufferEXT( params->buffer, params->access );
++    params->ret = hvf_copy ? wow64_glMapNamedBuffer( params->teb, params->buffer, params->access, funcs->p_glMapNamedBufferEXT ) : funcs->p_glMapNamedBufferEXT( params->buffer, params->access );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -13965,7 +13982,7 @@ static NTSTATUS ext_glMapNamedBufferRange( void *args )
+     struct glMapNamedBufferRange_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glMapNamedBufferRange) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glMapNamedBufferRange( params->buffer, params->offset, params->length, params->access );
++    params->ret = hvf_copy ? wow64_glMapNamedBufferRange( params->teb, params->buffer, params->offset, params->length, params->access, funcs->p_glMapNamedBufferRange ) : funcs->p_glMapNamedBufferRange( params->buffer, params->offset, params->length, params->access );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -13974,7 +13991,7 @@ static NTSTATUS ext_glMapNamedBufferRangeEXT( void *args )
+     struct glMapNamedBufferRangeEXT_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glMapNamedBufferRangeEXT) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glMapNamedBufferRangeEXT( params->buffer, params->offset, params->length, params->access );
++    params->ret = hvf_copy ? wow64_glMapNamedBufferRange( params->teb, params->buffer, params->offset, params->length, params->access, funcs->p_glMapNamedBufferRangeEXT ) : funcs->p_glMapNamedBufferRangeEXT( params->buffer, params->offset, params->length, params->access );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -16251,7 +16268,8 @@ static NTSTATUS ext_glNamedBufferAttachMemoryNV( void *args )
+     struct glNamedBufferAttachMemoryNV_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glNamedBufferAttachMemoryNV) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glNamedBufferAttachMemoryNV( params->buffer, params->memory, params->offset );
++    if (hvf_copy) wow64_glNamedBufferAttachMemoryNV( params->teb, params->buffer, params->memory, params->offset, funcs->p_glNamedBufferAttachMemoryNV );
++    else funcs->p_glNamedBufferAttachMemoryNV( params->buffer, params->memory, params->offset );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -16260,7 +16278,8 @@ static NTSTATUS ext_glNamedBufferData( void *args )
+     struct glNamedBufferData_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glNamedBufferData) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glNamedBufferData( params->buffer, params->size, params->data, params->usage );
++    if (hvf_copy) wow64_glNamedBufferData( params->teb, params->buffer, params->size, params->data, params->usage, funcs->p_glNamedBufferData );
++    else funcs->p_glNamedBufferData( params->buffer, params->size, params->data, params->usage );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -16269,7 +16288,8 @@ static NTSTATUS ext_glNamedBufferDataEXT( void *args )
+     struct glNamedBufferDataEXT_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glNamedBufferDataEXT) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glNamedBufferDataEXT( params->buffer, params->size, params->data, params->usage );
++    if (hvf_copy) wow64_glNamedBufferData( params->teb, params->buffer, params->size, params->data, params->usage, funcs->p_glNamedBufferDataEXT );
++    else funcs->p_glNamedBufferDataEXT( params->buffer, params->size, params->data, params->usage );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -16305,7 +16325,8 @@ static NTSTATUS ext_glNamedBufferStorage( void *args )
+     struct glNamedBufferStorage_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glNamedBufferStorage) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glNamedBufferStorage( params->buffer, params->size, params->data, params->flags );
++    if (hvf_copy) wow64_glNamedBufferStorage( params->teb, params->buffer, params->size, params->data, params->flags, funcs->p_glNamedBufferStorage );
++    else funcs->p_glNamedBufferStorage( params->buffer, params->size, params->data, params->flags );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -16314,7 +16335,8 @@ static NTSTATUS ext_glNamedBufferStorageEXT( void *args )
+     struct glNamedBufferStorageEXT_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glNamedBufferStorageEXT) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glNamedBufferStorageEXT( params->buffer, params->size, params->data, params->flags );
++    if (hvf_copy) wow64_glNamedBufferStorage( params->teb, params->buffer, params->size, params->data, params->flags, funcs->p_glNamedBufferStorageEXT );
++    else funcs->p_glNamedBufferStorageEXT( params->buffer, params->size, params->data, params->flags );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -16323,7 +16345,8 @@ static NTSTATUS ext_glNamedBufferStorageMemEXT( void *args )
+     struct glNamedBufferStorageMemEXT_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glNamedBufferStorageMemEXT) return STATUS_NOT_IMPLEMENTED;
+-    funcs->p_glNamedBufferStorageMemEXT( params->buffer, params->size, params->memory, params->offset );
++    if (hvf_copy) wow64_glNamedBufferStorageMemEXT( params->teb, params->buffer, params->size, params->memory, params->offset, funcs->p_glNamedBufferStorageMemEXT );
++    else funcs->p_glNamedBufferStorageMemEXT( params->buffer, params->size, params->memory, params->offset );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -23814,7 +23837,7 @@ static NTSTATUS ext_glUnmapBuffer( void *args )
+     struct glUnmapBuffer_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glUnmapBuffer) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glUnmapBuffer( params->target );
++    params->ret = hvf_copy ? wow64_glUnmapBuffer( params->teb, params->target, funcs->p_glUnmapBuffer ) : funcs->p_glUnmapBuffer( params->target );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -23823,7 +23846,7 @@ static NTSTATUS ext_glUnmapBufferARB( void *args )
+     struct glUnmapBufferARB_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glUnmapBufferARB) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glUnmapBufferARB( params->target );
++    params->ret = hvf_copy ? wow64_glUnmapBuffer( params->teb, params->target, funcs->p_glUnmapBufferARB ) : funcs->p_glUnmapBufferARB( params->target );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -23832,7 +23855,7 @@ static NTSTATUS ext_glUnmapNamedBuffer( void *args )
+     struct glUnmapNamedBuffer_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glUnmapNamedBuffer) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glUnmapNamedBuffer( params->buffer );
++    params->ret = hvf_copy ? wow64_glUnmapNamedBuffer( params->teb, params->buffer, funcs->p_glUnmapNamedBuffer ) : funcs->p_glUnmapNamedBuffer( params->buffer );
+     return STATUS_SUCCESS;
+ }
+ 
+@@ -23841,7 +23864,7 @@ static NTSTATUS ext_glUnmapNamedBufferEXT( void *args )
+     struct glUnmapNamedBufferEXT_params *params = args;
+     const struct opengl_funcs *funcs = params->teb->glTable;
+     if (!funcs->p_glUnmapNamedBufferEXT) return STATUS_NOT_IMPLEMENTED;
+-    params->ret = funcs->p_glUnmapNamedBufferEXT( params->buffer );
++    params->ret = hvf_copy ? wow64_glUnmapNamedBuffer( params->teb, params->buffer, funcs->p_glUnmapNamedBufferEXT ) : funcs->p_glUnmapNamedBufferEXT( params->buffer );
+     return STATUS_SUCCESS;
+ }
+ 
+diff --git a/dlls/opengl32/unix_wgl.c b/dlls/opengl32/unix_wgl.c
+index 26136a0..9d4080a 100644
+--- a/dlls/opengl32/unix_wgl.c
++++ b/dlls/opengl32/unix_wgl.c
+@@ -1197,6 +1197,13 @@ NTSTATUS process_attach( void *args )
+         NtQuerySystemInformation( SystemEmulationBasicInformation, &info, sizeof(info), NULL );
+         zero_bits = (ULONG_PTR)info.HighestUserAddress | 0x7fffffff;
+     }
++#ifdef _WIN64
++    else
++    {
++        const char *hvf = getenv( "WINE_HVF" );
++        hvf_copy = hvf && !strcmp( hvf, "1" );
++    }
++#endif
+ 
+     return STATUS_SUCCESS;
+ }
+@@ -1671,7 +1678,7 @@ static void *wow64_map_buffer( TEB *teb, struct buffer *buffer, GLenum target, G
+ 
+     buffer->host_ptr = ptr;
+     if (!offset && !length) length = buffer->size;
+-    if (ULongToPtr(PtrToUlong(ptr)) == ptr) /* we're lucky */
++    if (!hvf_copy && ULongToPtr(PtrToUlong(ptr)) == ptr) /* we're lucky */
+     {
+         buffer->map_ptr = ptr;
+         TRACE( "returning %p\n", buffer->map_ptr );
+@@ -1797,6 +1804,90 @@ void wow64_glGetNamedBufferPointerv( TEB *teb, GLuint buffer, GLenum pname, PTR3
+     *params = PtrToUlong(ptr);
+ }
+ 
++BOOL hvf_copy;
++
++static pthread_mutex_t hvf_string_lock = PTHREAD_MUTEX_INITIALIZER;
++static struct hvf_string
++{
++    struct hvf_string *next;
++    size_t len;
++    char *copy;
++} *hvf_strings;
++static char *hvf_string_pool;
++static SIZE_T hvf_string_left;
++
++/* Return a copy of a driver string in memory that Windows code can read. Driver
++ * strings live as long as the context and repeat, so copies are kept and shared. */
++const void *hvf_string( const void *str )
++{
++    struct hvf_string *entry;
++    const char *ret = NULL;
++    size_t len;
++
++    if (!str) return NULL;
++    len = strlen( str ) + 1;
++
++    pthread_mutex_lock( &hvf_string_lock );
++    for (entry = hvf_strings; entry; entry = entry->next)
++        if (entry->len == len && !memcmp( entry->copy, str, len )) break;
++    if (entry)
++    {
++        ret = entry->copy;
++        goto done;
++    }
++    if (len > hvf_string_left)
++    {
++        SIZE_T size = (len + 0xffff) & ~(SIZE_T)0xffff;
++        void *pool = NULL;
++
++        if (NtAllocateVirtualMemory( GetCurrentProcess(), &pool, 0, &size, MEM_COMMIT, PAGE_READWRITE ))
++        {
++            ERR( "NtAllocateVirtualMemory failed\n" );
++            goto done;
++        }
++        hvf_string_pool = pool;
++        hvf_string_left = size;
++    }
++    if (!(entry = malloc( sizeof(*entry) ))) goto done;
++    entry->len = len;
++    entry->copy = hvf_string_pool;
++    memcpy( entry->copy, str, len );
++    hvf_string_pool += len;
++    hvf_string_left -= len;
++    entry->next = hvf_strings;
++    hvf_strings = entry;
++    ret = entry->copy;
++done:
++    pthread_mutex_unlock( &hvf_string_lock );
++    return ret;
++}
++
++void hvf_glGetBufferPointerv( TEB *teb, GLenum target, GLenum pname, void **params,
++                              PFN_glGetBufferPointerv p_glGetBufferPointerv )
++{
++    struct buffer *buffer;
++
++    if (pname == GL_BUFFER_MAP_POINTER && (buffer = get_target_buffer_storage( teb, target )))
++    {
++        *params = buffer->map_ptr;
++        return;
++    }
++    p_glGetBufferPointerv( target, pname, params );
++}
++
++void hvf_glGetNamedBufferPointerv( TEB *teb, GLuint name, GLenum pname, void **params,
++                                   PFN_glGetNamedBufferPointerv p_glGetNamedBufferPointerv )
++{
++    struct buffer *buffer;
++
++    if (pname == GL_BUFFER_MAP_POINTER && name && (buffer = get_named_buffer_storage( teb, name )))
++    {
++        *params = buffer->map_ptr;
++        return;
++    }
++    p_glGetNamedBufferPointerv( name, pname, params );
++}
++
+ void *wow64_glMapBuffer( TEB *teb, GLenum target, GLenum access, PFN_glMapBuffer p_glMapBuffer )
+ {
+     GLbitfield range_access = map_range_flags_from_map_flags( access );
 diff --git a/dlls/win32u/font.c b/dlls/win32u/font.c
 index 97936e9..d643139 100644
 --- a/dlls/win32u/font.c
@@ -2885,6 +3380,77 @@ index de1a484..c83a235 100644
      switch (type)
      {
      case NtUserScrollBarWndProc:
+diff --git a/dlls/winemac.drv/cocoa_event.m b/dlls/winemac.drv/cocoa_event.m
+index 581449a..e0f128e 100644
+--- a/dlls/winemac.drv/cocoa_event.m
++++ b/dlls/winemac.drv/cocoa_event.m
+@@ -498,6 +498,15 @@ void OnMainThread(dispatch_block_t block)
+     dispatch_semaphore_t semaphore = NULL;
+     __block BOOL finished;
+ 
++    /* Barrique: called on the main thread (e.g. -[WineContentView viewWillDraw]
++       -> macdrv_update_opengl_context), queueing the block and waiting for the
++       main thread would deadlock; run it right away instead. */
++    if ([NSThread isMainThread])
++    {
++        block();
++        return;
++    }
++
+     if (!queue)
+     {
+         semaphore = dispatch_semaphore_create(0);
+diff --git a/dlls/winemac.drv/cocoa_opengl.m b/dlls/winemac.drv/cocoa_opengl.m
+index c15aefe..fb014ca 100644
+--- a/dlls/winemac.drv/cocoa_opengl.m
++++ b/dlls/winemac.drv/cocoa_opengl.m
+@@ -134,13 +134,32 @@ - (void) wine_updateBackingSize:(const CGSize*)size
+         }
+     }
+ 
++    /* Barrique: -[NSOpenGLContext dealloc] calls -setView:/-clearDrawable on the
++       deallocating object.  A block that used [super ...] would capture and retain
++       self, and its later release on the main thread hits freed memory.  Go
++       through these helpers with a non-retaining (__block, MRC) reference instead;
++       OnMainThread is synchronous, so the object is alive while the block runs. */
++    - (void) wine_superSetView:(NSView*)newView
++    {
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wdeprecated-declarations"
++        [super setView:newView];
++#pragma clang diagnostic pop
++    }
++
++    - (void) wine_superClearDrawable
++    {
++        [super clearDrawable];
++    }
++
+     - (void) setView:(NSView*)newView
+     {
+         NSView* oldView = [self view];
++        __block WineOpenGLContext* unretained_self = self;
+         if ([NSThread isMainThread])
+             [super setView:newView];
+         else OnMainThread(^{
+-            [super setView:newView];
++            [unretained_self wine_superSetView:newView];
+         });
+         [newView retain];
+         [oldView release];
+@@ -149,10 +168,11 @@ - (void) setView:(NSView*)newView
+     - (void) clearDrawable
+     {
+         NSView* oldView = [self view];
++        __block WineOpenGLContext* unretained_self = self;
+         if ([NSThread isMainThread])
+             [super clearDrawable];
+         else OnMainThread(^{
+-            [super clearDrawable];
++            [unretained_self wine_superClearDrawable];
+         });
+         [oldView release];
+ 
 diff --git a/dlls/winemac.drv/unixlib.h b/dlls/winemac.drv/unixlib.h
 index dc22da0..f096cf3 100644
 --- a/dlls/winemac.drv/unixlib.h
