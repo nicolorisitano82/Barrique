@@ -122,7 +122,7 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 - ✅ Passo 0, base di partenza (giro 5, 2026-11-15).
 - ✅ Grafica a 64 bit sotto HVF: stringhe e buffer GL, blocco e use-after-free in winemac (giro 6, 2026-11-16).
 - ✅ Passo 1, FreeType e font (giro 7, 2026-11-16): FreeType incluso con `@rpath`, 35 unità migliorate. Dal test di fumo: `fork()` da un thread Windows sotto HVF (installer VC++, crash all'uscita dei processi), winedbg e wineserver col debugger.
-- 🔧 Passo 2, audio (giro 8, in corso): timer di coreaudio, salvataggio del registro in un processo figlio (via il buco audio di ~60 ms ogni 20 s). Da provare 96 kHz e Bluetooth.
+- 🔧 Passo 2, audio (giro 8, in corso): timer di coreaudio, salvataggio del registro in un processo figlio (via il buco audio di ~60 ms ogni 20 s). 96 kHz provato; resta il Bluetooth.
 - ⬜ Passi 3-7: video, memoria GPU, Vulkan/MoltenVK, banco di prova grafico, Direct3D.
 
 - ⬜ **[MS]** Direct3D su Metal in versione ARM64X, così un'unica build serve sia ai programmi ARM64 sia a quelli x86-64 (ARM64EC). Componenti da valutare:
@@ -136,7 +136,7 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 - ⬜ **[MS]** Mouse raw con GCMouse e schermo intero nativo di macOS.
 - 🔧 **[MS]** Font:
   - ✅ Arial, Times New Roman e Courier New: macOS li ha già in `/System/Library/Fonts/Supplemental` e Wine li carica tramite CoreText, Liberation non serve;
-  - ⬜ famiglie CJK di Windows associate ai font di sistema di macOS.
+  - ✅ famiglie CJK di Windows associate ai font di sistema di macOS (Hiragino, Songti, PingFang, Apple SD Gothic Neo; giro 9).
 - ⬜ **[MS]** Mono (arm64, x86, x86-64) e Gecko inclusi, invece della finestra che chiede di scaricarli.
 - ⬜ **[MS]** CEF/Chromium: `--in-process-gpu` automatico (senza, la pagina resta bianca).
 - ⬜ **[MS]** msync, sincronizzazione su memoria condivisa. Da verificare con la VM: la memoria condivisa `shm` nella VM è già provata.

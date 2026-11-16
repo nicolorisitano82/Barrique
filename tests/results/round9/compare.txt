@@ -1,0 +1,28 @@
+== aarch64-gdi32
+  font: NEW font.c:5698 font family names don't match: returned SimSun, expect Songti SC
+  font: NEW font.c:5700 FamilyName SimSun doesn't match otmpFamilyName Songti SC
+== aarch64-kernel32
+  loader: WORSE timeout(-) -> crash(-)
+== aarch64-user32
+  input: NEW input.c:3221 4: Unexpected cursor movement
+  input: NEW input.c:6491 got pos (49,51)
+== i386-gdi32
+  font: NEW font.c:5698 font family names don't match: returned SimSun, expect Songti SC
+  font: NEW font.c:5700 FamilyName SimSun doesn't match otmpFamilyName Songti SC
+== i386-kernel32
+  debugger: better crash(1) -> timeout(0)
+  debugger: 1 failing checks not comparable (baseline crash, now timeout)
+  debugger: 1 checks fixed
+== i386-user32
+  msg: 24 failing checks not comparable (baseline timeout, now timeout)
+  msg: 4 checks fixed
+== x86_64-gdi32
+  font: NEW font.c:5698 font family names don't match: returned SimSun, expect Songti SC
+  font: NEW font.c:5700 FamilyName SimSun doesn't match otmpFamilyName Songti SC
+== x86_64-kernel32
+  debugger: 7 checks fixed
+== x86_64-user32
+  msg: 1 failing checks not comparable (baseline timeout, now timeout)
+
+units worse 1, better 1; failing checks new 8, fixed 12
+REGRESSIONS

@@ -1,0 +1,11 @@
+unit	status	executed	failures	todo	skipped	seconds
+capture	ok	9885	0	0	0	52
+generated	ok	0	0	0	0	0
+joystick	ok	34	0	0	1	1
+mci	fail	748	274	38	2	17
+mcicda	ok	6	0	1	2	1
+midi	ok	406	0	4	0	9
+mixer	ok	249	0	5	0	0
+mmio	ok	367	0	8	0	0
+timer	ok	88	0	0	0	12
+wave	fail	7268	3	64	0	26

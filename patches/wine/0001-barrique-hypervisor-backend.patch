@@ -2422,7 +2422,7 @@ index 83084b8..ec1677d 100644
  
  static DWORD get_core_id_regs_arm64( struct smbios_wine_id_reg_value_arm64 *regs,
 diff --git a/dlls/ntdll/unix/thread.c b/dlls/ntdll/unix/thread.c
-index 11171cc..b00ac21 100644
+index 11171cc..e39e6f0 100644
 --- a/dlls/ntdll/unix/thread.c
 +++ b/dlls/ntdll/unix/thread.c
 @@ -1564,6 +1564,10 @@ static DECLSPEC_NORETURN void exit_thread( int status )
@@ -2436,6 +2436,35 @@ index 11171cc..b00ac21 100644
      pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
      process_exit_wrapper( get_unix_exit_code( status ));
  }
+@@ -1689,11 +1693,27 @@ NTSTATUS send_debug_event( struct thread_data *data, EXCEPTION_RECORD *rec,
+ NTSTATUS WINAPI NtRaiseException( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL first_chance )
+ {
+     struct thread_data *data = get_thread_data();
+-    NTSTATUS status = send_debug_event( data, rec, context, first_chance );
++    NTSTATUS status;
++#ifdef __aarch64__
++    /* Barrique: FEX (ARM64EC) moves the PC of an x64 int3 back onto the int3
++     * before raising it. An x64 debugger expects Rip after the int3, like
++     * x86-64 Windows and setup_raise_exception() in signal_x86_64.c: show it
++     * that, and move it back only for the program's own handlers. */
++    BOOL x64_breakpoint = rec->ExceptionCode == EXCEPTION_BREAKPOINT &&
++                          context->Pc == (ULONG_PTR)rec->ExceptionAddress &&
++                          is_emulated_code( context->Pc );
++
++    if (x64_breakpoint) context->Pc++;
++#endif
++    status = send_debug_event( data, rec, context, first_chance );
+ 
+     if (status == DBG_CONTINUE || status == DBG_EXCEPTION_HANDLED)
+         return NtContinue( context, FALSE );
+ 
++#ifdef __aarch64__
++    if (x64_breakpoint) context->Pc--;
++#endif
++
+     if (first_chance) return call_user_exception_dispatcher( data, rec, context );
+ 
+     if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
 index 829db1e..2091b1d 100644
 --- a/dlls/ntdll/unix/unix_private.h
@@ -3632,10 +3661,64 @@ index 454fb25..bcec456 100644
  EXTRADLLFLAGS = -nodefaultlibs
  
 diff --git a/dlls/win32u/font.c b/dlls/win32u/font.c
-index 97936e9..d643139 100644
+index 97936e9..fc31490 100644
 --- a/dlls/win32u/font.c
 +++ b/dlls/win32u/font.c
-@@ -3046,12 +3046,13 @@ static void update_codepage( UINT screen_dpi )
+@@ -994,6 +994,53 @@ static void load_gdi_font_replacements(void)
+     NtClose( hkey );
+ }
+ 
++#ifdef __APPLE__
++/* Barrique: map the Windows CJK families onto the macOS system fonts, like a
++ * built-in Replacements key. A real font of that name, or a registry
++ * replacement, takes precedence. Candidates are tried in order. */
++static void load_mac_cjk_replacements(void)
++{
++    static const char * const jp_gothic[] = { "Hiragino Sans", "Hiragino Maru Gothic ProN", NULL };
++    static const char * const jp_mincho[] = { "Hiragino Mincho ProN", "Hiragino Sans", NULL };
++    static const char * const sc_song[]   = { "Songti SC", "STSong", "Hiragino Sans GB", "PingFang SC", NULL };
++    static const char * const sc_hei[]    = { "PingFang SC", "Hiragino Sans GB", "Heiti SC", NULL };
++    static const char * const tc_ming[]   = { "Songti TC", "PingFang TC", "Heiti TC", NULL };
++    static const char * const tc_hei[]    = { "PingFang TC", "Heiti TC", NULL };
++    static const char * const ko_gothic[] = { "Apple SD Gothic Neo", "AppleGothic", NULL };
++    static const char * const ko_myungjo[] = { "AppleMyungjo", "Apple SD Gothic Neo", NULL };
++    static const struct { const char *name; const char * const *fonts; } map[] =
++    {
++        { "MS Gothic", jp_gothic }, { "MS PGothic", jp_gothic }, { "MS UI Gothic", jp_gothic },
++        { "Meiryo", jp_gothic }, { "Meiryo UI", jp_gothic },
++        { "Yu Gothic", jp_gothic }, { "Yu Gothic UI", jp_gothic },
++        { "MS Mincho", jp_mincho }, { "MS PMincho", jp_mincho }, { "Yu Mincho", jp_mincho },
++        { "SimSun", sc_song }, { "NSimSun", sc_song }, { "SimSun-ExtB", sc_song },
++        { "SimHei", sc_hei }, { "Microsoft YaHei", sc_hei }, { "Microsoft YaHei UI", sc_hei },
++        { "DengXian", sc_hei },
++        { "PMingLiU", tc_ming }, { "MingLiU", tc_ming }, { "MingLiU_HKSCS", tc_ming },
++        { "PMingLiU-ExtB", tc_ming },
++        { "Microsoft JhengHei", tc_hei }, { "Microsoft JhengHei UI", tc_hei },
++        { "Gulim", ko_gothic }, { "GulimChe", ko_gothic }, { "Dotum", ko_gothic },
++        { "DotumChe", ko_gothic }, { "Malgun Gothic", ko_gothic },
++        { "Batang", ko_myungjo }, { "BatangChe", ko_myungjo }, { "Gungsuh", ko_myungjo },
++    };
++    WCHAR name[LF_FACESIZE], font[LF_FACESIZE];
++    const char * const *p;
++    unsigned int i;
++
++    for (i = 0; i < ARRAY_SIZE(map); i++)
++    {
++        asciiz_to_unicode( name, map[i].name );
++        if (find_family_from_any_name( name )) continue;
++        for (p = map[i].fonts; *p; p++)
++        {
++            asciiz_to_unicode( font, *p );
++            if (add_family_replacement( name, font )) break;
++        }
++    }
++}
++#endif
++
+ static void dump_gdi_font_list(void)
+ {
+     struct gdi_font_family *family;
+@@ -3046,12 +3093,13 @@ static void update_codepage( UINT screen_dpi )
          font_dpi = *(DWORD *)info->Data;
  
      RtlInitCodePageTable( utf8_hdr, &utf8_cp );
@@ -3651,6 +3734,16 @@ index 97936e9..d643139 100644
      else
          oem_cp = utf8_cp;
      snprintf( cpbuf, sizeof(cpbuf), "%u,%u", ansi_cp.CodePage, oem_cp.CodePage );
+@@ -6782,6 +6830,9 @@ UINT font_init(void)
+     reorder_font_list();
+     load_gdi_font_subst();
+     load_gdi_font_replacements();
++#ifdef __APPLE__
++    load_mac_cjk_replacements();
++#endif
+     load_system_links();
+     dump_gdi_font_list();
+     dump_gdi_font_subst();
 diff --git a/dlls/win32u/freetype.c b/dlls/win32u/freetype.c
 index ce89912..00df57a 100644
 --- a/dlls/win32u/freetype.c
