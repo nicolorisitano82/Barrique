@@ -716,10 +716,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..f734b6f
+index 0000000..4a9c9ef
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,928 @@
+@@ -0,0 +1,927 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -936,11 +936,13 @@ index 0000000..f734b6f
 +
 +/*
 + * Anonymous, readable, not executable, not file-backed or code-signing related,
-+ * and not GPU memory. Memory Metal allocates (VM_MEMORY_IOACCELERATOR), IOSurfaces
-+ * (VM_MEMORY_IOSURFACE) and anonymous memory the GPU has used through
-+ * newBufferWithBytesNoCopy (shared and wired, see research/hvproto/gpumem.m) all
-+ * pass the tests above, but nothing shows whether the SPTM accepts them in a VM,
-+ * so they are refused. Private wired pages (VirtualLock uses mlock) are fine.
++ * and not memory the GPU driver allocated: Metal buffers (VM_MEMORY_IOACCELERATOR)
++ * and IOSurfaces (VM_MEMORY_IOSURFACE) pass the other tests, and Wine never needs
++ * them in the VM (opengl32 and win32u's Vulkan copy or import instead), so they are
++ * refused. Process memory imported into Metal (VK_EXT_external_memory_host, which
++ * win32u uses under HVF) turns shared and, once the GPU used it, wired: phase 5
++ * step 4 mapped exactly such pages into a VM without trouble
++ * (research/hvproto/gpumap.m), so it is accepted.
 + */
 +static BOOL page_type_ok( const vm_region_extended_info_data_t *info, const vm_page_info_basic_data_t *page_info )
 +{
@@ -951,9 +953,6 @@ index 0000000..f734b6f
 +    if ((page_info->disposition & VM_PAGE_QUERY_PAGE_PRESENT) &&
 +        (page_info->disposition & (VM_PAGE_QUERY_PAGE_EXTERNAL | VM_PAGE_QUERY_PAGE_CS_VALIDATED |
 +                                   VM_PAGE_QUERY_PAGE_CS_TAINTED | VM_PAGE_QUERY_PAGE_CS_NX)))
-+        return FALSE;
-+    if ((page_info->disposition & VM_PAGE_QUERY_PAGE_WIRED) &&
-+        info->share_mode != SM_PRIVATE && info->share_mode != SM_PRIVATE_ALIASED)
 +        return FALSE;
 +    return TRUE;
 +}
@@ -4361,6 +4360,118 @@ index de1a484..c83a235 100644
      switch (type)
      {
      case NtUserScrollBarWndProc:
+diff --git a/dlls/win32u/vulkan.c b/dlls/win32u/vulkan.c
+index 3265d74..2f74e0d 100644
+--- a/dlls/win32u/vulkan.c
++++ b/dlls/win32u/vulkan.c
+@@ -60,9 +60,30 @@ static const UINT EXTERNAL_FENCE_WIN32_BITS = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQ
+ 
+ #define ROUND_SIZE(size, mask) ((((SIZE_T)(size) + (mask)) & ~(SIZE_T)(mask)))
+ 
++/* Barrique: under the Hypervisor.framework backend (ntdll/unix/hvf.c) Windows code
++ * runs in a VM that only maps plain process memory, and MoltenVK's mapped memory
++ * is Metal memory (VM_MEMORY_IOACCELERATOR), which hvf.c refuses. So 64-bit
++ * processes take the WoW64 path too: host visible memory is allocated with
++ * NtAllocateVirtualMemory and imported with VK_EXT_external_memory_host (phase 5
++ * step 4: such pages stay plain anonymous memory, mapping them is safe). */
++static BOOL hvf_host_memory(void)
++{
++#if defined(__APPLE__) && defined(__aarch64__)
++    static int enabled = -1;
++    if (enabled == -1)
++    {
++        const char *hvf = getenv( "WINE_HVF" );
++        enabled = hvf && !strcmp( hvf, "1" );
++    }
++    return enabled;
++#else
++    return FALSE;
++#endif
++}
++
+ static BOOL use_external_memory(void)
+ {
+-    return zero_bits != 0;
++    return zero_bits != 0 || hvf_host_memory();
+ }
+ 
+ struct mempool
+@@ -213,8 +234,9 @@ static VkResult allocate_external_host_memory( struct vulkan_device *device, VkM
+         return VK_ERROR_OUT_OF_HOST_MEMORY;
+     }
+ 
++    /* mapping is a Windows address: below 4GB it lives at WINE_LOW_WINDOW_BASE on the host */
+     if ((res = device->p_vkGetMemoryHostPointerPropertiesEXT( device->host.device, VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT,
+-                                                              mapping, &props )))
++                                                              wine_low_window_ptr( (ULONG_PTR)mapping ), &props )))
+     {
+         ERR( "vkGetMemoryHostPointerPropertiesEXT failed: %d\n", res );
+         return res;
+@@ -245,7 +267,7 @@ static VkResult allocate_external_host_memory( struct vulkan_device *device, VkM
+     {
+         import_info->sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT;
+         import_info->handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+-        import_info->pHostPointer = mapping;
++        import_info->pHostPointer = wine_low_window_ptr( (ULONG_PTR)mapping );
+         import_info->pNext = alloc_info->pNext;
+         alloc_info->pNext = import_info;
+         alloc_info->allocationSize = (alloc_info->allocationSize + align) & ~align;
+@@ -519,7 +541,7 @@ static VkResult init_physical_device( struct vulkan_physical_device *physical_de
+         }
+     }
+ 
+-    if (zero_bits && physical_device->extensions.has_VK_EXT_external_memory_host && !physical_device->map_placed_align)
++    if (use_external_memory() && physical_device->extensions.has_VK_EXT_external_memory_host && !physical_device->map_placed_align)
+     {
+         VkPhysicalDeviceExternalMemoryHostPropertiesEXT host_mem_props = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT};
+         VkPhysicalDeviceProperties2 props = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &host_mem_props};
+@@ -531,7 +553,7 @@ static VkResult init_physical_device( struct vulkan_physical_device *physical_de
+     }
+ 
+     driver_funcs->p_map_device_extensions( &extensions );
+-    if (extensions.has_VK_KHR_external_memory_win32 && zero_bits && !physical_device->map_placed_align)
++    if (extensions.has_VK_KHR_external_memory_win32 && use_external_memory() && !physical_device->map_placed_align)
+     {
+         WARN( "Cannot export WOW64 memory without VK_EXT_map_memory_placed\n" );
+         extensions.has_VK_KHR_external_memory_win32 = 0;
+@@ -1688,6 +1710,24 @@ static VkResult win32u_vkGetPhysicalDevicePresentRectanglesKHR( VkPhysicalDevice
+         return VK_SUCCESS;
+     }
+ 
++    if (!instance->p_vkGetPhysicalDevicePresentRectanglesKHR)
++    {
++        /* Barrique: MoltenVK has no vkGetPhysicalDevicePresentRectanglesKHR, but Windows
++         * drivers always do: one rectangle covering the surface's current extent */
++        VkSurfaceCapabilitiesKHR caps;
++        VkResult res;
++
++        if (!rects) { *rect_count = 1; return VK_SUCCESS; }
++        if (!*rect_count) return VK_INCOMPLETE;
++        if ((res = instance->p_vkGetPhysicalDeviceSurfaceCapabilitiesKHR( physical_device->host.physical_device,
++                                                                          surface->obj.host.surface, &caps )))
++            return res;
++        rects[0].offset.x = rects[0].offset.y = 0;
++        rects[0].extent = caps.currentExtent;
++        *rect_count = 1;
++        return VK_SUCCESS;
++    }
++
+     return instance->p_vkGetPhysicalDevicePresentRectanglesKHR( physical_device->host.physical_device,
+                                                                    surface->obj.host.surface, rect_count, rects );
+ }
+@@ -3130,6 +3170,12 @@ static void vulkan_init_once(void)
+     VkResult res;
+ 
+ #ifdef SONAME_LIBVULKAN
++#ifdef __APPLE__
++    /* Barrique: MoltenVK is bundled next to the other libraries (deps), found
++     * through win32u.so's rpath like FreeType */
++    vulkan_handle = dlopen( "@rpath/" SONAME_LIBVULKAN, RTLD_NOW );
++    if (!vulkan_handle)
++#endif
+     vulkan_handle = dlopen( SONAME_LIBVULKAN, RTLD_NOW );
+     if (!vulkan_handle) ERR( "Failed to load %s\n", SONAME_LIBVULKAN );
+ #else
 diff --git a/dlls/winecoreaudio.drv/coreaudio.c b/dlls/winecoreaudio.drv/coreaudio.c
 index 163faff..9497303 100644
 --- a/dlls/winecoreaudio.drv/coreaudio.c
@@ -4828,6 +4939,132 @@ index dc22da0..f096cf3 100644
 +#else
      return (void *)(UINT_PTR)param;
 +#endif
+ }
+diff --git a/dlls/winevulkan/make_vulkan b/dlls/winevulkan/make_vulkan
+index 71a921a..fefc998 100755
+--- a/dlls/winevulkan/make_vulkan
++++ b/dlls/winevulkan/make_vulkan
+@@ -1215,6 +1215,12 @@ class VkVariable(object):
+         else:
+             ptr = ""
+ 
++        # Barrique: UlongToPtr turns Windows addresses into host ones under HVF
++        # (WINE_LOW_WINDOW_BASE); handles are not addresses
++        if not self.is_pointer() and not self.is_static_array() and self.type in ("HANDLE", "HWND", "HMONITOR"):
++            return f"({cast_type})LongToHandle({prefix}{self.name})"
++        if not self.is_pointer() and not self.is_static_array() and self.type == "HINSTANCE":
++            return f"({cast_type})ULongToHandle({prefix}{self.name})"
+         return f"{ptr}({cast_type})UlongToPtr({prefix}{self.name})"
+ 
+ 
+@@ -2414,6 +2420,14 @@ class Generator(object):
+ 
+         f.write("static uint64_t wine_vk_unwrap_handle(uint32_t type, uint64_t handle)\n")
+         f.write("{\n")
++        f.write("    /* Barrique: dispatchable handles and command pools are client objects in Windows\n")
++        f.write("     * memory; for WoW64 under HVF they live at WINE_LOW_WINDOW_BASE on the host */\n")
++        f.write("    if (type == VK_OBJECT_TYPE_COMMAND_POOL")
++        for handle in Type.all(Handle, Handle.is_wrapped, by_name=True):
++            if handle.is_dispatchable():
++                f.write(" || type == {}".format(handle.object_type))
++        f.write(")\n")
++        f.write("        handle = (uint64_t)(uintptr_t)wine_low_window_ptr((uintptr_t)handle);\n")
+         f.write("    switch(type)\n")
+         f.write("    {\n")
+         for handle in Type.all(Handle, Handle.is_wrapped, by_name=True):
+diff --git a/dlls/winevulkan/vulkan.c b/dlls/winevulkan/vulkan.c
+index 2dac08a..4cb8b37 100644
+--- a/dlls/winevulkan/vulkan.c
++++ b/dlls/winevulkan/vulkan.c
+@@ -975,6 +975,9 @@ void wine_vkDestroyDeferredOperationKHR(VkDevice device_handle,
+ static NTSTATUS is_available_instance_function(VkInstance handle, const char *name)
+ {
+     struct vulkan_instance *instance = vulkan_instance_from_handle(handle);
++    /* Barrique: win32u emulates it when the host (MoltenVK) lacks it */
++    if (!strcmp(name, "vkGetPhysicalDevicePresentRectanglesKHR") && instance->extensions.has_VK_KHR_surface)
++        return TRUE;
+     return !!vk_funcs->p_vkGetInstanceProcAddr(instance->host.instance, name);
+ }
+ 
+diff --git a/dlls/winevulkan/vulkan_loader.h b/dlls/winevulkan/vulkan_loader.h
+index 9b05806..348cd9e 100644
+--- a/dlls/winevulkan/vulkan_loader.h
++++ b/dlls/winevulkan/vulkan_loader.h
+@@ -46,7 +46,13 @@ struct vk_command_pool
+ 
+ static inline struct vk_command_pool *command_pool_from_handle(VkCommandPool handle)
+ {
++#ifdef WINE_UNIX_LIB
++    /* the client pool lives in Windows memory: for WoW64 under HVF its address is
++     * below 4GB and the host sees it at WINE_LOW_WINDOW_BASE + address */
++    return (struct vk_command_pool *)wine_low_window_ptr((uintptr_t)handle);
++#else
+     return (struct vk_command_pool *)(uintptr_t)handle;
++#endif
+ }
+ 
+ struct VkCommandBuffer_T
+diff --git a/dlls/winevulkan/vulkan_thunks.c b/dlls/winevulkan/vulkan_thunks.c
+index 5703953..775736d 100644
+--- a/dlls/winevulkan/vulkan_thunks.c
++++ b/dlls/winevulkan/vulkan_thunks.c
+@@ -11105,6 +11105,10 @@ typedef struct VkWriteIndirectExecutionSetShaderEXT32
+ 
+ static uint64_t wine_vk_unwrap_handle(uint32_t type, uint64_t handle)
+ {
++    /* Barrique: dispatchable handles and command pools are client objects in Windows
++     * memory; for WoW64 under HVF they live at WINE_LOW_WINDOW_BASE on the host */
++    if (type == VK_OBJECT_TYPE_COMMAND_POOL || type == VK_OBJECT_TYPE_COMMAND_BUFFER || type == VK_OBJECT_TYPE_DEVICE || type == VK_OBJECT_TYPE_INSTANCE || type == VK_OBJECT_TYPE_PHYSICAL_DEVICE || type == VK_OBJECT_TYPE_QUEUE)
++        handle = (uint64_t)(uintptr_t)wine_low_window_ptr((uintptr_t)handle);
+     switch(type)
+     {
+     case VK_OBJECT_TYPE_COMMAND_BUFFER:
+@@ -11508,7 +11512,7 @@ static void convert_VkMemoryAllocateInfo_win32_to_host(struct conversion_context
+             out_ext->sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
+             out_ext->pNext = NULL;
+             out_ext->handleType = in_ext->handleType;
+-            out_ext->handle = (HANDLE)UlongToPtr(in_ext->handle);
++            out_ext->handle = (HANDLE)LongToHandle(in_ext->handle);
+             out_ext->name = (LPCWSTR)UlongToPtr(in_ext->name);
+             out_header->pNext = (void *)out_ext;
+             out_header = (void *)out_ext;
+@@ -30618,8 +30622,8 @@ static void convert_VkWin32SurfaceCreateInfoKHR_win32_to_host(const VkWin32Surfa
+     out->sType = in->sType;
+     out->pNext = NULL;
+     out->flags = in->flags;
+-    out->hinstance = (HINSTANCE)UlongToPtr(in->hinstance);
+-    out->hwnd = (HWND)UlongToPtr(in->hwnd);
++    out->hinstance = (HINSTANCE)ULongToHandle(in->hinstance);
++    out->hwnd = (HWND)LongToHandle(in->hwnd);
+     if (in->pNext)
+         FIXME("Unexpected pNext\n");
+ }
+@@ -48070,7 +48074,7 @@ static void convert_VkImportFenceWin32HandleInfoKHR_win32_to_unwrapped_host(cons
+     out->fence = in->fence;
+     out->flags = in->flags;
+     out->handleType = in->handleType;
+-    out->handle = (HANDLE)UlongToPtr(in->handle);
++    out->handle = (HANDLE)LongToHandle(in->handle);
+     out->name = (LPCWSTR)UlongToPtr(in->name);
+     if (in->pNext)
+         FIXME("Unexpected pNext\n");
+@@ -48085,7 +48089,7 @@ static void convert_VkImportSemaphoreWin32HandleInfoKHR_win32_to_unwrapped_host(
+     out->semaphore = in->semaphore;
+     out->flags = in->flags;
+     out->handleType = in->handleType;
+-    out->handle = (HANDLE)UlongToPtr(in->handle);
++    out->handle = (HANDLE)LongToHandle(in->handle);
+     out->name = (LPCWSTR)UlongToPtr(in->name);
+     if (in->pNext)
+         FIXME("Unexpected pNext\n");
+@@ -66281,7 +66285,7 @@ static NTSTATUS thunk32_vkGetMemoryWin32HandlePropertiesKHR(void *args)
+     TRACE("%#x, %#x, %#x, %#x\n", params->device, params->handleType, params->handle, params->pMemoryWin32HandleProperties);
+ 
+     convert_VkMemoryWin32HandlePropertiesKHR_win32_to_host((VkMemoryWin32HandlePropertiesKHR32 *)UlongToPtr(params->pMemoryWin32HandleProperties), &pMemoryWin32HandleProperties_host);
+-    params->result = vk_funcs->p_vkGetMemoryWin32HandlePropertiesKHR((VkDevice)UlongToPtr(params->device), params->handleType, (HANDLE)UlongToPtr(params->handle), &pMemoryWin32HandleProperties_host);
++    params->result = vk_funcs->p_vkGetMemoryWin32HandlePropertiesKHR((VkDevice)UlongToPtr(params->device), params->handleType, (HANDLE)LongToHandle(params->handle), &pMemoryWin32HandleProperties_host);
+     convert_VkMemoryWin32HandlePropertiesKHR_host_to_win32(&pMemoryWin32HandleProperties_host, (VkMemoryWin32HandlePropertiesKHR32 *)UlongToPtr(params->pMemoryWin32HandleProperties));
+     return STATUS_SUCCESS;
  }
 diff --git a/dlls/wmvdecod/video_decoder.c b/dlls/wmvdecod/video_decoder.c
 index 7c4c0dd..8fbbabc 100644

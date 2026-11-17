@@ -194,6 +194,20 @@ Un piccolo assistente, sul modello di winetricks, Whisky, CrossOver e Porting Ki
 - ⬜ Sezioni condivise scrivibili basate su file: oggi non supportate sotto HVF.
 - ⬜ Contatori e log diagnostici attivabili, sul modello del loro `*_TRACE`.
 
+## Fase 8: Steam ⬜
+
+Richiesta dell'utente (2026-11-17): far funzionare il client Steam per Windows e i giochi che lancia. È la prova d'insieme di tutto il resto: installer, processi a 32 e 64 bit, rete, Chromium, grafica, audio e input.
+
+Cosa serve, da verificare in ordine:
+- ⬜ Installer `SteamSetup.exe` (NSIS) e primo aggiornamento del client: rete (winhttp/wininet, TLS con gnutls o lo stack di macOS), scrittura di molti file, avvio dei processi figli. Il download di Steam va chiesto all'utente.
+- ⬜ `steam.exe` e i suoi processi: quali sono a 32 bit (WoW64 su FEX) e quali a 64 bit (ARM64EC su FEX); avvio e chiusura di molti processi sotto HVF (vedi il `fork()` da thread Windows già corretto e il figlio di mfplat i386 che ogni tanto si appende).
+- ⬜ `steamwebhelper.exe` (Chromium/CEF, a 64 bit): la sandbox di Chromium (token ristretti, job object, desktop separati), il processo GPU (prima con `-cef-disable-gpu`, poi D3D11 sul nostro backend della fase 5 passo 7), memoria condivisa fra processi (sezioni, `NtMapViewOfSection` sotto HVF), molti thread. È il punto che di solito rompe Steam sotto Wine.
+- ⬜ Login e interfaccia (libreria, negozio): rendering della finestra, input da tastiera e mouse, font (CJK compresi), DPI su Retina.
+- ⬜ Download e installazione di un gioco libero (da scegliere con l'utente), Steam overlay (`gameoverlayrenderer`, hook di D3D/Vulkan), controller (fase 5, winebus).
+- ⬜ Avvio di giochi: uno D3D11 a 64 bit, uno D3D9 a 32 bit, uno Vulkan, quando i passi 5-7 della fase 5 li rendono possibili.
+- ⬜ Integrazione con la `.app` (fase 6/6b): Steam come programma installabile dal wizard, con prefix e cartella dati propri.
+- Rischi: le API anti-cheat (EAC, BattlEye) e i DRM a livello kernel non funzionano sotto Wine; i giochi che li richiedono restano fuori.
+
 ## Idee di MetalSharp che NON adottiamo (le risolve già la VM)
 
 | Loro soluzione | Perché da noi non serve |

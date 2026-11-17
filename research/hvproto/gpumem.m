@@ -61,7 +61,8 @@ static void query( void *p, struct page_state *s )
 }
 
 /* same verdict as hvf.c host_page_is_safe() without the copy-on-write fix-ups
- * (with the GPU checks added after the first run: tags 88/100, shared + wired) */
+ * (with the GPU check added after the first run: tags 88/100; shared + wired
+ * pages were refused too until gpumap.m showed they map fine) */
 static int safe( const struct page_state *s )
 {
     const vm_region_extended_info_data_t *info = &s->ext;
@@ -75,9 +76,6 @@ static int safe( const struct page_state *s )
     if ((pi->disposition & VM_PAGE_QUERY_PAGE_PRESENT) &&
         (pi->disposition & (VM_PAGE_QUERY_PAGE_EXTERNAL | VM_PAGE_QUERY_PAGE_CS_VALIDATED |
                             VM_PAGE_QUERY_PAGE_CS_TAINTED | VM_PAGE_QUERY_PAGE_CS_NX)))
-        return 0;
-    if ((pi->disposition & VM_PAGE_QUERY_PAGE_WIRED) &&
-        info->share_mode != SM_PRIVATE && info->share_mode != SM_PRIVATE_ALIASED)
         return 0;
     switch (info->share_mode)
     {

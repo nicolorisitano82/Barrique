@@ -5,7 +5,7 @@
 # @loader_path/../../deps (build tree: <build>/deps, install tree:
 # <prefix>/lib/deps).
 #
-#   bundle-deps.sh <wine build or lib dir> [media prefix] [fonts dir]
+#   bundle-deps.sh <wine build or lib dir> [media prefix] [fonts dir] [vulkan prefix]
 #
 # FreeType and its libpng come from Homebrew (phase 5 step 1). The media stack
 # (FFmpeg, glib, GStreamer and its plugins, phase 5 step 3) comes from the
@@ -20,6 +20,7 @@ set -e
 dest=${1:?usage: bundle-deps.sh <wine build or lib dir> [media prefix]}/deps
 media=${2:-$HOME/Work/wine/deps-gst}
 fonts=${3:-$HOME/Work/wine/deps-fonts}
+vk=${4:-$HOME/Work/wine/deps-vk}   # MoltenVK from build-moltenvk.sh (phase 5 step 5)
 src=${HOMEBREW_PREFIX:-/opt/homebrew}/opt
 mkdir -p $dest
 
@@ -49,6 +50,11 @@ if [[ -d $media/lib ]]; then
         install -m 644 $f $dest/gstreamer-1.0/${f:t}
         copied+=(gstreamer-1.0/${f:t})
     done
+fi
+
+if [[ -f $vk/lib/libMoltenVK.dylib ]]; then
+    install -m 644 $vk/lib/libMoltenVK.dylib $dest/libMoltenVK.dylib
+    copied+=(libMoltenVK.dylib)
 fi
 
 for lib in $copied; do

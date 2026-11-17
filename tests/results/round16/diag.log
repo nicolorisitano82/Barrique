@@ -1,0 +1,4 @@
+aarch64 vulkan-1 vulkan: crash (- tests, - failures, 3s)
+x86_64 vulkan-1 vulkan: crash (- tests, - failures, 2s)
+i386 vulkan-1 vulkan: crash (- tests, - failures, 2s)
+DIAG DONE

@@ -1,0 +1,17 @@
+aarch64 vulkan-1 vulkan: timeout (- tests, - failures, 180s)
+aarch64 d3d11 d3d11: fail (3931 tests, 15 failures, 104s)
+aarch64 d3d12 d3d12: ok (671 tests, 0 failures, 7s)
+aarch64 dxgi dxgi: crash (- tests, - failures, 21s)
+x86_64 vulkan-1 vulkan: fail (1173 tests, 19 failures, 4s)
+x86_64 d3d11 d3d11: fail (3931 tests, 15 failures, 99s)
+x86_64 d3d12 d3d12: ok (671 tests, 0 failures, 5s)
+x86_64 dxgi dxgi: crash (- tests, - failures, 21s)
+i386 vulkan-1 vulkan: fail (1173 tests, 19 failures, 3s)
+i386 d3d11 d3d11: ok (0 tests, 0 failures, 7s)
+i386 d3d12 d3d12: ok (3 tests, 0 failures, 1s)
+i386 dxgi dxgi: crash (- tests, - failures, 1s)
+refusals:
+external memory:
+$HOME/Work/wine/tests/results/round16/vk2/logs/aarch64-d3d12-d3d12.log
+$HOME/Work/wine/tests/results/round16/vk2/logs/x86_64-d3d12-d3d12.log
+VK DONE

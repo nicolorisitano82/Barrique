@@ -232,12 +232,24 @@ Nessuno dei tipi di memoria della GPU che abbiamo trovato manda in panic. Quindi
 
 **Chiuso (2026-11-17). Strategia scelta:** **A (copia) come strategia di base**, costo trascurabile (copia 31,8–54,7 GB/s, blit GPU 64–74 GB/s) e nessun rischio; B (importazione) provato possibile nel punto 3, da usare dove la copia pesa (buffer grandi mappati in modo persistente, Vulkan `HOST_COHERENT`), allentando il controllo di `hvf.c` solo per la memoria che Barrique stessa importa.
 
-## Passo 5: Vulkan con MoltenVK ⬜
+## Passo 5: Vulkan con MoltenVK 🔧
 
 - Loader Vulkan e MoltenVK (Apache-2.0) compilati da noi, dentro la `.app`, versione fissata. CrossOver fa lo stesso.
 - winevulkan con la strategia del passo 4; cache delle pipeline di MoltenVK.
 - Test: vulkan-1 e i nostri campioni del passo 6.
 - Cancello: test senza regressioni sulle tre architetture, base di fase 4 verde.
+
+**In corso (2026-11-17, giro 16, `tests/results/round16`).**
+- Solo MoltenVK, niente loader: il `configure` di Wine accetta `libMoltenVK.dylib` come `SONAME_LIBVULKAN` e win32u usa direttamente il suo `vkGetInstanceProcAddr`. Il loader servirebbe solo per i layer (validazione): si aggiunge se serve.
+- `scripts/build-moltenvk.sh`: MoltenVK 1.4.2 (24 luglio 2026) dagli archivi delle revisioni fissate in `ExternalRevisions` (MoltenVK, SPIRV-Cross, SPIRV-Tools, SPIRV-Headers, Vulkan-Headers, cereal, Volk: 12 MB, SHA-256 controllate), senza clonare e senza la build CMake (che scarica CPM). Solo arm64, macOS 15. `libMoltenVK.dylib` 5,3 MB, `@rpath`; `bundle-deps.sh` lo copia in `deps/`, win32u lo apre con `dlopen("@rpath/...")` come FreeType. Wine riconfigurato con `LDFLAGS=-L.../deps-vk/lib`: unica differenza i due define Vulkan. Dopo il rilink il loader va rifirmato con `entitlements.plist` (il primo giro è fallito per questo).
+- **Memoria (passo 4, strategia B):** sotto HVF anche i processi a 64 bit prendono la strada WoW64 di win32u: la memoria Vulkan visibile dalla CPU è allocata con `NtAllocateVirtualMemory` e importata con `VK_EXT_external_memory_host`. Prima a MoltenVK arrivava l'indirizzo Windows: ora `wine_low_window_ptr` (sotto i 4 GB l'host la vede a `WINE_LOW_WINDOW_BASE`). `hvf.c` accetta di nuovo le pagine condivise e wired (sono quelle importate, provate nel caso 3) e rifiuta solo i tag 88/100. Nei test d3d12 la memoria importata è usata e nessuna pagina è rifiutata.
+- **WoW64 sotto HVF:** `command_pool_from_handle` e `wine_vk_unwrap_handle` usavano senza traduzione gli indirizzi degli oggetti del client (command pool, device, queue, command buffer, instance) passati come handle a 64 bit; gli handle (HWND, HANDLE, HMONITOR, HINSTANCE) passavano invece da `UlongToPtr`, che sotto HVF li trattava come indirizzi. Corretti in `vulkan_thunks.c` e nel generatore `make_vulkan` (non rigenerato).
+- **MoltenVK senza `vkGetPhysicalDevicePresentRectanglesKHR`:** il test chiamava un puntatore nullo. win32u ora la emula (un rettangolo grande quanto `currentExtent`) e winevulkan la dichiara disponibile con `VK_KHR_surface`.
+
+Risultati (`round16/vk2`): vulkan-1 1173 controlli con 19 fallimenti su tutte e tre le architetture quando arriva in fondo (prima: istanza non creata, `vr -3`); d3d12 su vkd3d e MoltenVK 671 controlli, 0 fallimenti su aarch64 e x86_64 (prima saltati); d3d11 invariato (15 fallimenti, wined3d GL). Aperti:
+- I fallimenti di vulkan-1 sono finestre ridimensionate o minimizzate: MoltenVK risponde `VK_ERROR_OUT_OF_DATE_KHR` all'acquisizione dove Windows non lo fa, e win32u non può nasconderlo (senza immagine valida). Dopo uno di questi il test ogni tanto si blocca (attesa infinita su una fence: una volta x86_64, una volta aarch64).
+- i386: d3d12 non crea il device (vkd3d a 32 bit), d3d11 0 controlli.
+- dxgi in crash sulle tre architetture: ora che d3d12 funziona, `test_create_swapchain` arriva a una parte che crea un device D3D10 con BGRA a livello 10_0 e non controlla il risultato; wined3d sul GL 2.1 di Apple arriva solo a 9.x. Su Windows i due vanno insieme: si risolve con un D3D10/11 a livello ≥ 10 (renderer Vulkan di wined3d o DXMT, passo 7).
 
 ## Passo 6: banco di prova grafico ⬜
 

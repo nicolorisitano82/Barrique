@@ -1,0 +1,4 @@
+aarch64 vulkan-1 vulkan: fail (1173 tests, 19 failures, 4s)
+x86_64 vulkan-1 vulkan: timeout (- tests, - failures, 180s)
+i386 vulkan-1 vulkan: fail (1173 tests, 18 failures, 4s)
+DIAG DONE
