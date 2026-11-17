@@ -2,7 +2,9 @@
 # Build the media stack Wine's winegstreamer and winedmo need, LGPL only,
 # into one prefix (default ~/Work/wine/deps-gst), for macOS 15+ arm64:
 #   FFmpeg (decoders/demuxers, VideoToolbox, AudioToolbox, no GPL/nonfree),
-#   pcre2 (static), glib, GStreamer core, plugins base/good/ugly (subset), gst-libav.
+#   pcre2 (static), glib, GStreamer core, plugins base/good/ugly (subset), gst-libav,
+#   applemedia from plugins bad (VideoToolbox: vtenc_h264 is the H.264 encoder
+#   behind Media Foundation's; it needs the GL library of plugins base).
 #
 #   build-gst.sh <source dir> [prefix] [stage...]
 #
@@ -87,7 +89,11 @@ for s in $stages; do
         mesonb gst-plugins-base -Dauto_features=disabled -Dtests=disabled -Dexamples=disabled -Dtools=disabled \
             -Ddoc=disabled -Dintrospection=disabled -Dnls=disabled -Dorc=disabled \
             -Dplayback=enabled -Dtypefind=enabled -Dapp=enabled -Daudioconvert=enabled -Dvideoconvertscale=enabled \
-            -Daudioresample=enabled -Dvolume=enabled -Daudiorate=enabled -Dvideorate=enabled -Drawparse=enabled
+            -Daudioresample=enabled -Dvolume=enabled -Daudiorate=enabled -Dvideorate=enabled -Drawparse=enabled \
+            -Dgl=enabled -Dgl_api=opengl -Dgl_platform=cgl -Dgl_winsys=cocoa \
+            -Dgl-graphene=disabled -Dgl-jpeg=disabled -Dgl-png=disabled
+        # only libgstgl is needed (by applemedia), not the opengl plugin
+        rm -f $P/lib/gstreamer-1.0/libgstopengl.dylib
         ;;
     good)
         mesonb gst-plugins-good -Dauto_features=disabled -Dtests=disabled -Dexamples=disabled -Ddoc=disabled \
@@ -103,7 +109,7 @@ for s in $stages; do
     bad)
         mesonb gst-plugins-bad -Dauto_features=disabled -Dtests=disabled -Dexamples=disabled -Dtools=disabled \
             -Ddoc=disabled -Dintrospection=disabled -Dnls=disabled -Dorc=disabled -Dgpl=disabled \
-            -Dmpegdemux=enabled -Dvideoparsers=enabled
+            -Dmpegdemux=enabled -Dvideoparsers=enabled -Dapplemedia=enabled -Dgl=enabled
         ;;
     libav)
         mesonb gst-libav -Dtests=disabled -Ddoc=disabled

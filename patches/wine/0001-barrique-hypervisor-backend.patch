@@ -59,6 +59,24 @@ index afcdd85..32e1727 100644
          dnl If the -no_huge linker option is present (added in Xcode 15.3), use zerofill sections instead of the preloader
          WINE_TRY_CFLAGS([-Wl,-no_huge],
             [wine_use_preloader=no
+diff --git a/dlls/colorcnv/color_converter.c b/dlls/colorcnv/color_converter.c
+index 38981e4..f0a6f9b 100644
+--- a/dlls/colorcnv/color_converter.c
++++ b/dlls/colorcnv/color_converter.c
+@@ -591,7 +591,13 @@ static HRESULT color_convert_init(struct color_convert *impl)
+         goto failed;
+     video_frame_init_aperture(&impl->output_frame, &impl->output_format);
+ 
++#if defined(__aarch64__) || defined(__arm64ec__)
++    /* Barrique: skip swscale's NEON unscaled YUV->RGB converters, as in
++     * msvproc; under ARM64EC they are 11-13% off the reference */
++    av_opt_set(impl->context, "sws_flags", "neighbor+accurate_rnd", 0);
++#else
+     av_opt_set(impl->context, "sws_flags", "neighbor", 0);
++#endif
+     av_opt_set_int(impl->context, "threads", 0, 0);
+     av_opt_set_int(impl->context, "srcw", impl->input_frame.width, 0);
+     av_opt_set_int(impl->context, "srch", impl->input_frame.height, 0);
 diff --git a/dlls/dnsapi/libresolv.c b/dlls/dnsapi/libresolv.c
 index dd9b32d..6eb2acc 100644
 --- a/dlls/dnsapi/libresolv.c
@@ -461,19 +479,21 @@ index dcdcb16..6d0c286 100644
              }
          }
 diff --git a/dlls/mp3dmod/mp3dmod.c b/dlls/mp3dmod/mp3dmod.c
-index e542644..07f7aeb 100644
+index e542644..faf6e86 100644
 --- a/dlls/mp3dmod/mp3dmod.c
 +++ b/dlls/mp3dmod/mp3dmod.c
-@@ -38,6 +38,8 @@
+@@ -38,6 +38,10 @@
  #include "initguid.h"
  DEFINE_GUID(WMMEDIATYPE_Audio, 0x73647561,0x0000,0x0010,0x80,0x00,0x00,0xaa,0x00,0x38,0x9b,0x71);
  DEFINE_GUID(WMMEDIASUBTYPE_MP3,0x00000055,0x0000,0x0010,0x80,0x00,0x00,0xaa,0x00,0x38,0x9b,0x71);
 +/* Barrique: MPEG-1 layer I/II audio (WAVE_FORMAT_MPEG), which mpg123 decodes too */
 +DEFINE_GUID(WMMEDIASUBTYPE_MPEG,0x00000050,0x0000,0x0010,0x80,0x00,0x00,0xaa,0x00,0x38,0x9b,0x71);
++/* Barrique: Windows registers it as its own MFT, CLSID_MSMPEGAudDecMFT */
++DEFINE_GUID(CLSID_mpeg_audio_decoder_mft,0x70707b39,0xb2ca,0x4015,0xab,0xea,0xf8,0x44,0x7d,0x22,0xd8,0x8b);
  DEFINE_GUID(WMMEDIASUBTYPE_PCM,0x00000001,0x0000,0x0010,0x80,0x00,0x00,0xaa,0x00,0x38,0x9b,0x71);
  DEFINE_GUID(WMFORMAT_WaveFormatEx,  0x05589f81,0xc356,0x11ce,0xbf,0x01,0x00,0xaa,0x00,0x55,0x59,0x5a);
  
-@@ -252,7 +254,7 @@ static HRESULT WINAPI MediaObject_SetInputType(IMediaObject *iface, DWORD index,
+@@ -252,7 +256,7 @@ static HRESULT WINAPI MediaObject_SetInputType(IMediaObject *iface, DWORD index,
      }
  
      if (!IsEqualGUID(&type->majortype, &WMMEDIATYPE_Audio)
@@ -482,36 +502,68 @@ index e542644..07f7aeb 100644
              || !IsEqualGUID(&type->formattype, &WMFORMAT_WaveFormatEx))
          return DMO_E_TYPE_NOT_ACCEPTED;
  
-@@ -1278,7 +1280,7 @@ HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID iid, void **obj)
+@@ -1266,7 +1270,7 @@ HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID iid, void **obj)
+ {
+     TRACE("%s, %s, %p\n", debugstr_guid(clsid), debugstr_guid(iid), obj);
+ 
+-    if (IsEqualGUID(clsid, &CLSID_CMP3DecMediaObject))
++    if (IsEqualGUID(clsid, &CLSID_CMP3DecMediaObject) || IsEqualGUID(clsid, &CLSID_mpeg_audio_decoder_mft))
+         return IClassFactory_QueryInterface(&mp3_decoder_cf, iid, obj);
+ 
+     FIXME("class %s not available\n", debugstr_guid(clsid));
+@@ -1278,7 +1282,7 @@ HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID iid, void **obj)
   */
  HRESULT WINAPI DllRegisterServer(void)
  {
 -    MFT_REGISTER_TYPE_INFO mf_in, mf_out;
-+    MFT_REGISTER_TYPE_INFO mf_in[2], mf_out;
++    MFT_REGISTER_TYPE_INFO mf_in, mf_out, mpeg_in;
      DMO_PARTIAL_MEDIATYPE in, out;
      HRESULT hr;
  
-@@ -1286,15 +1288,17 @@ HRESULT WINAPI DllRegisterServer(void)
-     in.subtype = WMMEDIASUBTYPE_MP3;
-     out.type = WMMEDIATYPE_Audio;
+@@ -1288,6 +1292,8 @@ HRESULT WINAPI DllRegisterServer(void)
      out.subtype = WMMEDIASUBTYPE_PCM;
--    mf_in.guidMajorType = MFMediaType_Audio;
--    mf_in.guidSubtype = MFAudioFormat_MP3;
-+    mf_in[0].guidMajorType = MFMediaType_Audio;
-+    mf_in[0].guidSubtype = MFAudioFormat_MP3;
-+    mf_in[1].guidMajorType = MFMediaType_Audio;
-+    mf_in[1].guidSubtype = MFAudioFormat_MPEG;
+     mf_in.guidMajorType = MFMediaType_Audio;
+     mf_in.guidSubtype = MFAudioFormat_MP3;
++    mpeg_in.guidMajorType = MFMediaType_Audio;
++    mpeg_in.guidSubtype = MFAudioFormat_MPEG;
      mf_out.guidMajorType = MFMediaType_Audio;
      mf_out.guidSubtype = MFAudioFormat_PCM;
      hr = DMORegister(L"MP3 Decoder DMO", &CLSID_CMP3DecMediaObject, &DMOCATEGORY_AUDIO_DECODER,
-         0, 1, &in, 1, &out);
-     if (FAILED(hr)) return hr;
+@@ -1296,6 +1302,10 @@ HRESULT WINAPI DllRegisterServer(void)
      hr = MFTRegister(CLSID_CMP3DecMediaObject, MFT_CATEGORY_AUDIO_DECODER, (LPWSTR) L"MP3 Decoder MFT",
--        0, 1, &mf_in, 1, &mf_out, NULL);
-+        0, ARRAY_SIZE(mf_in), mf_in, 1, &mf_out, NULL);
+         0, 1, &mf_in, 1, &mf_out, NULL);
      if (FAILED(hr)) return hr;
++    /* Barrique: MPEG-1 layer I/II (MP2 in .mpg files), decoded by mpg123 too */
++    hr = MFTRegister(CLSID_mpeg_audio_decoder_mft, MFT_CATEGORY_AUDIO_DECODER, (LPWSTR) L"Microsoft MPEG Audio Decoder MFT",
++        0, 1, &mpeg_in, 1, &mf_out, NULL);
++    if (FAILED(hr)) return hr;
  
      return __wine_register_resources();
+ }
+@@ -1311,6 +1321,8 @@ HRESULT WINAPI DllUnregisterServer(void)
+     if (FAILED(hr)) return hr;
+     hr = MFTUnregister(CLSID_CMP3DecMediaObject);
+     if (FAILED(hr)) return hr;
++    hr = MFTUnregister(CLSID_mpeg_audio_decoder_mft);
++    if (FAILED(hr)) return hr;
+ 
+     return __wine_unregister_resources();
+ }
+diff --git a/dlls/mp3dmod/mp3dmod.idl b/dlls/mp3dmod/mp3dmod.idl
+index c4afd3a..64fc435 100644
+--- a/dlls/mp3dmod/mp3dmod.idl
++++ b/dlls/mp3dmod/mp3dmod.idl
+@@ -25,3 +25,10 @@
+     uuid(bbeea841-0a63-4f52-a7ab-a9b3a84ed38a)
+ ]
+ coclass CMP3DecMediaObject { interface IMediaObject; }
++
++[
++    helpstring("Microsoft MPEG Audio Decoder MFT"),
++    threading(both),
++    uuid(70707b39-b2ca-4015-abea-f8447d22d88b)
++]
++coclass CMSMPEGAudDecMFT {}
 diff --git a/dlls/msmpeg2vdec/msmpeg2vdec.c b/dlls/msmpeg2vdec/msmpeg2vdec.c
 index 2bb0729..8e3ed1b 100644
 --- a/dlls/msmpeg2vdec/msmpeg2vdec.c
@@ -573,6 +625,25 @@ index f2ddcde..35b8cce 100644
 +    uuid(2d709e52-123f-49b5-9cbc-9af5cde28fb9)
 +]
 +coclass CMSMPEGDecoderMFT {}
+diff --git a/dlls/msvproc/video_processor.c b/dlls/msvproc/video_processor.c
+index f2ad3e0..54a9eb1 100644
+--- a/dlls/msvproc/video_processor.c
++++ b/dlls/msvproc/video_processor.c
+@@ -556,7 +556,14 @@ static HRESULT video_processor_init(struct video_processor *impl)
+         goto failed;
+     video_frame_init_aperture(&impl->output_frame, impl->input_format);
+ 
++#if defined(__aarch64__) || defined(__arm64ec__)
++    /* Barrique: without accurate_rnd swscale picks its NEON unscaled YUV->RGB
++     * converters, which round differently from the x86 and C paths (2-11%
++     * off the reference in mf transform videoproc) */
++    av_opt_set(impl->context, "sws_flags", "neighbor+accurate_rnd", 0);
++#else
+     av_opt_set(impl->context, "sws_flags", "neighbor", 0);
++#endif
+     av_opt_set_int(impl->context, "threads", 0, 0);
+     av_opt_set_int(impl->context, "srcw", impl->input_frame.width, 0);
+     av_opt_set_int(impl->context, "srch", impl->input_frame.height, 0);
 diff --git a/dlls/ntdll/Makefile.in b/dlls/ntdll/Makefile.in
 index 4c43b77..cb7d252 100644
 --- a/dlls/ntdll/Makefile.in
@@ -4429,7 +4500,7 @@ index 3199e36..849c7d6 100644
  
  /* wg_allocator_release_sample can be used to release any sample that was requested. */
 diff --git a/dlls/winegstreamer/unixlib.c b/dlls/winegstreamer/unixlib.c
-index ac671bb..978ea6e 100644
+index ac671bb..96ffe83 100644
 --- a/dlls/winegstreamer/unixlib.c
 +++ b/dlls/winegstreamer/unixlib.c
 @@ -27,6 +27,12 @@
@@ -4445,7 +4516,7 @@ index ac671bb..978ea6e 100644
  
  #include <gst/gst.h>
  #include <gst/video/video.h>
-@@ -275,6 +281,31 @@ NTSTATUS wg_init_gstreamer(void *arg)
+@@ -275,6 +281,34 @@ NTSTATUS wg_init_gstreamer(void *arg)
          setenv("GST_DEBUG", "1", FALSE);
      setenv("GST_DEBUG_NO_COLOR", "1", FALSE);
  
@@ -4460,6 +4531,9 @@ index ac671bb..978ea6e 100644
 +        struct stat st;
 +
 +        setenv("GST_REGISTRY_FORK", "no", FALSE);
++        /* VideoToolbox (applemedia) is there for its H.264 encoder; decoding
++         * stays on gst-libav until vtdec is validated */
++        setenv("GST_PLUGIN_FEATURE_RANK", "vtdec:NONE,vtdec_hw:NONE", FALSE);
 +        if (!getenv("GST_PLUGIN_SYSTEM_PATH_1_0") && dladdr((void *)wg_init_gstreamer, &info) && info.dli_fname
 +                && strlen(info.dli_fname) < sizeof(dir) - 32)
 +        {
@@ -4597,6 +4671,45 @@ index d405839..39074c8 100644
  
      if (codec_data)
      {
+diff --git a/dlls/winegstreamer/wg_transform.c b/dlls/winegstreamer/wg_transform.c
+index c19c2c8..f4ab15f 100644
+--- a/dlls/winegstreamer/wg_transform.c
++++ b/dlls/winegstreamer/wg_transform.c
+@@ -678,8 +678,32 @@ static bool transform_create_encoder_element(struct wg_transform *transform,
+     if (!strcmp(output_mime, "audio/x-raw") || !strcmp(output_mime, "video/x-raw"))
+         return true;
+ 
+-    return (element = find_element(GST_ELEMENT_FACTORY_TYPE_ENCODER, NULL, transform->output_caps))
+-            && append_element(transform->container, element, first, last);
++    if ((element = find_element(GST_ELEMENT_FACTORY_TYPE_ENCODER, NULL, transform->output_caps)))
++        return append_element(transform->container, element, first, last);
++
++    /* Barrique: on macOS the H.264 encoder is VideoToolbox's vtenc_h264
++     * (applemedia), which only outputs the avc stream format: encode to avc,
++     * then h264parse to the byte stream Media Foundation wants, with SPS/PPS
++     * before every IDR frame. */
++    if (!strcmp(output_mime, "video/x-h264"))
++    {
++        GstCaps *avc_caps = gst_caps_copy(transform->output_caps);
++        GstElement *parser;
++
++        gst_caps_set_simple(avc_caps, "stream-format", G_TYPE_STRING, "avc", NULL);
++        element = find_element(GST_ELEMENT_FACTORY_TYPE_ENCODER, NULL, avc_caps);
++        gst_caps_unref(avc_caps);
++        if (!element)
++            return false;
++        if (!append_element(transform->container, element, first, last))
++            return false;
++        if (!(parser = create_element("h264parse", "bad")))
++            return false;
++        gst_util_set_object_arg(G_OBJECT(parser), "config-interval", "-1");
++        return append_element(transform->container, parser, first, last);
++    }
++
++    return false;
+ }
+ 
+ NTSTATUS wg_transform_create(void *args)
 diff --git a/dlls/winegstreamer/winegstreamer_classes.idl b/dlls/winegstreamer/winegstreamer_classes.idl
 index fd46ba3..ec1dfcd 100644
 --- a/dlls/winegstreamer/winegstreamer_classes.idl

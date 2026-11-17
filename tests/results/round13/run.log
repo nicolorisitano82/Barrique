@@ -1,0 +1,31 @@
+aarch64 mf mf: fail (10225 tests, 1 failures, 55s)
+aarch64 mf topology: ok (8216 tests, 0 failures, 4s)
+aarch64 mf transform: fail (71568 tests, 11 failures, 3s)
+x86_64 mf mf: fail (10211 tests, 1 failures, 43s)
+x86_64 mf topology: ok (8216 tests, 0 failures, 3s)
+x86_64 mf transform: fail (71535 tests, 34 failures, 3s)
+i386 mf mf: fail (9864 tests, 2 failures, 43s)
+i386 mf topology: ok (7486 tests, 0 failures, 3s)
+i386 mf transform: fail (66205 tests, 1 failures, 3s)
+mfplay aarch64 h264-aac.mp4 rc=0 video frames 50/50 max dY 1.57 ok audio frames 88201/88200 rate 44100/44100 ch 1/1 rms 2884/2884 ok RESULT: ok 
+mfplay aarch64 hevc.mp4 rc=0 video frames 50/50 max dY 1.57 ok RESULT: ok 
+mfplay aarch64 mp3.mp3 rc=0 audio frames 89856/88200 rate 44100/44100 ch 1/1 rms 2726/2751 ok RESULT: ok 
+mfplay aarch64 mpeg2.mpg rc=0 video frames 50/50 max dY 1.56 ok audio frames 88704/88704 rate 44100/44100 ch 1/1 rms 2887/2887 ok RESULT: ok 
+mfplay aarch64 pcm.wav rc=0 audio frames 88200/88200 rate 44100/44100 ch 1/1 rms 2896/2896 ok RESULT: ok 
+mfplay aarch64 vp9.webm rc=0 video frames 50/50 max dY 1.56 ok RESULT: ok 
+mfplay aarch64 wmv2-wma2.wmv rc=0 video frames 50/51 max dY 1.61 ok audio frames 90112/88064 rate 44100/44100 ch 1/1 rms 2865/2864 ok RESULT: ok 
+mfplay x86_64 h264-aac.mp4 rc=0 video frames 50/50 max dY 1.57 ok audio frames 88201/88200 rate 44100/44100 ch 1/1 rms 2884/2884 ok RESULT: ok 
+mfplay x86_64 hevc.mp4 rc=0 video frames 50/50 max dY 1.57 ok RESULT: ok 
+mfplay x86_64 mp3.mp3 rc=0 audio frames 89856/88200 rate 44100/44100 ch 1/1 rms 2726/2751 ok RESULT: ok 
+mfplay x86_64 mpeg2.mpg rc=0 video frames 50/50 max dY 1.56 ok audio frames 88704/88704 rate 44100/44100 ch 1/1 rms 2887/2887 ok RESULT: ok 
+mfplay x86_64 pcm.wav rc=0 audio frames 88200/88200 rate 44100/44100 ch 1/1 rms 2896/2896 ok RESULT: ok 
+mfplay x86_64 vp9.webm rc=0 video frames 50/50 max dY 1.56 ok RESULT: ok 
+mfplay x86_64 wmv2-wma2.wmv rc=0 video frames 50/51 max dY 1.61 ok audio frames 90112/88064 rate 44100/44100 ch 1/1 rms 2865/2864 ok RESULT: ok 
+mfplay i686 h264-aac.mp4 rc=0 video frames 50/50 max dY 1.57 ok audio frames 88201/88200 rate 44100/44100 ch 1/1 rms 2884/2884 ok RESULT: ok 
+mfplay i686 hevc.mp4 rc=0 video frames 50/50 max dY 1.57 ok RESULT: ok 
+mfplay i686 mp3.mp3 rc=0 audio frames 89856/88200 rate 44100/44100 ch 1/1 rms 2726/2751 ok RESULT: ok 
+mfplay i686 mpeg2.mpg rc=0 video frames 50/50 max dY 1.56 ok audio frames 88704/88704 rate 44100/44100 ch 1/1 rms 2887/2887 ok RESULT: ok 
+mfplay i686 pcm.wav rc=0 audio frames 88200/88200 rate 44100/44100 ch 1/1 rms 2896/2896 ok RESULT: ok 
+mfplay i686 vp9.webm rc=0 video frames 50/50 max dY 1.56 ok RESULT: ok 
+mfplay i686 wmv2-wma2.wmv rc=0 video frames 50/51 max dY 1.61 ok audio frames 90112/88064 rate 44100/44100 ch 1/1 rms 2865/2864 ok RESULT: ok 
+ROUND13 DONE
