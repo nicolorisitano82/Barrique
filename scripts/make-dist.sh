@@ -3,6 +3,7 @@
 # elsewhere. Layout:
 #   Barrique.app/Contents/Info.plist
 #   Barrique.app/Contents/MacOS/barrique             launcher (see barrique-launcher.sh)
+#   Barrique.app/Contents/Resources/AppIcon.icns     from resources/icon.svg
 #   Barrique.app/Contents/Resources/wine/bin/        wine (starts the loader), wineserver
 #   (the loader, lib/wine/aarch64-unix/wine, is signed with the hypervisor entitlement)
 #   Barrique.app/Contents/Resources/wine/lib/wine/   aarch64-unix, aarch64-windows (+ FEX), i386-windows,
@@ -52,6 +53,15 @@ print "== app"
 mkdir -p $R/share/barrique
 cp $S/prefix-defaults.reg $R/share/barrique/
 install -m 755 $S/barrique-launcher.sh $APP/Contents/MacOS/barrique
+# icon: resources/icon.svg rendered at every size macOS wants, then iconutil
+iconset=$W/dist/AppIcon.iconset
+rm -rf $iconset; mkdir -p $iconset $APP/Contents/Resources
+for size in 16 32 128 256 512; do
+    rsvg-convert -w $size -h $size $S/../resources/icon.svg -o $iconset/icon_${size}x${size}.png
+    rsvg-convert -w $((size * 2)) -h $((size * 2)) $S/../resources/icon.svg -o $iconset/icon_${size}x${size}@2x.png
+done
+iconutil -c icns -o $APP/Contents/Resources/AppIcon.icns $iconset
+rm -rf $iconset
 version=$(git -C $S/.. describe --always --dirty 2>/dev/null || print dev)
 cat > $APP/Contents/Info.plist <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -62,6 +72,7 @@ cat > $APP/Contents/Info.plist <<PLIST
     <key>CFBundleDisplayName</key>          <string>Barrique</string>
     <key>CFBundleIdentifier</key>           <string>org.barrique.Barrique</string>
     <key>CFBundleExecutable</key>           <string>barrique</string>
+    <key>CFBundleIconFile</key>             <string>AppIcon</string>
     <key>CFBundlePackageType</key>          <string>APPL</string>
     <key>CFBundleShortVersionString</key>   <string>0.1</string>
     <key>CFBundleVersion</key>              <string>$version</string>

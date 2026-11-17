@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Barrique</title>
+  <defs>
+    <!-- background: deep wine red, lighter at the top -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8A1F3A"/>
+      <stop offset="0.55" stop-color="#5A1024"/>
+      <stop offset="1" stop-color="#2E0612"/>
+    </linearGradient>
+    <radialGradient id="bgglow" cx="0.5" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#C2425F" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#C2425F" stop-opacity="0"/>
+    </radialGradient>
+    <!-- glass highlight on the top half of the tile -->
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <!-- oak: a cylinder lit from the front left -->
+    <linearGradient id="oak" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4E260F"/>
+      <stop offset="0.18" stop-color="#8A4B22"/>
+      <stop offset="0.42" stop-color="#D99A5B"/>
+      <stop offset="0.52" stop-color="#E8B074"/>
+      <stop offset="0.72" stop-color="#A9622E"/>
+      <stop offset="1" stop-color="#4A220C"/>
+    </linearGradient>
+    <linearGradient id="oakshade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.28"/>
+      <stop offset="0.25" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.75" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.35"/>
+    </linearGradient>
+    <!-- iron hoops -->
+    <linearGradient id="iron" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#16161A"/>
+      <stop offset="0.45" stop-color="#5A5A64"/>
+      <stop offset="0.55" stop-color="#7C7C88"/>
+      <stop offset="1" stop-color="#16161A"/>
+    </linearGradient>
+    <clipPath id="barrel">
+      <path d="M360 250 Q512 232 664 250 C724 330 744 430 744 512 C744 594 724 694 664 774 Q512 792 360 774 C300 694 280 594 280 512 C280 430 300 330 360 250 Z"/>
+    </clipPath>
+    <clipPath id="tile">
+      <rect x="100" y="100" width="824" height="824" rx="185" ry="185"/>
+    </clipPath>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <!-- tile -->
+  <rect x="100" y="100" width="824" height="824" rx="185" ry="185" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="185" ry="185" fill="url(#bgglow)"/>
+
+  <g clip-path="url(#tile)">
+    <!-- shadow under the barrel -->
+    <ellipse cx="512" cy="792" rx="250" ry="34" fill="#12020A" opacity="0.65" filter="url(#soft)"/>
+
+    <!-- barrel body -->
+    <g clip-path="url(#barrel)">
+      <rect x="270" y="225" width="484" height="575" fill="url(#oak)"/>
+      <!-- staves -->
+      <g fill="none" stroke="#3C1C0A" stroke-opacity="0.55" stroke-width="5">
+        <path d="M398 250 C362 380 362 644 398 774"/>
+        <path d="M436 250 C412 380 412 644 436 774"/>
+        <path d="M474 250 C462 380 462 644 474 774"/>
+        <path d="M512 250 C512 380 512 644 512 774"/>
+        <path d="M550 250 C562 380 562 644 550 774"/>
+        <path d="M588 250 C612 380 612 644 588 774"/>
+        <path d="M626 250 C662 380 662 644 626 774"/>
+      </g>
+      <!-- stave grain highlights -->
+      <g fill="none" stroke="#FFE2B8" stroke-opacity="0.18" stroke-width="3">
+        <path d="M480 260 C470 390 470 634 480 764"/>
+        <path d="M518 260 C519 390 519 634 518 764"/>
+      </g>
+      <rect x="270" y="225" width="484" height="575" fill="url(#oakshade)"/>
+
+      <!-- hoops (curving down at the front, as seen slightly from above) -->
+      <g fill="url(#iron)">
+        <path d="M336 284 Q512 300 688 284 L688 316 Q512 332 336 316 Z"/>
+        <path d="M297 384 Q512 404 727 384 L727 416 Q512 436 297 416 Z"/>
+        <path d="M297 608 Q512 628 727 608 L727 640 Q512 660 297 640 Z"/>
+        <path d="M336 708 Q512 724 688 708 L688 740 Q512 756 336 740 Z"/>
+      </g>
+      <g fill="none" stroke="#C9C9D6" stroke-opacity="0.55" stroke-width="3">
+        <path d="M340 287 Q512 303 684 287"/>
+        <path d="M301 387 Q512 407 723 387"/>
+        <path d="M301 611 Q512 631 723 611"/>
+        <path d="M340 711 Q512 727 684 711"/>
+      </g>
+    </g>
+
+    <!-- outline of the barrel -->
+    <path d="M360 250 Q512 232 664 250 C724 330 744 430 744 512 C744 594 724 694 664 774 Q512 792 360 774 C300 694 280 594 280 512 C280 430 300 330 360 250 Z"
+          fill="none" stroke="#2A1206" stroke-opacity="0.6" stroke-width="6"/>
+
+    <!-- bung hole with a drop of red wine -->
+    <ellipse cx="512" cy="514" rx="24" ry="17" fill="#2A1206"/>
+    <ellipse cx="512" cy="511" rx="15" ry="9" fill="#7E1630"/>
+    <path d="M512 532 C504 548 498 558 498 568 C498 578 504 586 512 586 C520 586 526 578 526 568 C526 558 520 548 512 532 Z" fill="#9E1C3C"/>
+    <ellipse cx="506" cy="566" rx="4" ry="8" fill="#FFFFFF" opacity="0.45"/>
+
+    <!-- glass highlight -->
+    <path d="M100 285 C100 183 183 100 285 100 L739 100 C841 100 924 183 924 285 L924 470 C760 430 264 430 100 470 Z" fill="url(#glass)"/>
+  </g>
+
+  <!-- rim -->
+  <rect x="101.5" y="101.5" width="821" height="821" rx="184" ry="184" fill="none" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="3"/>
+</svg>
