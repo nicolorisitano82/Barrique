@@ -52,3 +52,46 @@ EOF
     find $B/$arch/src -name "*.dll" -o -name "winemetal.so" | while read f; do cp "$f" $OUT/$arch/; done
     ls -la $OUT/$arch
 done
+
+# ARM64X: one DLL for ARM64 and x86-64 (ARM64EC) processes, as Wine's own builtins
+# are; needed because the prefix has a single system32. Each DLL is relinked from
+# both builds' objects with the arm64ec link command plus -marm64x.
+if [[ -d $B/aarch64 && -d $B/arm64ec ]]; then
+    mkdir -p $OUT/arm64x
+    for dll in src/winemetal/winemetal.dll src/dxgi/dxgi.dll src/d3d11/d3d11.dll src/d3d10/d3d10core.dll; do
+        cmd=$(cd $B/arm64ec && ninja -t commands $dll | tail -1)
+        python3 - "$cmd" "$B" "$OUT/arm64x/${dll:t}" > $B/link-${dll:t:r}.sh <<'PY'
+import shlex, sys
+cmd, build, out = sys.argv[1], sys.argv[2], sys.argv[3]
+args = shlex.split(cmd)
+res, extra = [], []
+i = 0
+while i < len(args):
+    a = args[i]
+    if a == '-o':
+        res += ['-o', out]; i += 2; continue
+    res.append(a)
+    # build-relative inputs: add the aarch64 build's file too
+    # (resources such as version.o only once, from the arm64ec build)
+    if not a.startswith(('-', '/', '.')) and (a.endswith('.obj') or a.endswith('.a')):
+        extra.append(build + '/aarch64/' + a)
+    i += 1
+res.insert(1, '-marm64x')
+# aarch64 objects right after the arm64ec ones, before the libraries
+first_lib = next((k for k, a in enumerate(res) if a.startswith('-L') or a.startswith('-Wl')), len(res))
+objs = [e for e in extra if e.endswith('.obj') or e.endswith('.o')]
+libs = [e for e in extra if e.endswith('.a')]
+res = res[:first_lib] + objs + res[first_lib:]
+try:
+    k = res.index('-Wl,--end-group')
+    res = res[:k] + libs + res[k:]
+except ValueError:
+    res += libs
+print('cd ' + shlex.quote(build + '/arm64ec') + ' && ' + ' '.join(shlex.quote(x) for x in res))
+PY
+        zsh $B/link-${dll:t:r}.sh
+    done
+    $WINE_BUILD/tools/winebuild/winebuild --builtin $OUT/arm64x/winemetal.dll
+    cp $OUT/aarch64/winemetal.so $OUT/arm64x/
+    ls -la $OUT/arm64x
+fi

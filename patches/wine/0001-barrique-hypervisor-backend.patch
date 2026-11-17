@@ -5898,6 +5898,190 @@ index fd46ba3..ec1dfcd 100644
  [
      threading(both),
      uuid(6c34de69-4670-46cd-8cb4-1f2fa1dffb65)
+diff --git a/dlls/winemac.drv/Makefile.in b/dlls/winemac.drv/Makefile.in
+index 7efe299..176f80f 100644
+--- a/dlls/winemac.drv/Makefile.in
++++ b/dlls/winemac.drv/Makefile.in
+@@ -23,6 +23,7 @@ SOURCES = \
+ 	cocoa_clipboard.m \
+ 	cocoa_cursorclipping.m \
+ 	cocoa_display.m \
++	cocoa_dxmt.m \
+ 	cocoa_event.m \
+ 	cocoa_main.m \
+ 	cocoa_opengl.m \
+diff --git a/dlls/winemac.drv/cocoa_dxmt.m b/dlls/winemac.drv/cocoa_dxmt.m
+new file mode 100644
+index 0000000..aa0f614
+--- /dev/null
++++ b/dlls/winemac.drv/cocoa_dxmt.m
+@@ -0,0 +1,166 @@
++/*
++ * Barrique: Windows memory for DXMT's Metal buffers
++ *
++ * DXMT (D3D10/11 on Metal) is used unmodified. Its unix library winemetal.so
++ * creates most CPU-visible buffers with -[MTLDevice newBufferWithLength:options:]
++ * and hands [buffer contents] to the Windows side. Under the Hypervisor.framework
++ * backend Windows code runs in a VM that only maps Windows memory, and memory
++ * Metal allocated itself, mapped into the VM by hand, keeps its old pages after
++ * Metal frees it (research/hvproto/gpumap.m, case 6).
++ *
++ * So when winemetal.so is loaded, its import of MTLCopyAllDevices is pointed at
++ * a wrapper that swizzles newBufferWithLength:options: on the device classes it
++ * returns. For calls coming from winemetal.so, and storage that is not private,
++ * the buffer is created with newBufferWithBytesNoCopy over a Windows view
++ * (macdrv_dxmt_alloc); its deallocator gives the view back. Calls from anywhere
++ * else (MoltenVK, Metal itself) are untouched. Same strategy as win32u's Vulkan
++ * memory under HVF (phase 5 step 4).
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ */
++
++#import <Metal/Metal.h>
++#import <objc/runtime.h>
++#include <dlfcn.h>
++#include <mach/mach.h>
++#include <mach-o/dyld.h>
++#include <mach-o/getsect.h>
++#include <pthread.h>
++#include <string.h>
++#include <stdio.h>
++#include <stdlib.h>
++
++#import "macdrv_cocoa.h"
++
++#define DXMT_PAGE 0x4000
++
++typedef NSArray<id<MTLDevice>> *(*copy_all_devices_func)(void);
++typedef id (*new_buffer_func)(id self, SEL sel, NSUInteger length, MTLResourceOptions options);
++
++static copy_all_devices_func real_copy_all_devices;
++static uintptr_t winemetal_start, winemetal_end;
++static pthread_mutex_t swizzle_lock = PTHREAD_MUTEX_INITIALIZER;
++
++/* the original newBufferWithLength:options: of each swizzled class */
++static struct { Class cls; new_buffer_func orig; } swizzled[8];
++static unsigned int swizzled_count;
++
++static new_buffer_func original_for(id self)
++{
++    Class cls = object_getClass(self);
++    unsigned int i;
++
++    for (; cls; cls = class_getSuperclass(cls))
++        for (i = 0; i < swizzled_count; i++)
++            if (swizzled[i].cls == cls) return swizzled[i].orig;
++    return NULL;
++}
++
++static id dxmt_new_buffer(id self, SEL sel, NSUInteger length, MTLResourceOptions options)
++{
++    uintptr_t caller = (uintptr_t)__builtin_return_address(0);
++    new_buffer_func orig = original_for(self);
++    void *host, *windows_addr;
++    NSUInteger size;
++    id buffer;
++
++    if (!orig) return nil;
++    if (caller < winemetal_start || caller >= winemetal_end || !length ||
++        (options & MTLResourceStorageModeMask) == MTLResourceStorageModePrivate)
++        return orig(self, sel, length, options);
++
++    size = (length + DXMT_PAGE - 1) & ~(NSUInteger)(DXMT_PAGE - 1);
++    if (!(host = macdrv_dxmt_alloc(size, &windows_addr))) return orig(self, sel, length, options);
++
++    buffer = [(id<MTLDevice>)self newBufferWithBytesNoCopy:host length:size options:options
++                                               deallocator:^(void *pointer, NSUInteger len) {
++        macdrv_dxmt_free(windows_addr);
++    }];
++    if (!buffer)
++    {
++        macdrv_dxmt_free(windows_addr);
++        return orig(self, sel, length, options);
++    }
++    return buffer;
++}
++
++static void swizzle_device(id<MTLDevice> device)
++{
++    SEL sel = @selector(newBufferWithLength:options:);
++    Class cls = object_getClass(device);
++    Method method;
++    unsigned int i;
++
++    pthread_mutex_lock(&swizzle_lock);
++    for (i = 0; i < swizzled_count; i++) if (swizzled[i].cls == cls) goto done;
++    if (swizzled_count == sizeof(swizzled) / sizeof(swizzled[0])) goto done;
++    if (!(method = class_getInstanceMethod(cls, sel))) goto done;
++    /* own the method in this class, so a superclass shared with others stays as is */
++    class_addMethod(cls, sel, method_getImplementation(method), method_getTypeEncoding(method));
++    method = class_getInstanceMethod(cls, sel);
++    swizzled[swizzled_count].cls = cls;
++    swizzled[swizzled_count].orig = (new_buffer_func)method_getImplementation(method);
++    swizzled_count++;
++    method_setImplementation(method, (IMP)dxmt_new_buffer);
++    fprintf(stderr, "barrique: DXMT buffers of %s use Windows memory\n", class_getName(cls));
++done:
++    pthread_mutex_unlock(&swizzle_lock);
++}
++
++static NSArray<id<MTLDevice>> *dxmt_copy_all_devices(void)
++{
++    NSArray<id<MTLDevice>> *devices = real_copy_all_devices();
++    for (id<MTLDevice> device in devices) swizzle_device(device);
++    return devices;
++}
++
++/* point winemetal.so's resolved import of MTLCopyAllDevices at the wrapper */
++static void hook_winemetal(const struct mach_header_64 *header, intptr_t slide)
++{
++    unsigned long got_size, text_size;
++    void **got = (void **)getsectiondata(header, "__DATA_CONST", "__got", &got_size);
++    uint8_t *text = getsegmentdata(header, "__TEXT", &text_size);
++    unsigned int i, count = 0;
++
++    if (!real_copy_all_devices || !got || !text) return;
++    winemetal_start = (uintptr_t)text;
++    winemetal_end = (uintptr_t)text + text_size;
++
++    for (i = 0; i < got_size / sizeof(void *); i++)
++    {
++        vm_address_t page;
++        if (got[i] != (void *)real_copy_all_devices) continue;
++        page = (vm_address_t)&got[i] & ~(vm_address_t)(vm_page_size - 1);
++        if (vm_protect(mach_task_self(), page, vm_page_size, FALSE,
++                       VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY) != KERN_SUCCESS)
++            continue;
++        got[i] = (void *)dxmt_copy_all_devices;
++        vm_protect(mach_task_self(), page, vm_page_size, FALSE, VM_PROT_READ);
++        count++;
++    }
++    fprintf(stderr, "barrique: winemetal.so loaded, %u MTLCopyAllDevices import(s) hooked\n", count);
++}
++
++static void image_added(const struct mach_header *header, intptr_t slide)
++{
++    Dl_info info;
++    size_t len;
++
++    if (!dladdr(header, &info) || !info.dli_fname) return;
++    len = strlen(info.dli_fname);
++    if (len < 13 || strcmp(info.dli_fname + len - 13, "/winemetal.so")) return;
++    hook_winemetal((const struct mach_header_64 *)header, slide);
++}
++
++static void __attribute__((constructor)) dxmt_init(void)
++{
++    const char *env = getenv("BARRIQUE_DXMT_BUFFERS");
++
++    if (env && !strcmp(env, "0")) return;
++    real_copy_all_devices = (copy_all_devices_func)dlsym(RTLD_DEFAULT, "MTLCopyAllDevices");
++    if (!real_copy_all_devices) return;
++    _dyld_register_func_for_add_image(image_added);
++}
 diff --git a/dlls/winemac.drv/cocoa_event.m b/dlls/winemac.drv/cocoa_event.m
 index 581449a..e0f128e 100644
 --- a/dlls/winemac.drv/cocoa_event.m
@@ -5969,6 +6153,21 @@ index c15aefe..fb014ca 100644
          });
          [oldView release];
  
+diff --git a/dlls/winemac.drv/macdrv_cocoa.h b/dlls/winemac.drv/macdrv_cocoa.h
+index dd332b6..1c8d391 100644
+--- a/dlls/winemac.drv/macdrv_cocoa.h
++++ b/dlls/winemac.drv/macdrv_cocoa.h
+@@ -501,6 +501,10 @@ extern void macdrv_order_cocoa_window(WineWindow *window, WineWindow *prev,
+ extern WineMetalView *macdrv_view_create_metal_view(WineContentView *view, MTLDevice_id device);
+ extern CAMetalLayer *macdrv_view_get_metal_layer(WineMetalView *view);
+ extern void macdrv_view_release_metal_view(WineMetalView *view);
++
++/* Barrique: Windows memory for DXMT's Metal buffers (window.c, cocoa_dxmt.m) */
++extern void *macdrv_dxmt_alloc(size_t size, void **windows_addr);
++extern void macdrv_dxmt_free(void *windows_addr);
+ extern WineMetalSwapChain_id macdrv_create_view_swapchain(WineContentView *view);
+ extern WineMetalSwapChain_id macdrv_create_offscreen_swapchain(void* hwnd, CGRect bounds);
+ extern CAMetalLayer *macdrv_swapchain_get_layer(WineMetalSwapChain_id swapchain);
 diff --git a/dlls/winemac.drv/unixlib.h b/dlls/winemac.drv/unixlib.h
 index dc22da0..f096cf3 100644
 --- a/dlls/winemac.drv/unixlib.h
@@ -5985,10 +6184,10 @@ index dc22da0..f096cf3 100644
 +#endif
  }
 diff --git a/dlls/winemac.drv/window.c b/dlls/winemac.drv/window.c
-index e025823..f4a893e 100644
+index e025823..5f56d7e 100644
 --- a/dlls/winemac.drv/window.c
 +++ b/dlls/winemac.drv/window.c
-@@ -2203,3 +2203,148 @@ void init_win_context(void)
+@@ -2203,3 +2203,206 @@ void init_win_context(void)
      pthread_mutex_init(&win_data_mutex, &attr);
      pthread_mutexattr_destroy(&attr);
  }
@@ -6137,6 +6336,64 @@ index e025823..f4a893e 100644
 +    dxmt_view_release_metal_view,
 +    NULL,
 +};
++
++
++/***********************************************************************
++ * Barrique: memory for DXMT's Metal buffers (see cocoa_dxmt.m).
++ *
++ * The buffers winemetal.so creates with newBufferWithLength are handed to the
++ * Windows side, which in the VM can only touch Windows memory. cocoa_dxmt.m
++ * gives Metal process memory allocated here as a Windows view instead
++ * (newBufferWithBytesNoCopy). Metal may drop a buffer on a thread Wine did not
++ * create, so frees are queued and done on the next allocation.
++ */
++static pthread_mutex_t dxmt_free_lock = PTHREAD_MUTEX_INITIALIZER;
++static struct dxmt_free { struct dxmt_free *next; void *addr; } *dxmt_free_list;
++
++static void dxmt_drain_frees(void)
++{
++    struct dxmt_free *list, *next;
++    SIZE_T size;
++
++    pthread_mutex_lock(&dxmt_free_lock);
++    list = dxmt_free_list;
++    dxmt_free_list = NULL;
++    pthread_mutex_unlock(&dxmt_free_lock);
++
++    for (; list; list = next)
++    {
++        next = list->next;
++        size = 0;
++        NtFreeVirtualMemory(GetCurrentProcess(), &list->addr, &size, MEM_RELEASE);
++        free(list);
++    }
++}
++
++/* returns the host address of size bytes of Windows memory, or NULL */
++void *macdrv_dxmt_alloc(size_t size, void **windows_addr)
++{
++    void *addr = NULL;
++    SIZE_T alloc_size = size;
++
++    dxmt_drain_frees();
++    if (NtAllocateVirtualMemory(GetCurrentProcess(), &addr, 0, &alloc_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE))
++        return NULL;
++    *windows_addr = addr;
++    return wine_low_window_ptr((ULONG_PTR)addr);
++}
++
++/* any thread, also one Wine did not create */
++void macdrv_dxmt_free(void *windows_addr)
++{
++    struct dxmt_free *entry = malloc(sizeof(*entry));
++
++    if (!entry) return;  /* leak rather than crash */
++    entry->addr = windows_addr;
++    pthread_mutex_lock(&dxmt_free_lock);
++    entry->next = dxmt_free_list;
++    dxmt_free_list = entry;
++    pthread_mutex_unlock(&dxmt_free_lock);
++}
 diff --git a/dlls/winevulkan/make_vulkan b/dlls/winevulkan/make_vulkan
 index 71a921a..fefc998 100755
 --- a/dlls/winevulkan/make_vulkan

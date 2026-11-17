@@ -21,7 +21,7 @@ for a in ${=DXMT_ARCHS:-aarch64 x86_64}; do
         WINEDLLPATH=$W/fex-dlls:$T/$a/dllpath BARRIQUE_METAL_MEMORY=$m \
             timeout -k 10 60 ./wine $T/$a/app/gears-$a.exe d3d11 3 > $R/gears-$a-mw$m.log 2>&1
         print "rc=$?"
-        grep -a "^d3d11\|RESULT\|winemetal\|d3d11.dll\|dxgi.dll\|err:" $R/gears-$a-mw$m.log | grep -av "^\s\|winebth\|SvchostPush" | head -10
+        grep -a "^d3d11\|RESULT\|barrique:\|d3d11.dll\|err:" $R/gears-$a-mw$m.log | grep -av "^\s\|winebth\|SvchostPush" | head -10
         grep -ac "dispatch_exception\|handle_syscall_fault" $R/gears-$a-mw$m.log
     done
 done
