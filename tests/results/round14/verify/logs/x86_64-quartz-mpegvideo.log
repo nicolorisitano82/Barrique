@@ -1,0 +1,36 @@
+mpegvideo.c:702: Test marked todo: Got hr 0x1.
+mpegvideo.c:1892: Test marked todo: Got hr 0x1.
+mpegvideo.c:1892: Test marked todo: Got hr 0x1.
+mpegvideo.c:1307: Test marked todo: Got hr 0x8004020a.
+mpegvideo.c:960: Test succeeded inside todo block: Got stop time 0, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 33333, expected 22222.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:1972: Test marked todo: 1: Got hr 0x8004022a.
+mpegvideo.c:960: Test succeeded inside todo block: Got stop time 0, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 33333, expected 22222.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test succeeded inside todo block: Got stop time 0, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 33333, expected 22222.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test succeeded inside todo block: Got stop time 0, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 33333, expected 22222.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test succeeded inside todo block: Got stop time 0, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 33333, expected 22222.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test succeeded inside todo block: Got stop time 0, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 33333, expected 22222.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test succeeded inside todo block: Got stop time 0, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 33333, expected 22222.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:960: Test marked todo: Got stop time 120000, expected 0.
+mpegvideo.c:1972: Test marked todo: 8: Got hr 0x8004022a.
+mpegvideo.c:2046: Test marked todo: Got hr 0.
+041c:mpegvideo: 1907 tests executed (28 marked as todo, 0 as flaky, 7 failures), 0 skipped.

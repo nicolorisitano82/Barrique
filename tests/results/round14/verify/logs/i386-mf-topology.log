@@ -1,0 +1,188 @@
+topology.c:3120: Test marked todo: Unexpected hr 0xc00d521b.
+topology.c:3447: Test marked todo: 0: Unexpected count 0.
+topology.c:3452: Test marked todo: 0: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 0: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 0: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 3: Unexpected count 1.
+topology.c:3452: Test marked todo: 3: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 3: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 3: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 4: Unexpected count 0.
+topology.c:3452: Test marked todo: 4: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 4: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 4: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 7: Unexpected count 0.
+topology.c:3452: Test marked todo: 7: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 7: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 7: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 9: Unexpected count 0.
+topology.c:3452: Test marked todo: 9: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 9: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 9: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 10: Unexpected count 1.
+topology.c:3452: Test marked todo: 10: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 10: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 10: Failed to get sink pref type, hr 0x80004005.
+topology.c:3407: Test marked todo: 11: Unexpected hr 0xc00d6d6f
+topology.c:3447: Test marked todo: 12: Unexpected count 0.
+topology.c:3452: Test marked todo: 12: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 12: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 12: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 13: Unexpected count 0.
+topology.c:3452: Test marked todo: 13: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 13: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 13: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 14: Unexpected count 0.
+topology.c:3452: Test marked todo: 14: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 14: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 14: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 17: Unexpected count 0.
+topology.c:3452: Test marked todo: 17: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 17: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 17: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 21: Unexpected count 0.
+topology.c:3452: Test marked todo: 21: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 21: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 21: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 22: Unexpected count 0.
+topology.c:3452: Test marked todo: 22: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 22: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 22: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 23: Unexpected count 0.
+topology.c:3452: Test marked todo: 23: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 23: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 23: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 24: Unexpected count 0.
+topology.c:3452: Test marked todo: 24: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 24: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 24: Failed to get sink pref type, hr 0x80004005.
+topology.c:3575: Test marked todo: 24: "MF_MT_AUDIO_CHANNEL_MASK" missing, hr 0xc00d36e6
+topology.c:3635: Test marked todo: 24: "MF_MT_AUDIO_CHANNEL_MASK" missing, hr 0xc00d36e6
+topology.c:3447: Test marked todo: 25: Unexpected count 0.
+topology.c:3452: Test marked todo: 25: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 25: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 25: Failed to get sink pref type, hr 0x80004005.
+topology.c:3575: Test marked todo: 25: "MF_MT_AUDIO_CHANNEL_MASK" missing, hr 0xc00d36e6
+topology.c:3635: Test marked todo: 25: "MF_MT_AUDIO_CHANNEL_MASK" missing, hr 0xc00d36e6
+topology.c:3447: Test marked todo: 26: Unexpected count 1.
+topology.c:3452: Test marked todo: 26: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 26: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 26: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 27: Unexpected count 1.
+topology.c:3452: Test marked todo: 27: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 27: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 27: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 30: Unexpected count 0.
+topology.c:3452: Test marked todo: 30: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 30: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 30: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 31: Unexpected count 0.
+topology.c:3452: Test marked todo: 31: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 31: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 31: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 32: Unexpected count 0.
+topology.c:3452: Test marked todo: 32: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 32: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 32: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 35: Unexpected count 0.
+topology.c:3452: Test marked todo: 35: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 35: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 35: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 37: Unexpected count 0.
+topology.c:3452: Test marked todo: 37: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 37: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 37: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 38: Unexpected count 0.
+topology.c:3452: Test marked todo: 38: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 38: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 38: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 39: Unexpected count 0.
+topology.c:3452: Test marked todo: 39: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 39: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 39: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 40: Unexpected count 0.
+topology.c:3452: Test marked todo: 40: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 40: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 40: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 41: Unexpected count 0.
+topology.c:3452: Test marked todo: 41: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 41: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 41: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 42: Unexpected count 0.
+topology.c:3452: Test marked todo: 42: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 42: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 42: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 43: Unexpected count 0.
+topology.c:3452: Test marked todo: 43: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 43: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 43: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 45: Unexpected count 0.
+topology.c:3452: Test marked todo: 45: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 45: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 45: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 46: Unexpected count 0.
+topology.c:3452: Test marked todo: 46: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 46: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 46: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 47: Unexpected count 0.
+topology.c:3452: Test marked todo: 47: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 47: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 47: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 48: Unexpected count 0.
+topology.c:3452: Test marked todo: 48: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 48: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 48: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 50: Unexpected count 1.
+topology.c:3452: Test marked todo: 50: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 50: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 50: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 51: Unexpected count 1.
+topology.c:3452: Test marked todo: 51: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 51: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 51: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 53: Unexpected count 0.
+topology.c:3452: Test marked todo: 53: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 53: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 53: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 54: Unexpected count 0.
+topology.c:3452: Test marked todo: 54: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 54: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 54: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 55: Unexpected count 0.
+topology.c:3452: Test marked todo: 55: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 55: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 55: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 56: Unexpected count 0.
+topology.c:3452: Test marked todo: 56: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 56: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 56: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 57: Unexpected count 0.
+topology.c:3452: Test marked todo: 57: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 57: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 57: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 58: Unexpected count 0.
+topology.c:3452: Test marked todo: 58: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 58: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 58: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 59: Unexpected count 0.
+topology.c:3452: Test marked todo: 59: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 59: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 59: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Test marked todo: 60: Unexpected count 0.
+topology.c:3452: Test marked todo: 60: Failed to get attribute, hr 0xc00d36e6.
+topology.c:3453: Test marked todo: 60: Unexpected value 0xdeadbeef.
+topology.c:3485: Test marked todo: 60: Failed to get sink pref type, hr 0x80004005.
+topology.c:3447: Line has been silenced after 42 occurrences
+topology.c:3452: Line has been silenced after 42 occurrences
+topology.c:3453: Line has been silenced after 42 occurrences
+topology.c:3485: Line has been silenced after 42 occurrences
+topology.c:3691: Test marked todo: 65: got transform output_enum_complete 0
+topology.c:3789: Tests skipped: Failed to create an EVR sink, skipping tests.
+topology.c:4157: Tests skipped: d3d9 mode 0: Failed to create a D3D9 object, skipping tests.
+topology.c:4157: Tests skipped: d3d9 mode 1: Failed to create a D3D9 object, skipping tests.
+topology.c:4157: Tests skipped: d3d9 mode 2: Failed to create a D3D9 object, skipping tests.
+topology.c:4356: Tests skipped: d3d11 mode 0: D3D11 device creation failed, skipping tests.
+topology.c:4356: Tests skipped: d3d11 mode 1: D3D11 device creation failed, skipping tests.
+topology.c:4356: Tests skipped: d3d11 mode 2: D3D11 device creation failed, skipping tests.
+078c:topology: Silenced 36 todos, 0 skips and 0 traces.
+078c:topology: 7486 tests executed (175 marked as todo, 0 as flaky, 0 failures), 7 skipped.

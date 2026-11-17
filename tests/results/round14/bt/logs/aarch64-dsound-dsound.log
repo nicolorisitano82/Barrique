@@ -1,0 +1,75 @@
+dsound.c:208: Testing IDirectSound
+dsound.c:2004: *** Testing Primary Sound Driver -  ***
+dsound.c:2004: *** Testing Speakers (AirPods Pro di Nicolò) - {0.0.0.00000000}.{F4E32BF2-D389-486E-963A-134FFEC2F562} ***
+dsound.c:1215: testing duplicated buffer without notifications.
+dsound.c:1232: testing duplicated buffer with a notification.
+dsound.c:1243: testing original buffer with a notification.
+dsound.c:1912: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1912: Test marked todo: got buf 000000700C862F60 expected 0000000000000000
+dsound.c:1920: Test marked todo: got buf 00000000DEADBEEF expected 0000000000000000
+dsound.c:1928: Test marked todo: got buf 00000000DEADBEEF expected 0000000000000000
+dsound.c:1944: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1944: Test marked todo: got buf 000000700C85D1A0 expected 0000000000000000
+dsound.c:1944: Test marked todo: got bufsize 48000 expected 0
+dsound.c:1946: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 0, 0000000000000000, 0) returned 00000000
+dsound.c:1947: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 0, 0000000000000000, 0) returned 00000000
+dsound.c:1951: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1951: Test marked todo: got buf 000000700C862F60 expected 0000000000000000
+dsound.c:1951: Test marked todo: got bufsize 24000 expected 0
+dsound.c:1951: Test marked todo: got buf2 000000700C85D1A0 expected 0000000000000000
+dsound.c:1951: Test marked todo: got bufsize2 24000 expected 0
+dsound.c:1958: Test marked todo: IDirectSoundBuffer_Unlock(000000700C862F60, 48000, 0000000000000000, 0) returned 80070057
+dsound.c:1959: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 3735928559, 0000000000000000, 0) returned 80070057
+dsound.c:1961: Test marked todo: IDirectSoundBuffer_Unlock(000000700C862F60, 24000, 0000000000000000, 0) returned 00000000
+dsound.c:1962: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 24000, 0000000000000000, 0) returned 00000000
+dsound.c:1982: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 0, 000000700C85D1A0, 0) returned 00000000
+dsound.c:2004: *** Testing Speakers (Altoparlanti MacBook Pro) - {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C} ***
+dsound.c:1215: testing duplicated buffer without notifications.
+dsound.c:1232: testing duplicated buffer with a notification.
+dsound.c:1243: testing original buffer with a notification.
+dsound.c:1912: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1912: Test marked todo: got buf 000000700C862F60 expected 0000000000000000
+dsound.c:1920: Test marked todo: got buf 00000000DEADBEEF expected 0000000000000000
+dsound.c:1928: Test marked todo: got buf 00000000DEADBEEF expected 0000000000000000
+dsound.c:1944: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1944: Test marked todo: got buf 000000700C85D1A0 expected 0000000000000000
+dsound.c:1944: Test marked todo: got bufsize 48000 expected 0
+dsound.c:1946: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 0, 0000000000000000, 0) returned 00000000
+dsound.c:1947: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 0, 0000000000000000, 0) returned 00000000
+dsound.c:1951: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1951: Test marked todo: got buf 000000700C862F60 expected 0000000000000000
+dsound.c:1951: Test marked todo: got bufsize 24000 expected 0
+dsound.c:1951: Test marked todo: got buf2 000000700C85D1A0 expected 0000000000000000
+dsound.c:1951: Test marked todo: got bufsize2 24000 expected 0
+dsound.c:1958: Test marked todo: IDirectSoundBuffer_Unlock(000000700C862F60, 48000, 0000000000000000, 0) returned 80070057
+dsound.c:1959: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 3735928559, 0000000000000000, 0) returned 80070057
+dsound.c:1961: Test marked todo: IDirectSoundBuffer_Unlock(000000700C862F60, 24000, 0000000000000000, 0) returned 00000000
+dsound.c:1962: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 24000, 0000000000000000, 0) returned 00000000
+dsound.c:1982: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 0, 000000700C85D1A0, 0) returned 00000000
+dsound.c:2004: *** Testing Speakers (BlackHole 2ch) - {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406} ***
+dsound.c:1215: testing duplicated buffer without notifications.
+dsound.c:1232: testing duplicated buffer with a notification.
+dsound.c:1243: testing original buffer with a notification.
+dsound.c:1912: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1912: Test marked todo: got buf 000000700C862F60 expected 0000000000000000
+dsound.c:1920: Test marked todo: got buf 00000000DEADBEEF expected 0000000000000000
+dsound.c:1928: Test marked todo: got buf 00000000DEADBEEF expected 0000000000000000
+dsound.c:1944: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1944: Test marked todo: got buf 000000700C85D1A0 expected 0000000000000000
+dsound.c:1944: Test marked todo: got bufsize 48000 expected 0
+dsound.c:1946: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 0, 0000000000000000, 0) returned 00000000
+dsound.c:1947: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 0, 0000000000000000, 0) returned 00000000
+dsound.c:1951: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1951: Test marked todo: got buf 000000700C862F60 expected 0000000000000000
+dsound.c:1951: Test marked todo: got bufsize 24000 expected 0
+dsound.c:1951: Test marked todo: got buf2 000000700C85D1A0 expected 0000000000000000
+dsound.c:1951: Test marked todo: got bufsize2 24000 expected 0
+dsound.c:1958: Test marked todo: IDirectSoundBuffer_Unlock(000000700C862F60, 48000, 0000000000000000, 0) returned 80070057
+dsound.c:1959: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 3735928559, 0000000000000000, 0) returned 80070057
+dsound.c:1961: Test marked todo: IDirectSoundBuffer_Unlock(000000700C862F60, 24000, 0000000000000000, 0) returned 00000000
+dsound.c:1962: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 24000, 0000000000000000, 0) returned 00000000
+dsound.c:1982: Test marked todo: IDirectSoundBuffer_Unlock(000000700C85D1A0, 0, 000000700C85D1A0, 0) returned 00000000
+dsound.c:2117: dwMaxHwMixingAllBuffers: 1
+dsound.c:2118: dwMaxHwMixingStaticBuffers: 1
+dsound.c:2119: dwMaxHwMixingStreamingBuffers: 1
+0684:dsound: 10587 tests executed (57 marked as todo, 0 as flaky, 0 failures), 0 skipped.

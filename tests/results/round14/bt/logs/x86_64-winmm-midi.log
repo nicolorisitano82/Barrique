@@ -1,0 +1,97 @@
+midi.c:225: Found no MIDI IN device
+midi.c:1148: Found 1 MIDI OUT devices
+midi.c:253: Found 1 MCI sequencer devices
+midi.c:1156: ** Testing device 0
+midi.c:286: * CoreAudio MIDI Synth 1: manufacturer=255, product=1, tech=2, support=1: 16 voices, 16 notes
+midi.c:308: Message 3c7, wParam=8000, lParam=0 from midiOutOpen
+midi.c:314: Current volume 0 on device 0
+midi.c:350: ShortMsg type 93
+midi.c:379: MIDIHDR flags=2 when unsent
+midi.c:416: Message 3c8, wParam=8000, lParam=0 from midiOutClose
+midi.c:444: Message 3c7, wParam=8000, lParam=0 from midiOutOpen
+midi.c:455: Message 3c9, wParam=8000, lParam=700c23f830 from midiOutLongMsg
+midi.c:466: Message 3c9, wParam=8000, lParam=700c23f830 from midiOutLongMsg
+midi.c:470: ShortMsg type 93 (muted)
+midi.c:488: Message 3c9, wParam=8000, lParam=700c23f830 from midiOutLongMsg
+midi.c:492: Message 3c8, wParam=8000, lParam=0 from midiOuClose
+midi.c:624: Message 3c7, wParam=8000, lParam=0 from midiStreamOpen
+midi.c:657: MIDIHDR flags=e when submitted
+midi.c:686: Message 3ca, wParam=8000, lParam=700c23f818 from midiStream callback
+midi.c:687: Message 3c9, wParam=8000, lParam=700c23f818 from midiStreamOut
+midi.c:697: MIDIHDR stream flags=9 when finished
+midi.c:505: Stream position 5ms
+midi.c:508: Stream position 0 ticks
+midi.c:511: Stream position song pointer 0
+midi.c:505: Stream position 7ms
+midi.c:505: Stream position 8ms
+midi.c:505: Stream position 8ms
+midi.c:734: buffer: 24
+midi.c:746: Message 3c9, wParam=8000, lParam=700c23f818 from midiStreamOut
+midi.c:762: Message 3ca, wParam=8000, lParam=700c23f818 from 1 of 2 events
+midi.c:763: Message 3c9, wParam=8000, lParam=700c23f818 from 1 of 2 events
+midi.c:773: Message 3ca, wParam=8000, lParam=700c23f818 from 2 of 2 events
+midi.c:774: Message 3ca, wParam=8000, lParam=700c23f818 from 2 of 2 events
+midi.c:775: Message 3c9, wParam=8000, lParam=700c23f818 from 2 of 2 events
+midi.c:786: Message 3c9, wParam=8000, lParam=700c23f818 from 0 CB in 2 events
+midi.c:819: Test marked todo: midiOutPrepare stream too large rc=MMSYSERR_NOERROR
+midi.c:829: Message 3c8, wParam=8000, lParam=0 from midiStreamClose
+midi.c:835: Device 0 accepts NULL CALLBACK_FUNCTION
+midi.c:916: after playing, got 252ms
+midi.c:505: Stream position 0ms
+midi.c:508: Stream position 0 ticks
+midi.c:505: Stream position 0ms
+midi.c:502: Test marked todo: midiStreamPosition type 8 converted to 1 rc=MMSYSERR_NOERROR
+midi.c:505: Stream position 0ms
+midi.c:505: Stream position 0ms
+midi.c:505: Stream position 0ms
+midi.c:989: Message 3c7, wParam=8000, lParam=0 from midiStreamOpen
+midi.c:1040: Message 3c9, wParam=8000, lParam=700c23f818 from midiStreamOut
+midi.c:1049: Message 3c8, wParam=8000, lParam=0 from midiStreamClose
+midi.c:1165: ** Testing MIDI mapper
+midi.c:286: * Wine midi mapper: manufacturer=255, product=1, tech=5, support=3: 0 voices, 0 notes
+midi.c:308: Message 3c7, wParam=8000, lParam=0 from midiOutOpen
+midi.c:314: Current volume ffffffff on device -1
+midi.c:350: ShortMsg type 93
+midi.c:379: MIDIHDR flags=2 when unsent
+midi.c:416: Message 3c8, wParam=8000, lParam=0 from midiOutClose
+midi.c:444: Message 3c7, wParam=8000, lParam=0 from midiOutOpen
+midi.c:455: Message 3c9, wParam=8000, lParam=700c23f830 from midiOutLongMsg
+midi.c:466: Message 3c9, wParam=8000, lParam=700c23f830 from midiOutLongMsg
+midi.c:470: ShortMsg type 93 (muted)
+midi.c:488: Message 3c9, wParam=8000, lParam=700c23f830 from midiOutLongMsg
+midi.c:492: Message 3c8, wParam=8000, lParam=0 from midiOuClose
+midi.c:624: Message 3c7, wParam=8000, lParam=0 from midiStreamOpen
+midi.c:657: MIDIHDR flags=e when submitted
+midi.c:674: async MIDI still queued
+midi.c:686: Message 3ca, wParam=8000, lParam=700c23f818 from midiStream callback
+midi.c:687: Message 3c9, wParam=8000, lParam=700c23f818 from midiStreamOut
+midi.c:697: MIDIHDR stream flags=9 when finished
+midi.c:505: Stream position 110ms
+midi.c:508: Stream position 8 ticks
+midi.c:511: Stream position song pointer 1
+midi.c:505: Stream position 112ms
+midi.c:505: Stream position 113ms
+midi.c:505: Stream position 114ms
+midi.c:734: buffer: 24
+midi.c:746: Message 3c9, wParam=8000, lParam=700c23f818 from midiStreamOut
+midi.c:762: Message 3ca, wParam=8000, lParam=700c23f818 from 1 of 2 events
+midi.c:763: Message 3c9, wParam=8000, lParam=700c23f818 from 1 of 2 events
+midi.c:773: Message 3ca, wParam=8000, lParam=700c23f818 from 2 of 2 events
+midi.c:774: Message 3ca, wParam=8000, lParam=700c23f818 from 2 of 2 events
+midi.c:775: Message 3c9, wParam=8000, lParam=700c23f818 from 2 of 2 events
+midi.c:786: Message 3c9, wParam=8000, lParam=700c23f818 from 0 CB in 2 events
+midi.c:819: Test marked todo: midiOutPrepare stream too large rc=MMSYSERR_NOERROR
+midi.c:829: Message 3c8, wParam=8000, lParam=0 from midiStreamClose
+midi.c:835: Device -1 accepts NULL CALLBACK_FUNCTION
+midi.c:916: after playing, got 251ms
+midi.c:505: Stream position 0ms
+midi.c:508: Stream position 0 ticks
+midi.c:505: Stream position 0ms
+midi.c:502: Test marked todo: midiStreamPosition type 8 converted to 1 rc=MMSYSERR_NOERROR
+midi.c:505: Stream position 0ms
+midi.c:505: Stream position 0ms
+midi.c:505: Stream position 0ms
+midi.c:989: Message 3c7, wParam=8000, lParam=0 from midiStreamOpen
+midi.c:1040: Message 3c9, wParam=8000, lParam=700c23f818 from midiStreamOut
+midi.c:1049: Message 3c8, wParam=8000, lParam=0 from midiStreamClose
+06cc:midi: 406 tests executed (4 marked as todo, 0 as flaky, 0 failures), 0 skipped.

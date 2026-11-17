@@ -1,0 +1,273 @@
+propset.c:408: *** Testing DSPROPERTY_DIRECTSOUNDDEVICE_ENUMERATE ***
+propset.c:57:   found device:
+propset.c:58:     Type: WDM
+propset.c:62:     DataFlow: Render
+propset.c:66:     DeviceId: {f4e32bf2-d389-486e-963a-134ffec2f562}
+propset.c:67:     Description: Speakers (AirPods Pro di Nicolò)
+propset.c:68:     Module: {0.0.0.00000000}.{F4E32BF2-D389-486E-963A-134FFEC2F562}
+propset.c:69:     Interface: Interface
+propset.c:70:     WaveDeviceId: 0
+propset.c:57:   found device:
+propset.c:58:     Type: WDM
+propset.c:62:     DataFlow: Render
+propset.c:66:     DeviceId: {56cf8c5d-f98c-4c48-9c5b-c25c728e373c}
+propset.c:67:     Description: Speakers (Altoparlanti MacBook Pro)
+propset.c:68:     Module: {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C}
+propset.c:69:     Interface: Interface
+propset.c:70:     WaveDeviceId: 1
+propset.c:57:   found device:
+propset.c:58:     Type: WDM
+propset.c:62:     DataFlow: Render
+propset.c:66:     DeviceId: {b10b0d41-ffb3-4e73-8396-2358a330d406}
+propset.c:67:     Description: Speakers (BlackHole 2ch)
+propset.c:68:     Module: {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406}
+propset.c:69:     Interface: Interface
+propset.c:70:     WaveDeviceId: 2
+propset.c:57:   found device:
+propset.c:58:     Type: WDM
+propset.c:62:     DataFlow: Capture
+propset.c:66:     DeviceId: {0ce6c2c3-a148-496b-a6ac-9c24f20b139b}
+propset.c:67:     Description: Microphone (AirPods Pro di Nicolò)
+propset.c:68:     Module: {0.0.1.00000000}.{0CE6C2C3-A148-496B-A6AC-9C24F20B139B}
+propset.c:69:     Interface: Interface
+propset.c:70:     WaveDeviceId: 0
+propset.c:57:   found device:
+propset.c:58:     Type: WDM
+propset.c:62:     DataFlow: Capture
+propset.c:66:     DeviceId: {3660b88f-7315-4309-8286-d3a128496386}
+propset.c:67:     Description: Microphone (BlackHole 2ch)
+propset.c:68:     Module: {0.0.1.00000000}.{3660B88F-7315-4309-8286-D3A128496386}
+propset.c:69:     Interface: Interface
+propset.c:70:     WaveDeviceId: 1
+propset.c:57:   found device:
+propset.c:58:     Type: WDM
+propset.c:62:     DataFlow: Capture
+propset.c:66:     DeviceId: {7aeb6826-d0d1-414c-af02-aff95dfa5916}
+propset.c:67:     Description: Microphone (Microfono di iPhone di Nicolò)
+propset.c:68:     Module: {0.0.1.00000000}.{7AEB6826-D0D1-414C-AF02-AFF95DFA5916}
+propset.c:69:     Interface: Interface
+propset.c:70:     WaveDeviceId: 2
+propset.c:57:   found device:
+propset.c:58:     Type: WDM
+propset.c:62:     DataFlow: Capture
+propset.c:66:     DeviceId: {a37a6761-0568-41c0-a4e8-6b59be3ada31}
+propset.c:67:     Description: Microphone (Microfono MacBook Pro)
+propset.c:68:     Module: {0.0.1.00000000}.{A37A6761-0568-41C0-A4E8-6B59BE3ADA31}
+propset.c:69:     Interface: Interface
+propset.c:70:     WaveDeviceId: 3
+propset.c:446: *** Testing DSPROPERTY_DIRECTSOUNDDEVICE_ENUMERATE_1 ***
+propset.c:81:   found device:
+propset.c:82:     Type: WDM
+propset.c:86:     DataFlow: Render
+propset.c:90:     DeviceId: {f4e32bf2-d389-486e-963a-134ffec2f562}
+propset.c:91:     DescriptionA: Speakers (AirPods Pro di Nicolò)
+propset.c:93:     DescriptionW: Speakers (AirPods Pro di Nicolò)
+propset.c:94:     ModuleA: {0.0.0.00000000}.{F4E32BF2-D389-486E-963A-134FFEC2F562}
+propset.c:96:     ModuleW: {0.0.0.00000000}.{F4E32BF2-D389-486E-963A-134FFEC2F562}
+propset.c:97:     WaveDeviceId: 0
+propset.c:81:   found device:
+propset.c:82:     Type: WDM
+propset.c:86:     DataFlow: Render
+propset.c:90:     DeviceId: {56cf8c5d-f98c-4c48-9c5b-c25c728e373c}
+propset.c:91:     DescriptionA: Speakers (Altoparlanti MacBook Pro)
+propset.c:93:     DescriptionW: Speakers (Altoparlanti MacBook Pro)
+propset.c:94:     ModuleA: {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C}
+propset.c:96:     ModuleW: {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C}
+propset.c:97:     WaveDeviceId: 1
+propset.c:81:   found device:
+propset.c:82:     Type: WDM
+propset.c:86:     DataFlow: Render
+propset.c:90:     DeviceId: {b10b0d41-ffb3-4e73-8396-2358a330d406}
+propset.c:91:     DescriptionA: Speakers (BlackHole 2ch)
+propset.c:93:     DescriptionW: Speakers (BlackHole 2ch)
+propset.c:94:     ModuleA: {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406}
+propset.c:96:     ModuleW: {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406}
+propset.c:97:     WaveDeviceId: 2
+propset.c:81:   found device:
+propset.c:82:     Type: WDM
+propset.c:86:     DataFlow: Capture
+propset.c:90:     DeviceId: {0ce6c2c3-a148-496b-a6ac-9c24f20b139b}
+propset.c:91:     DescriptionA: Microphone (AirPods Pro di Nicolò)
+propset.c:93:     DescriptionW: Microphone (AirPods Pro di Nicolò)
+propset.c:94:     ModuleA: {0.0.1.00000000}.{0CE6C2C3-A148-496B-A6AC-9C24F20B139B}
+propset.c:96:     ModuleW: {0.0.1.00000000}.{0CE6C2C3-A148-496B-A6AC-9C24F20B139B}
+propset.c:97:     WaveDeviceId: 0
+propset.c:81:   found device:
+propset.c:82:     Type: WDM
+propset.c:86:     DataFlow: Capture
+propset.c:90:     DeviceId: {3660b88f-7315-4309-8286-d3a128496386}
+propset.c:91:     DescriptionA: Microphone (BlackHole 2ch)
+propset.c:93:     DescriptionW: Microphone (BlackHole 2ch)
+propset.c:94:     ModuleA: {0.0.1.00000000}.{3660B88F-7315-4309-8286-D3A128496386}
+propset.c:96:     ModuleW: {0.0.1.00000000}.{3660B88F-7315-4309-8286-D3A128496386}
+propset.c:97:     WaveDeviceId: 1
+propset.c:81:   found device:
+propset.c:82:     Type: WDM
+propset.c:86:     DataFlow: Capture
+propset.c:90:     DeviceId: {7aeb6826-d0d1-414c-af02-aff95dfa5916}
+propset.c:91:     DescriptionA: Microphone (Microfono di iPhone di Nicolò)
+propset.c:93:     DescriptionW: Microphone (Microfono di iPhone di Nicolò)
+propset.c:94:     ModuleA: {0.0.1.00000000}.{7AEB6826-D0D1-414C-AF02-AFF95DFA5916}
+propset.c:96:     ModuleW: {0.0.1.00000000}.{7AEB6826-D0D1-414C-AF02-AFF95DFA5916}
+propset.c:97:     WaveDeviceId: 2
+propset.c:81:   found device:
+propset.c:82:     Type: WDM
+propset.c:86:     DataFlow: Capture
+propset.c:90:     DeviceId: {a37a6761-0568-41c0-a4e8-6b59be3ada31}
+propset.c:91:     DescriptionA: Microphone (Microfono MacBook Pro)
+propset.c:93:     DescriptionW: Microphone (Microfono MacBook Pro)
+propset.c:94:     ModuleA: {0.0.1.00000000}.{A37A6761-0568-41C0-A4E8-6B59BE3ADA31}
+propset.c:96:     ModuleW: {0.0.1.00000000}.{A37A6761-0568-41C0-A4E8-6B59BE3ADA31}
+propset.c:97:     WaveDeviceId: 3
+propset.c:476: *** Testing DSPROPERTY_DIRECTSOUNDDEVICE_ENUMERATE_A ***
+propset.c:105:   found device:
+propset.c:106:     Type: WDM
+propset.c:110:     DataFlow: Render
+propset.c:114:     DeviceId: {f4e32bf2-d389-486e-963a-134ffec2f562}
+propset.c:115:     Description: Speakers (AirPods Pro di Nicolò)
+propset.c:116:     Module: {0.0.0.00000000}.{F4E32BF2-D389-486E-963A-134FFEC2F562}
+propset.c:117:     Interface: Interface
+propset.c:118:     WaveDeviceId: 0
+propset.c:105:   found device:
+propset.c:106:     Type: WDM
+propset.c:110:     DataFlow: Render
+propset.c:114:     DeviceId: {56cf8c5d-f98c-4c48-9c5b-c25c728e373c}
+propset.c:115:     Description: Speakers (Altoparlanti MacBook Pro)
+propset.c:116:     Module: {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C}
+propset.c:117:     Interface: Interface
+propset.c:118:     WaveDeviceId: 1
+propset.c:105:   found device:
+propset.c:106:     Type: WDM
+propset.c:110:     DataFlow: Render
+propset.c:114:     DeviceId: {b10b0d41-ffb3-4e73-8396-2358a330d406}
+propset.c:115:     Description: Speakers (BlackHole 2ch)
+propset.c:116:     Module: {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406}
+propset.c:117:     Interface: Interface
+propset.c:118:     WaveDeviceId: 2
+propset.c:105:   found device:
+propset.c:106:     Type: WDM
+propset.c:110:     DataFlow: Capture
+propset.c:114:     DeviceId: {0ce6c2c3-a148-496b-a6ac-9c24f20b139b}
+propset.c:115:     Description: Microphone (AirPods Pro di Nicolò)
+propset.c:116:     Module: {0.0.1.00000000}.{0CE6C2C3-A148-496B-A6AC-9C24F20B139B}
+propset.c:117:     Interface: Interface
+propset.c:118:     WaveDeviceId: 0
+propset.c:105:   found device:
+propset.c:106:     Type: WDM
+propset.c:110:     DataFlow: Capture
+propset.c:114:     DeviceId: {3660b88f-7315-4309-8286-d3a128496386}
+propset.c:115:     Description: Microphone (BlackHole 2ch)
+propset.c:116:     Module: {0.0.1.00000000}.{3660B88F-7315-4309-8286-D3A128496386}
+propset.c:117:     Interface: Interface
+propset.c:118:     WaveDeviceId: 1
+propset.c:105:   found device:
+propset.c:106:     Type: WDM
+propset.c:110:     DataFlow: Capture
+propset.c:114:     DeviceId: {7aeb6826-d0d1-414c-af02-aff95dfa5916}
+propset.c:115:     Description: Microphone (Microfono di iPhone di Nicolò)
+propset.c:116:     Module: {0.0.1.00000000}.{7AEB6826-D0D1-414C-AF02-AFF95DFA5916}
+propset.c:117:     Interface: Interface
+propset.c:118:     WaveDeviceId: 2
+propset.c:105:   found device:
+propset.c:106:     Type: WDM
+propset.c:110:     DataFlow: Capture
+propset.c:114:     DeviceId: {a37a6761-0568-41c0-a4e8-6b59be3ada31}
+propset.c:115:     Description: Microphone (Microfono MacBook Pro)
+propset.c:116:     Module: {0.0.1.00000000}.{A37A6761-0568-41C0-A4E8-6B59BE3ADA31}
+propset.c:117:     Interface: Interface
+propset.c:118:     WaveDeviceId: 3
+propset.c:506: *** Testing DSPROPERTY_DIRECTSOUNDDEVICE_ENUMERATE_W ***
+propset.c:130: found device:
+propset.c:131: 	Type: WDM
+propset.c:135: 	DataFlow: Render
+propset.c:139: 	DeviceId: {f4e32bf2-d389-486e-963a-134ffec2f562}
+propset.c:143: 	Description: Speakers (AirPods Pro di Nicolò)
+propset.c:144: 	Module: {0.0.0.00000000}.{F4E32BF2-D389-486E-963A-134FFEC2F562}
+propset.c:145: 	Interface: Interface
+propset.c:146: 	WaveDeviceId: 0
+propset.c:130: found device:
+propset.c:131: 	Type: WDM
+propset.c:135: 	DataFlow: Render
+propset.c:139: 	DeviceId: {56cf8c5d-f98c-4c48-9c5b-c25c728e373c}
+propset.c:143: 	Description: Speakers (Altoparlanti MacBook Pro)
+propset.c:144: 	Module: {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C}
+propset.c:145: 	Interface: Interface
+propset.c:146: 	WaveDeviceId: 1
+propset.c:130: found device:
+propset.c:131: 	Type: WDM
+propset.c:135: 	DataFlow: Render
+propset.c:139: 	DeviceId: {b10b0d41-ffb3-4e73-8396-2358a330d406}
+propset.c:143: 	Description: Speakers (BlackHole 2ch)
+propset.c:144: 	Module: {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406}
+propset.c:145: 	Interface: Interface
+propset.c:146: 	WaveDeviceId: 2
+propset.c:130: found device:
+propset.c:131: 	Type: WDM
+propset.c:135: 	DataFlow: Capture
+propset.c:139: 	DeviceId: {0ce6c2c3-a148-496b-a6ac-9c24f20b139b}
+propset.c:143: 	Description: Microphone (AirPods Pro di Nicolò)
+propset.c:144: 	Module: {0.0.1.00000000}.{0CE6C2C3-A148-496B-A6AC-9C24F20B139B}
+propset.c:145: 	Interface: Interface
+propset.c:146: 	WaveDeviceId: 0
+propset.c:130: found device:
+propset.c:131: 	Type: WDM
+propset.c:135: 	DataFlow: Capture
+propset.c:139: 	DeviceId: {3660b88f-7315-4309-8286-d3a128496386}
+propset.c:143: 	Description: Microphone (BlackHole 2ch)
+propset.c:144: 	Module: {0.0.1.00000000}.{3660B88F-7315-4309-8286-D3A128496386}
+propset.c:145: 	Interface: Interface
+propset.c:146: 	WaveDeviceId: 1
+propset.c:130: found device:
+propset.c:131: 	Type: WDM
+propset.c:135: 	DataFlow: Capture
+propset.c:139: 	DeviceId: {7aeb6826-d0d1-414c-af02-aff95dfa5916}
+propset.c:143: 	Description: Microphone (Microfono di iPhone di Nicolò)
+propset.c:144: 	Module: {0.0.1.00000000}.{7AEB6826-D0D1-414C-AF02-AFF95DFA5916}
+propset.c:145: 	Interface: Interface
+propset.c:146: 	WaveDeviceId: 2
+propset.c:130: found device:
+propset.c:131: 	Type: WDM
+propset.c:135: 	DataFlow: Capture
+propset.c:139: 	DeviceId: {a37a6761-0568-41c0-a4e8-6b59be3ada31}
+propset.c:143: 	Description: Microphone (Microfono MacBook Pro)
+propset.c:144: 	Module: {0.0.1.00000000}.{A37A6761-0568-41C0-A4E8-6B59BE3ADA31}
+propset.c:145: 	Interface: Interface
+propset.c:146: 	WaveDeviceId: 3
+propset.c:549: *** Testing Primary Sound Driver -  ***
+propset.c:600:   Testing a secondary buffer at 44100x16x1
+propset.c:613:   Supports property sets
+propset.c:622:     DSPROPSETID_VoiceManager not supported
+propset.c:630:     DSPROPSETID_EAX20_ListenerProperties not supported
+propset.c:638:     DSPROPSETID_EAX20_BufferProperties not supported
+propset.c:647:     DSPROPSETID_I3DL2_ListenerProperties not supported
+propset.c:655:     DSPROPSETID_I3DL2_BufferProperties not supported
+propset.c:664:     DSPROPSETID_ZOOMFX_BufferProperties not supported
+propset.c:549: *** Testing Speakers (AirPods Pro di Nicolò) - {0.0.0.00000000}.{F4E32BF2-D389-486E-963A-134FFEC2F562} ***
+propset.c:600:   Testing a secondary buffer at 44100x16x1
+propset.c:613:   Supports property sets
+propset.c:622:     DSPROPSETID_VoiceManager not supported
+propset.c:630:     DSPROPSETID_EAX20_ListenerProperties not supported
+propset.c:638:     DSPROPSETID_EAX20_BufferProperties not supported
+propset.c:647:     DSPROPSETID_I3DL2_ListenerProperties not supported
+propset.c:655:     DSPROPSETID_I3DL2_BufferProperties not supported
+propset.c:664:     DSPROPSETID_ZOOMFX_BufferProperties not supported
+propset.c:549: *** Testing Speakers (Altoparlanti MacBook Pro) - {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C} ***
+propset.c:600:   Testing a secondary buffer at 44100x16x1
+propset.c:613:   Supports property sets
+propset.c:622:     DSPROPSETID_VoiceManager not supported
+propset.c:630:     DSPROPSETID_EAX20_ListenerProperties not supported
+propset.c:638:     DSPROPSETID_EAX20_BufferProperties not supported
+propset.c:647:     DSPROPSETID_I3DL2_ListenerProperties not supported
+propset.c:655:     DSPROPSETID_I3DL2_BufferProperties not supported
+propset.c:664:     DSPROPSETID_ZOOMFX_BufferProperties not supported
+propset.c:549: *** Testing Speakers (BlackHole 2ch) - {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406} ***
+propset.c:600:   Testing a secondary buffer at 44100x16x1
+propset.c:613:   Supports property sets
+propset.c:622:     DSPROPSETID_VoiceManager not supported
+propset.c:630:     DSPROPSETID_EAX20_ListenerProperties not supported
+propset.c:638:     DSPROPSETID_EAX20_BufferProperties not supported
+propset.c:647:     DSPROPSETID_I3DL2_ListenerProperties not supported
+propset.c:655:     DSPROPSETID_I3DL2_BufferProperties not supported
+propset.c:664:     DSPROPSETID_ZOOMFX_BufferProperties not supported
+propset.c:697: tested 4 DirectSound drivers
+0328:propset: 90 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.

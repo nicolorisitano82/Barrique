@@ -1,0 +1,186 @@
+0750:mfplat: 33 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+0794:mfplat: 68 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+0028:mfplat: 12 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:3685: Test marked todo: got length
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.091: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.109: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.121: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:1694: Test marked todo: Unexpected hr 0.
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.132: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.144: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.156: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.168: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.182: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:1805: Test marked todo: Unexpected hr 0xc00d36bb.
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.191: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:1810: Test marked todo: Unexpected hr 0xc00d36bb.
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.200: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:1816: Test marked todo: Unexpected hr 0xc00d36bb.
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.209: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:1922: Test marked todo: Unexpected sub type {30323449-0000-0010-8000-00aa00389b71}.
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.691: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:1153: Test marked todo: Got object type 0.
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.795: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:1465: Test marked todo: L"test-h264.mp4": "MF_MT_SUBTYPE" mismatch, type 72, value {3231564e-0000-0010-8000-00aa00389b71}
+mfplat.c:1465: Test marked todo: L"test-h264.mp4": "MF_MT_AM_FORMAT_TYPE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-h264.mp4": "MF_MT_PIXEL_ASPECT_RATIO" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-h264.mp4": "MF_MT_MPEG2_PROFILE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-h264.mp4": "MF_MT_MPEG2_LEVEL" missing, hr 0xc00d36e6
+mfplat.c:1471: Test marked todo: L"test-h264.mp4": Got type count 6.
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.823: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:1465: Test marked todo: L"test-h264-par.mp4": "MF_MT_SUBTYPE" mismatch, type 72, value {3231564e-0000-0010-8000-00aa00389b71}
+mfplat.c:1465: Test marked todo: L"test-h264-par.mp4": "MF_MT_AM_FORMAT_TYPE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-h264-par.mp4": "MF_MT_PIXEL_ASPECT_RATIO" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-h264-par.mp4": "MF_MT_MPEG2_PROFILE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-h264-par.mp4": "MF_MT_MPEG2_LEVEL" missing, hr 0xc00d36e6
+mfplat.c:1471: Test marked todo: L"test-h264-par.mp4": Got type count 6.
+
+(wine:62151): GStreamer-Video-CRITICAL **: 15:10:25.848: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:1465: Test marked todo: L"test-h264-wrong-par.mp4": "MF_MT_SUBTYPE" mismatch, type 72, value {3231564e-0000-0010-8000-00aa00389b71}
+mfplat.c:1465: Test marked todo: L"test-h264-wrong-par.mp4": "MF_MT_AM_FORMAT_TYPE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-h264-wrong-par.mp4": "MF_MT_PIXEL_ASPECT_RATIO" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-h264-wrong-par.mp4": "MF_MT_MPEG2_PROFILE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-h264-wrong-par.mp4": "MF_MT_MPEG2_LEVEL" missing, hr 0xc00d36e6
+mfplat.c:1471: Test marked todo: L"test-h264-wrong-par.mp4": Got type count 6.
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_SUBTYPE" mismatch, type 72, value {00000003-0000-0010-8000-00aa00389b71}
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_AM_FORMAT_TYPE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_AUDIO_BITS_PER_SAMPLE" mismatch, type 19, value 32
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_AUDIO_AVG_BYTES_PER_SECOND" mismatch, type 19, value 176400
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_AUDIO_PREFER_WAVEFORMATEX" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_AVG_BITRATE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_AAC_PAYLOAD_TYPE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_FIXED_SIZE_SAMPLES" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-aac.mp4": "MF_MT_USER_DATA" missing, hr 0xc00d36e6
+mfplat.c:1471: Test marked todo: L"test-aac.mp4": Got type count 2.
+mfplat.c:1465: Test marked todo: L"test-wmv1.wmv": "MF_MT_SUBTYPE" mismatch, type 72, value {30323449-0000-0010-8000-00aa00389b71}
+mfplat.c:1465: Test marked todo: L"test-wmv1.wmv": "MF_MT_PIXEL_ASPECT_RATIO" missing, hr 0xc00d36e6
+mfplat.c:1471: Test marked todo: L"test-wmv1.wmv": Got type count 6.
+mfplat.c:1465: Test marked todo: L"test-wma2.wmv": "MF_MT_SUBTYPE" mismatch, type 72, value {00000003-0000-0010-8000-00aa00389b71}
+mfplat.c:1465: Test marked todo: L"test-wma2.wmv": "MF_MT_AUDIO_AVG_BYTES_PER_SECOND" mismatch, type 19, value 176400
+mfplat.c:1465: Test marked todo: L"test-wma2.wmv": "MF_MT_AUDIO_PREFER_WAVEFORMATEX" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-wma2.wmv": "MF_MT_AUDIO_BLOCK_ALIGNMENT" mismatch, type 19, value 4
+mfplat.c:1465: Test marked todo: L"test-wma2.wmv": "MF_MT_USER_DATA" missing, hr 0xc00d36e6
+mfplat.c:1471: Test marked todo: L"test-wma2.wmv": Got type count 2.
+mfplat.c:1465: Test marked todo: L"test-mp3.mp4": "MF_MT_SUBTYPE" mismatch, type 72, value {00000001-0000-0010-8000-00aa00389b71}
+mfplat.c:1465: Test marked todo: L"test-mp3.mp4": "MF_MT_AM_FORMAT_TYPE" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-mp3.mp4": "MF_MT_AUDIO_PREFER_WAVEFORMATEX" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-mp3.mp4": "MF_MT_FIXED_SIZE_SAMPLES" missing, hr 0xc00d36e6
+mfplat.c:1471: Test marked todo: L"test-mp3.mp4": Got type count 2.
+mfplat.c:1465: Test marked todo: L"test-i420.avi": "MF_MT_PIXEL_ASPECT_RATIO" missing, hr 0xc00d36e6
+mfplat.c:1465: Test marked todo: L"test-i420.avi": "MF_MT_FIXED_SIZE_SAMPLES" missing, hr 0xc00d36e6
+mfplat.c:1471: Test marked todo: L"test-i420.avi": Got type count 6.
+mfplat.c:7668: Test marked todo: 0x1: unexpected type 1, qualifier 1.
+029c:mfplat: 6 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:7668: Test marked todo: 0x2: unexpected type 1, qualifier 1.
+02b8:mfplat: 6 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:7668: Test marked todo: 0x3: unexpected type 1, qualifier 1.
+02cc:mfplat: 6 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:7668: Test marked todo: 0x4: unexpected type 1, qualifier 1.
+01f8:mfplat: 6 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:7668: Test marked todo: 0x5: unexpected type 1, qualifier 1.
+02f4:mfplat: 6 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:7665: Test marked todo: 0x7: unexpected type 1, qualifier 1.
+0308:mfplat: 6 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:7668: Test marked todo: 0x50001: unexpected type 1, qualifier 1.
+02a8:mfplat: 8 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:7668: Test marked todo: 0x50001: unexpected type 1, qualifier 1.
+0328:mfplat: 8 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:7668: Test marked todo: 0x50001: unexpected type 1, qualifier 1.
+033c:mfplat: 8 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+mfplat.c:8381: Test marked todo: Unexpected hr 0x80004001.
+mfplat.c:8383: Test marked todo: Unexpected hr 0x80004001.
+mfplat.c:8681: Test marked todo: Unexpected hr 0.
+mfplat.c:8991: Test marked todo: Failed to get attribute, hr 0.
+mfplat.c:8993: Test marked todo: Unexpected AAC_AUDIO_PROFILE_LEVEL_INDICATION 63.
+mfplat.c:8997: Test marked todo: Failed to get attribute, hr 0.
+mfplat.c:8999: Test marked todo: Unexpected AAC_PAYLOAD_TYPE 4.
+mfplat.c:9019: Test marked todo: got wSamplesPerBlock 0
+mfplat.c:9924: Test marked todo: got 3828804481
+mfplat.c:10089: Test marked todo: {e436eb7b-524f-11ce-9f53-0020af0ba770}: got 88
+mfplat.c:10101: Test marked todo: {297c55af-e209-4cb3-b757-c76d6b9c88a8}: got compression 0x00000019
+mfplat.c:10101: Test marked todo: {12345678-1234-1234-2323-232323232323}: got compression 0x12345678
+mfplat.c:10236: Test marked todo: Unexpected hr 0.
+mfplat.c:10246: Test marked todo: Unexpected hr 0.
+mfplat.c:10297: Test marked todo: got 123.
+mfplat.c:10709: Test marked todo: Unexpected hr 0x80004001.
+mfplat.c:10738: Test marked todo: got {00000000-0000-0010-8000-00aa00389b71}.
+mfplat.c:11499: Tests skipped: Failed to create a D3D11 device, skipping tests.
+mfplat.c:11966: Tests skipped: Failed to create a D3D12 device, skipping tests.
+mfplat.c:12677: Tests skipped: Failed to create a D3D12 device, skipping tests.
+mfplat.c:13362: Test marked todo: Unexpected count 2.
+mfplat.c:13386: Test marked todo: Unexpected refcount 1, expected 2.
+mfplat.c:13570: Tests skipped: Failed to create a D3D11 device, skipping tests.
+mfplat.c:13793: Tests skipped: Failed to create a D3D12 device, skipping tests.
+mfplat.c:14105: Test marked todo: Unexpected hr 0x80004001.
+mfplat.c:14110: Test marked todo: Unexpected hr 0x80004001.
+mfplat.c:14113: Test marked todo: Unexpected hr 0x80004001.
+mfplat.c:14117: Test marked todo: Unexpected hr 0x80004001.
+mfplat.c:14128: Test marked todo: Unexpected hr 0x80004001.
+mfplat.c:14221: Test marked todo: Unexpected hr 0.
+mfplat.c:14244: Test marked todo: Unexpected hr 0.
+mfplat.c:14247: Test marked todo: Unexpected hr 0.
+mfplat.c:14250: Test marked todo: Unexpected hr 0.
+mfplat.c:14294: Test marked todo: Unexpected hr 0xc00d36e6.
+mfplat.c:14296: Test marked todo: Unexpected value 0xdeadbeef.
+mfplat.c:14306: Test marked todo: Unexpected hr 0xc00d36e6.
+mfplat.c:14308: Test marked todo: Unexpected value 0xdeadbeef.
+mfplat.c:14420: Test marked todo: 1: Unexpected value 0xfffffffe.
+mfplat.c:14426: Test marked todo: 1: Unexpected hr 0xc00d36e6.
+mfplat.c:14446: Test marked todo: 1: Unexpected value 0xfffffffe.
+mfplat.c:14496: Test marked todo: Unexpected hr 0.
+mfplat.c:14501: Test marked todo: Unexpected hr 0.
+mfplat.c:14505: Test marked todo: Unexpected hr 0xc00d36e6.
+mfplat.c:14506: Test marked todo: got 3735928559.
+mfplat.c:14507: Test marked todo: Unexpected palette.
+mfplat.c:14516: Test marked todo: Unexpected hr 0.
+mfplat.c:14520: Test marked todo: Unexpected hr 0xc00d36e6.
+mfplat.c:14521: Test marked todo: got 3735928559.
+mfplat.c:14522: Test marked todo: Unexpected palette.
+mfplat.c:14565: Test marked todo: Unexpected hr 0.
+mfplat.c:14588: Test marked todo: Unexpected hr 0.
+mfplat.c:14591: Test marked todo: Unexpected hr 0.
+mfplat.c:14594: Test marked todo: Unexpected hr 0.
+mfplat.c:14618: Test marked todo: Unexpected hr 0.
+mfplat.c:14638: Test marked todo: Unexpected hr 0xc00d36e6.
+mfplat.c:14640: Test marked todo: Unexpected value 0xdeadbeef.
+mfplat.c:14650: Test marked todo: Unexpected hr 0xc00d36e6.
+mfplat.c:14652: Test marked todo: Unexpected value 0xdeadbeef.
+mfplat.c:14679: Test marked todo: Unexpected hr 0.
+mfplat.c:14688: Test marked todo: Unexpected value 0x100000001.
+mfplat.c:14813: Test marked todo: 1: Unexpected value 0xfffffffe.
+mfplat.c:14819: Test marked todo: 1: Unexpected hr 0xc00d36e6.
+mfplat.c:14839: Test marked todo: 1: Unexpected value 0xfffffffe.
+mfplat.c:14889: Test marked todo: Unexpected hr 0.
+mfplat.c:14894: Test marked todo: Unexpected hr 0.
+mfplat.c:14898: Test marked todo: Unexpected hr 0xc00d36e6.
+mfplat.c:14899: Test marked todo: got 3735928559.
+mfplat.c:14900: Test marked todo: Unexpected palette.
+mfplat.c:14909: Test marked todo: Unexpected hr 0.
+mfplat.c:14913: Test marked todo: Unexpected hr 0xc00d36e6.
+mfplat.c:14914: Test marked todo: got 3735928559.
+mfplat.c:14915: Test marked todo: Unexpected palette.
+mfplat.c:14955: Test marked todo: Unexpected hr 0.
+mfplat.c:14958: Test marked todo: Unexpected hr 0.
+mfplat.c:14961: Test marked todo: Unexpected hr 0.
+mfplat.c:15066: Test marked todo: Unexpected hr 0.
+mfplat.c:15069: Test marked todo: Unexpected hr 0.
+mfplat.c:15072: Test marked todo: Unexpected hr 0.
+mfplat.c:15094: Test marked todo: Unexpected hr 0.
+mfplat.c:15106: Test marked todo: Unexpected hr 0.
+mfplat.c:15680: Tests skipped: Failed to create a D3D11 device, skipping tests.
+0744:mfplat: 5709847 tests executed (128 marked as todo, 0 as flaky, 0 failures), 6 skipped.

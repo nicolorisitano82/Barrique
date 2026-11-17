@@ -1,0 +1,116 @@
+filtergraph.c:668: running L"test.avi"
+filtergraph.c:668: running L"test.mpg"
+filtergraph.c:696: Test marked todo: Got hr 0.
+filtergraph.c:668: running L"test.mp3"
+filtergraph.c:668: running L"test.wav"
+filtergraph.c:2582: Test marked todo: Got hr 0.
+filtergraph.c:2639: Test marked todo: Got hr 0x80040217.
+filtergraph.c:3222: Test marked todo: Got peer 00000000.
+filtergraph.c:3224: Test marked todo: Got peer 0025F398.
+filtergraph.c:3227: Test marked todo: Got hr 0x1.
+filtergraph.c:3228: Test marked todo: Got peer 0025F398.
+filtergraph.c:3233: Test marked todo: Got peer 00000000.
+filtergraph.c:3235: Test marked todo: Got peer 0025F398.
+filtergraph.c:3238: Test marked todo: Got hr 0x1.
+filtergraph.c:3239: Test marked todo: Got peer 0025F398.
+filtergraph.c:3274: Test marked todo: Got hr 0x80040209.
+filtergraph.c:3276: Test marked todo: Got hr 0x80040209.
+filtergraph.c:3345: Test marked todo: Got hr 0.
+filtergraph.c:3351: Test marked todo: Got hr 0x80040231.
+filtergraph.c:3353: Test marked todo: Got peer 00000000.
+filtergraph.c:3413: Test marked todo: Got outstanding refcount 3.
+filtergraph.c:3463: Test marked todo: Got hr 0.
+filtergraph.c:3756: Test marked todo: Got time 0.
+filtergraph.c:3825: Test marked todo: Got hr 0.
+filtergraph.c:1482: Test marked todo: Expected previous state 0x2, got 0x1.
+filtergraph.c:1482: Test marked todo: Expected previous state 0x2, got 0x1.
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.819: gst_element_set_state: assertion 'GST_IS_ELEMENT (element)' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.819: gst_object_unref: assertion '((GObject *) object)->ref_count > 0' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.819: gst_element_set_bus: assertion 'GST_IS_ELEMENT (element)' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.819: gst_object_unref: assertion 'object != NULL' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.821: gst_element_set_state: assertion 'GST_IS_ELEMENT (element)' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.821: gst_object_unref: assertion '((GObject *) object)->ref_count > 0' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.821: gst_element_set_bus: assertion 'GST_IS_ELEMENT (element)' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.821: gst_object_unref: assertion 'object != NULL' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.823: gst_element_set_state: assertion 'GST_IS_ELEMENT (element)' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.823: gst_object_unref: assertion '((GObject *) object)->ref_count > 0' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.823: gst_element_set_bus: assertion 'GST_IS_ELEMENT (element)' failed
+
+(wine:63008): GStreamer-CRITICAL **: 15:13:19.823: gst_object_unref: assertion 'object != NULL' failed
+filtergraph.c:4493: Test marked todo: Got hr 0x80040218.
+filtergraph.c:4571: Test marked todo: Got hr 0x80004001.
+filtergraph.c:4572: Test marked todo: Got caps 0xffffffff.
+filtergraph.c:4576: Test marked todo: Got hr 0x80004001.
+filtergraph.c:4581: Test marked todo: Got hr 0x80004001.
+filtergraph.c:4582: Test marked todo: Got caps 0x1.
+filtergraph.c:4585: Test marked todo: Got hr 0x80004003.
+filtergraph.c:4590: Test marked todo: Got hr 0x80004003 for format (null).
+filtergraph.c:4590: Test marked todo: Got hr 0x1 for format {00000000-0000-0000-0000-000000000000}.
+filtergraph.c:4590: Test marked todo: Got hr 0x1 for format {7b785570-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4590: Test marked todo: Got hr 0x1 for format {7b785572-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4590: Test marked todo: Got hr 0x1 for format {7b785573-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4590: Test marked todo: Got hr 0x1 for format {7b785571-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4590: Test marked todo: Got hr 0 for format {7b785574-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4590: Test marked todo: Got hr 0x1 for format {abbccdde-0000-0000-0000-000000000000}.
+filtergraph.c:4613: Test marked todo: Got hr 0x80070057.
+filtergraph.c:4634: Test marked todo: Got hr 0x80070057 for format {7b785570-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4634: Test marked todo: Got hr 0x80070057 for format {7b785572-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4634: Test marked todo: Got hr 0x80070057 for format {7b785573-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4634: Test marked todo: Got hr 0x80070057 for format {7b785571-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4634: Test marked todo: Got hr 0x80070057 for format {abbccdde-0000-0000-0000-000000000000}.
+filtergraph.c:4658: Test marked todo: Got hr 0.
+filtergraph.c:4660: Test marked todo: Got hr 0.
+filtergraph.c:4662: Test marked todo: Got hr 0.
+filtergraph.c:4664: Test marked todo: Got hr 0.
+filtergraph.c:4708: Test marked todo: Got hr 0.
+filtergraph.c:4713: Test marked todo: Got hr 0.
+filtergraph.c:4720: Test marked todo: Got hr 0.
+filtergraph.c:4735: Test marked todo: Got hr 0x80070057.
+filtergraph.c:4780: Test marked todo: Got hr 0x1.
+filtergraph.c:4785: Test marked todo: Got hr 0x1.
+filtergraph.c:4798: Test marked todo: Got hr 0x80070057.
+filtergraph.c:4806: Test marked todo: Got hr 0x80070057.
+filtergraph.c:4807: Test marked todo: Got format {7b785574-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4814: Test marked todo: Got format {7b785574-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4821: Test marked todo: Got hr 0.
+filtergraph.c:4823: Test marked todo: Got hr 0x1.
+filtergraph.c:4833: Test marked todo: Got hr 0x80070057.
+filtergraph.c:4836: Test marked todo: Got format {7b785574-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4860: Test marked todo: Got format {7b785574-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4864: Test marked todo: Got format {7b785574-8c82-11cf-bc0c-00aa00ac74f6}.
+filtergraph.c:4867: Test marked todo: Got hr 0x80070057.
+filtergraph.c:4879: Test marked todo: Got hr 0.
+filtergraph.c:5043: Test marked todo: Got rate 0.0000000000000000e+000.
+filtergraph.c:5044: Test marked todo: Got rate 0.0000000000000000e+000.
+filtergraph.c:5048: Test marked todo: Got rate 0.0000000000000000e+000.
+filtergraph.c:5049: Test marked todo: Got rate 0.0000000000000000e+000.
+filtergraph.c:5053: Test marked todo: Got rate 0.0000000000000000e+000.
+filtergraph.c:5054: Test marked todo: Got rate 0.0000000000000000e+000.
+filtergraph.c:5061: Test marked todo: Got rate 1.0000000000000000e+000.
+filtergraph.c:5169: Test marked todo: Got time 12340000.
+filtergraph.c:5173: Test marked todo: Got time 12340000.
+filtergraph.c:5236: Test marked todo: Got hr 0x80070057.
+filtergraph.c:5310: Test marked todo: Got unexpected clock.
+filtergraph.c:5320: Test marked todo: Got unexpected clock.
+filtergraph.c:5401: Test marked todo: Got unexpected name L"0002".
+filtergraph.c:5657: Test failed: Got hr 0x80040218.
+filtergraph.c:5882: Test marked todo: Got param1 0xdeadbeef.
+filtergraph.c:5883: Test marked todo: Got param2 0xdeadbeef.
+filtergraph.c:6017: Test marked todo: Got hr 0.
+filtergraph.c:6061: Test marked todo: Got hr 0.
+filtergraph.c:7270: Test marked todo: Mismatched sequence:
+filtergraph.c:7270: Test marked todo: [0] test_window_get_FullScreenMode 0 0 0 0.
+filtergraph.c:7282: Test marked todo: Mismatched sequence:
+filtergraph.c:7282: Test marked todo: [0] test_window_get_FullScreenMode 0 0 0 0.
+0780:filtergraph: 7758 tests executed (86 marked as todo, 0 as flaky, 1 failure), 0 skipped.

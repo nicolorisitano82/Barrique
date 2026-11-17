@@ -1,0 +1,20 @@
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:984: --- Testing ANSI functions ---
+mixer.c:987: found 5 Mixer devices
+mixer.c:395:   0: "Speakers (Altoparlanti MacBook " 256.1 (255:255)
+mixer.c:395:   1: "Speakers (BlackHole 2ch)" 256.1 (255:255)
+mixer.c:395:   2: "Microphone (Microfono MacBook P" 256.1 (255:255)
+mixer.c:395:   3: "Microphone (BlackHole 2ch)" 256.1 (255:255)
+mixer.c:395:   4: "Microphone (Microfono di iPhone" 256.1 (255:255)
+mixer.c:1004: --- Testing WCHAR functions ---
+mixer.c:1007: found 5 Mixer devices
+mixer.c:779:   0: "Speakers (Altoparlanti MacBook " 256.1 (255:255)
+mixer.c:779:   1: "Speakers (BlackHole 2ch)" 256.1 (255:255)
+mixer.c:779:   2: "Microphone (Microfono MacBook P" 256.1 (255:255)
+mixer.c:779:   3: "Microphone (BlackHole 2ch)" 256.1 (255:255)
+mixer.c:779:   4: "Microphone (Microfono di iPhone" 256.1 (255:255)
+0448:mixer: 249 tests executed (5 marked as todo, 0 as flaky, 0 failures), 0 skipped.

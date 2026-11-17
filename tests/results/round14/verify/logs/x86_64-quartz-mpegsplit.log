@@ -1,0 +1,37 @@
+mpegsplit.c:151: Test marked todo: Got hr 0x80004002, expected 0.
+mpegsplit.c:153: Test marked todo: Got hr 0x80004002, expected 0.
+mpegsplit.c:594: Test marked todo: Got hr 0x1.
+mpegsplit.c:597: Test marked todo: Got hr 0x1.
+mpegsplit.c:625: Test marked todo: Got hr 0.
+mpegsplit.c:628: Test marked todo: Got hr 0.
+mpegsplit.c:663: Test marked todo: Got subtype {00000055-0000-0010-8000-00aa00389b71}.
+mpegsplit.c:665: Test marked todo: Got fixed size 0.
+mpegsplit.c:667: Test marked todo: Got sample size 0.
+mpegsplit.c:671: Test marked todo: Got format size 30.
+mpegsplit.c:731: Test marked todo: Got hr 0x1.
+mpegsplit.c:935: Test marked todo: Got hr 0x1.
+mpegsplit.c:935: Test marked todo: Got hr 0x1.
+mpegsplit.c:949: Test marked todo: Got hr 0x1.
+mpegsplit.c:950: Test marked todo: Got count 0.
+mpegsplit.c:949: Test marked todo: Got hr 0x1.
+mpegsplit.c:950: Test marked todo: Got count 0.
+mpegsplit.c:963: Test marked todo: Got hr 0x1.
+mpegsplit.c:964: Test marked todo: Got count 1.
+mpegsplit.c:972: Test marked todo: Got count 0.
+mpegsplit.c:996: Test marked todo: Got hr 0x1.
+mpegsplit.c:1546: Test marked todo: Got hr 0x80040207.
+mpegsplit.c:1571: Test marked todo: Got hr 0x80040207.
+mpegsplit.c:1604: Test marked todo: Media types didn't match.
+mpegsplit.c:1761: Test marked todo: Got hr 0x8004025c.
+mpegsplit.c:1765: Test marked todo: Got rate 1.0000000000000000e+000.
+mpegsplit.c:1768: Test marked todo: Got hr 0x8004025c.
+mpegsplit.c:1771: Test marked todo: Got hr 0.
+mpegsplit.c:1990: Test marked todo: Got flags 0.
+mpegsplit.c:1993: Test marked todo: Got name (null).
+mpegsplit.c:1994: Test marked todo: Got object 0000000000000000, expected 000000700D805B90.
+mpegsplit.c:2007: Test marked todo: Got flags 0.
+mpegsplit.c:2009: Test marked todo: Got group 0.
+mpegsplit.c:2010: Test marked todo: Got name (null).
+mpegsplit.c:2011: Test marked todo: Got object 0000000000000000, expected 000000700D805FE0.
+mpegsplit.c:2084: Test marked todo: dwStartTimeCode didn't match, got 0.
+0340:mpegsplit: 1094 tests executed (36 marked as todo, 0 as flaky, 0 failures), 0 skipped.

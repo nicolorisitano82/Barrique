@@ -3,8 +3,8 @@
 
   cmpref.py <mfplay output> <file>.ref
 
-Video: frame count within 1, every frame's mean Y within 2.0 (hardware
-decoders and colour conversion are not bit exact). Audio: rate and channels
+Video: frame count within 1, every frame's mean Y within 0.5 (H.264, HEVC,
+VP9, MPEG-2 decode bit exact, VideoToolbox included; WMV2 is 0.2 off). Audio: rate and channels
 equal, sample frames within 3% (decoder priming and padding differ), RMS
 within 5%. Prints one line per stream and RESULT ok/FAILED; exit code 1 on
 failure.
@@ -32,7 +32,7 @@ if "video" in ref:
     rn, gn = int(r[0]), int(g[0])
     rm, gm = [float(x) for x in r[1:]], [float(x) for x in g[1:]]
     worst = max((abs(a - b) for a, b in zip(rm, gm)), default=0.0)
-    good = abs(rn - gn) <= 1 and worst <= 2.0 and gn > 0
+    good = abs(rn - gn) <= 1 and worst <= 0.5 and gn > 0
     print(f"video frames {gn}/{rn} max dY {worst:.2f} {'ok' if good else 'FAIL'}")
     ok &= good
 if "audio" in ref:

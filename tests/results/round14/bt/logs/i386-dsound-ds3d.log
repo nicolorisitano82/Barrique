@@ -1,0 +1,14 @@
+ds3d.c:1577: *** Testing Primary Sound Driver -  ***
+ds3d.c:1592:   Testing the primary buffer
+ds3d.c:1595:   Testing 3D primary buffer
+ds3d.c:1598:   Testing 3D primary buffer with listener
+ds3d.c:1577: *** Testing Speakers (Altoparlanti MacBook Pro) - {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C} ***
+ds3d.c:1592:   Testing the primary buffer
+ds3d.c:1595:   Testing 3D primary buffer
+ds3d.c:1598:   Testing 3D primary buffer with listener
+ds3d.c:1577: *** Testing Speakers (BlackHole 2ch) - {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406} ***
+ds3d.c:1592:   Testing the primary buffer
+ds3d.c:1595:   Testing 3D primary buffer
+ds3d.c:1598:   Testing 3D primary buffer with listener
+ds3d.c:1627: tested 3 DirectSound drivers
+0020:ds3d: 6013 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.

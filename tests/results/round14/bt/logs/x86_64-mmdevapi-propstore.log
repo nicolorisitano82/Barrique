@@ -1,0 +1,13 @@
+propstore.c:52: guid: L"{56CF8C5D-F98C-4C48-9C5B-C25C728E373C}"
+propstore.c:98: Test marked todo: Got bit depth 32
+propstore.c:99: Test marked todo: Got subformat {00000003-0000-0010-8000-00aa00389b71}
+propstore.c:117: device interface: L"{56CF8C5D-F98C-4C48-9C5B-C25C728E373C}"
+propstore.c:52: guid: L"{B10B0D41-FFB3-4E73-8396-2358A330D406}"
+propstore.c:98: Test marked todo: Got bit depth 32
+propstore.c:99: Test marked todo: Got subformat {00000003-0000-0010-8000-00aa00389b71}
+propstore.c:117: device interface: L"{B10B0D41-FFB3-4E73-8396-2358A330D406}"
+propstore.c:52: guid: L"{F4E32BF2-D389-486E-963A-134FFEC2F562}"
+propstore.c:98: Test marked todo: Got bit depth 32
+propstore.c:99: Test marked todo: Got subformat {00000003-0000-0010-8000-00aa00389b71}
+propstore.c:117: device interface: L"{F4E32BF2-D389-486E-963A-134FFEC2F562}"
+0178:propstore: 123 tests executed (6 marked as todo, 0 as flaky, 0 failures), 0 skipped.

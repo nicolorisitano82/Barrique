@@ -1,0 +1,22 @@
+capture.c:658: found 4 WaveIn devices
+capture.c:399:   0: "Microphone (AirPods Pro di Nico" ({0CE6C2C3-A148-496B-A6AC-9C24F20B139B}) 256.1 (255:255)
+capture.c:402:      channels=2 formats=fffff
+capture.c:470: waveInOpen(0): WAVE_FORMAT_MULAW not supported
+capture.c:489: waveInOpen(0): WAVE_FORMAT_ADPCM not supported
+capture.c:399:   1: "Microphone (BlackHole 2ch)" ({3660B88F-7315-4309-8286-D3A128496386}) 256.1 (255:255)
+capture.c:402:      channels=2 formats=fffff
+capture.c:470: waveInOpen(1): WAVE_FORMAT_MULAW not supported
+capture.c:489: waveInOpen(1): WAVE_FORMAT_ADPCM not supported
+capture.c:399:   2: "Microphone (Microfono di iPhone" ({7AEB6826-D0D1-414C-AF02-AFF95DFA5916}) 256.1 (255:255)
+capture.c:402:      channels=2 formats=fffff
+capture.c:470: waveInOpen(2): WAVE_FORMAT_MULAW not supported
+capture.c:489: waveInOpen(2): WAVE_FORMAT_ADPCM not supported
+capture.c:399:   3: "Microphone (Microfono MacBook P" ({A37A6761-0568-41C0-A4E8-6B59BE3ADA31}) 256.1 (255:255)
+capture.c:402:      channels=2 formats=fffff
+capture.c:470: waveInOpen(3): WAVE_FORMAT_MULAW not supported
+capture.c:489: waveInOpen(3): WAVE_FORMAT_ADPCM not supported
+capture.c:399:   WAVE_MAPPER: "Wine Sound Mapper" () 256.1 (255:255)
+capture.c:402:      channels=2 formats=ffffffff
+capture.c:470: waveInOpen(WAVE_MAPPER): WAVE_FORMAT_MULAW not supported
+capture.c:489: waveInOpen(WAVE_MAPPER): WAVE_FORMAT_ADPCM not supported
+035c:capture: 12815 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.

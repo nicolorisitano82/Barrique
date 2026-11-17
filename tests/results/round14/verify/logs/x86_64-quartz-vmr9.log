@@ -1,0 +1,259 @@
+vmr9.c:237: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:243: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:246: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:271: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:289: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:237: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:243: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:246: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:271: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:310: Test marked todo: Got hr 0, expected 0x80004002.
+vmr9.c:312: Test marked todo: Got hr 0, expected 0x80004002.
+vmr9.c:237: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:243: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:246: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:271: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:324: Test marked todo: Got hr 0, expected 0x80004002.
+vmr9.c:326: Test marked todo: Got hr 0, expected 0x80004002.
+vmr9.c:237: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:243: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:246: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:271: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:338: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:545: Test marked todo: Got hr 0x1.
+vmr9.c:555: Test marked todo: Got hr 0x1.
+vmr9.c:556: Test marked todo: Got count 1.
+vmr9.c:565: Test marked todo: Got count 1.
+vmr9.c:614: Test marked todo: Got hr 0x80040216.
+vmr9.c:666: Test marked todo: Got hr 0x80040216.
+vmr9.c:740: Test marked todo: Got hr 0.
+vmr9.c:743: Test marked todo: Got hr 0.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:1094: Test marked todo: Got hr 0.
+vmr9.c:1130: Test marked todo: Got hr 0.
+vmr9.c:1133: Test marked todo: Got hr 0.
+vmr9.c:1152: Test marked todo: Got hr 0.
+vmr9.c:1155: Test marked todo: Got hr 0.
+vmr9.c:1171: Test marked todo: Got hr 0.
+vmr9.c:1174: Test marked todo: Got hr 0.
+vmr9.c:1224: Test marked todo: Got hr 0.
+vmr9.c:1309: Test marked todo: Got hr 0x1.
+vmr9.c:1337: Test marked todo: Got unexpected EC_COMPLETE.
+vmr9.c:1339: Test marked todo: Expected EC_COMPLETE.
+vmr9.c:1357: Test marked todo: Got hr 0.
+vmr9.c:1364: Test marked todo: Got unexpected EC_COMPLETE.
+vmr9.c:1379: Test marked todo: Got unexpected EC_COMPLETE.
+vmr9.c:1494: Test marked todo: Got hr 0x80004003.
+vmr9.c:1495: Test marked todo: Got size -559038737.
+vmr9.c:1593: Test marked todo: Wait failed
+vmr9.c:2663: Test marked todo: Got hr 0.
+vmr9.c:2671: Test marked todo: Got hr 0.
+vmr9.c:2677: Test marked todo: Got hr 0.
+vmr9.c:2707: Test marked todo: Got hr 0x8004020a.
+vmr9.c:2556: Test marked todo: Got hr 0.
+vmr9.c:2583: Test marked todo: Got hr 0.
+vmr9.c:2374: Test marked todo: Got style 0xcf0000.
+vmr9.c:2735: Test marked todo: Got hr 0.
+vmr9.c:2737: Test marked todo: Got hr 0.
+vmr9.c:2747: Test marked todo: Got width 600.
+vmr9.c:2748: Test marked todo: Got height 400.
+vmr9.c:2751: Test marked todo: Expected width 1513, got 600.
+vmr9.c:2753: Test marked todo: Expected height 983, got 400.
+vmr9.c:2841: Test marked todo: Got hr 0x80040227.
+vmr9.c:2894: Test marked todo: Got hr 0x80070057.
+vmr9.c:2895: Test marked todo: Got count 1.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 0: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 1: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 2: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 3: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 4: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 5: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 6: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 7: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3322: Tests skipped: Format 20 (0x14), flags 0x4 are not supported, hr 0x8004022a.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 9: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 10: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 11: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 12: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 13: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:3329: Test marked todo: Test 14: Got hr 0x8004020a.
+vmr9.c:926: Test marked todo: Got hr 0x8004020a.
+vmr9.c:955: Test marked todo: Got hr 0x80004003.
+vmr9.c:961: Test marked todo: Got hr 0.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3956: Test marked todo: Got hr 0x80004003.
+vmr9.c:3970: Test marked todo: Got hr 0x8004020a.
+vmr9.c:3997: Test marked todo: Got hr 0x80004003.
+vmr9.c:4019: Test marked todo: Got hr 0x8004020a.
+vmr9.c:4099: Test marked todo: Got hr 0x8004020a.
+vmr9.c:3117: Test marked todo: Got buffer count 1.
+vmr9.c:3119: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3120: Test marked todo: Got aspect ratio height 16.
+vmr9.c:3123: Test marked todo: Got buffer count 1.
+vmr9.c:4458: Test marked todo: Got hr 0x8004020a.
+vmr9.c:3049: Test marked todo: Got flags 0x1a.
+vmr9.c:3052: Test marked todo: Got aspect ratio width 32.
+vmr9.c:3053: Test marked todo: Got aspect ratio height 16.
+05cc:vmr9: 3909 tests executed (257 marked as todo, 0 as flaky, 0 failures), 1 skipped.

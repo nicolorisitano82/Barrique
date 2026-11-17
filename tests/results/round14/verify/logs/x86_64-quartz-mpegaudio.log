@@ -1,0 +1,12 @@
+mpegaudio.c:1085: Test marked todo: Got hr 0x8004020a.
+mpegaudio.c:1007: Test failed: Got valid size 286.
+mpegaudio.c:1016: Test failed: Got stop time 44687.
+mpegaudio.c:1007: Test failed: Got valid size 286.
+mpegaudio.c:1016: Test failed: Got stop time 66909.
+mpegaudio.c:1007: Test failed: Got valid size 286.
+mpegaudio.c:1016: Test failed: Got stop time 66909.
+mpegaudio.c:1007: Test failed: Got valid size 286.
+mpegaudio.c:1016: Test failed: Got stop time 44687.
+mpegaudio.c:1007: Test failed: Got valid size 286.
+mpegaudio.c:1016: Test failed: Got stop time 44687.
+039c:mpegaudio: 463 tests executed (1 marked as todo, 0 as flaky, 10 failures), 0 skipped.

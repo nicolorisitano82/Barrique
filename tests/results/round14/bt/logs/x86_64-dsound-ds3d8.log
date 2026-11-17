@@ -1,0 +1,18 @@
+ds3d8.c:1090: *** Testing Primary Sound Driver -  ***
+ds3d8.c:1105:   Testing the primary buffer
+ds3d8.c:1108:   Testing 3D primary buffer
+ds3d8.c:1111:   Testing 3D primary buffer with listener
+ds3d8.c:1090: *** Testing Speakers (AirPods Pro di Nicolò) - {0.0.0.00000000}.{F4E32BF2-D389-486E-963A-134FFEC2F562} ***
+ds3d8.c:1105:   Testing the primary buffer
+ds3d8.c:1108:   Testing 3D primary buffer
+ds3d8.c:1111:   Testing 3D primary buffer with listener
+ds3d8.c:1090: *** Testing Speakers (Altoparlanti MacBook Pro) - {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C} ***
+ds3d8.c:1105:   Testing the primary buffer
+ds3d8.c:1108:   Testing 3D primary buffer
+ds3d8.c:1111:   Testing 3D primary buffer with listener
+ds3d8.c:1090: *** Testing Speakers (BlackHole 2ch) - {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406} ***
+ds3d8.c:1105:   Testing the primary buffer
+ds3d8.c:1108:   Testing 3D primary buffer
+ds3d8.c:1111:   Testing 3D primary buffer with listener
+ds3d8.c:1138: tested 4 DirectSound drivers
+0478:ds3d8: 1525 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.

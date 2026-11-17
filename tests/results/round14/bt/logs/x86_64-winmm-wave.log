@@ -1,0 +1,90 @@
+wave.c:1495: found 3 WaveOut devices
+wave.c:988:   WAVE_MAPPER: "Wine Sound Mapper" () 256.1 (255:255)
+wave.c:991:      channels=2 formats=ffffffff support=002c
+wave.c:993:      WAVECAPS_VOLUME WAVECAPS_LRVOLUME WAVECAPS_SAMPLEACCURATE
+wave.c:724: Playing 0.6 second silence at 22050x 8x1  1 header  0 loops 13230 bytes WAVE_FORMAT_PCM CALLBACK_EVENT
+wave.c:724: Playing 0.6 second silence at 22050x 8x1  1 header  0 loops 13230 bytes WAVE_FORMAT_PCM CALLBACK_EVENT
+wave.c:767: pausing for 0.3 seconds
+wave.c:724: Playing 0.6 second silence at 22050x 8x1  1 header  0 loops 13230 bytes WAVE_FORMAT_PCM CALLBACK_FUNCTION
+wave.c:724: Playing 0.6 second silence at 22050x 8x1  1 header  0 loops 13230 bytes WAVE_FORMAT_PCM CALLBACK_FUNCTION
+wave.c:767: pausing for 0.3 seconds
+wave.c:724: Playing 0.6 second silence at 22050x 8x1  1 header  0 loops 13230 bytes WAVE_FORMAT_PCM CALLBACK_THREAD
+wave.c:724: Playing 0.6 second silence at 22050x 8x1  1 header  0 loops 13230 bytes WAVE_FORMAT_PCM CALLBACK_THREAD
+wave.c:767: pausing for 0.3 seconds
+wave.c:724: Playing 0.8 second silence at 22050x 8x1 10 headers 0 loops 17640 bytes WAVE_FORMAT_PCM CALLBACK_EVENT
+wave.c:724: Playing 1 second silence at 22050x 8x1  5 headers 1 loop  22050 bytes WAVE_FORMAT_PCM CALLBACK_EVENT
+wave.c:1195: waveOutOpen(WAVE_MAPPER): WAVE_FORMAT_MULAW not supported
+wave.c:1232: waveOutOpen(WAVE_MAPPER): WAVE_FORMAT_IMA_ADPCM not supported
+wave.c:1281: Test failed: waveOutOpen(WAVE_MAPPER): returned MMSYSERR_ERROR(Errore esterno non definito.)
+wave.c:1293: waveOutOpen(WAVE_MAPPER): 4 channels not supported
+wave.c:1310: Test failed: waveOutOpen(WAVE_MAPPER): returned MMSYSERR_ERROR(Errore esterno non definito.)
+wave.c:1325: waveOutOpen(WAVE_MAPPER): 6 channels not supported
+wave.c:1666: writing 44101 bytes then 44099 bytes
+wave.c:1857: Test failed: Expected ordinal 2 to be PlaySound function
+wave.c:2119: Test marked todo: test 2: PX16(16)x48000x0:0: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 3: P16x48000x0: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 28: P16x48000x4: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 30: PX16(16)x48000x4:80000033: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 30: PX16(16)x48000x4:80000033: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 31: PX16(16)x48000x4:80000000: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 31: PX16(16)x48000x4:80000000: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 32: PX16(16)x48000x4:7ffc0033: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 32: PX16(16)x48000x4:7ffc0033: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 33: PX16(16)x48000x4:7ffc0000: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 33: PX16(16)x48000x4:7ffc0000: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 35: PX16(16)x48000x4:3f: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 35: PX16(16)x48000x4:3f: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 36: PX16(16)x48000x4:8000003f: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 36: PX16(16)x48000x4:8000003f: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 37: PX16(16)x48000x4:80000000: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 37: PX16(16)x48000x4:80000000: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 38: PX16(16)x48000x4:7ffc003f: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 38: PX16(16)x48000x4:7ffc003f: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 39: PX16(16)x48000x4:7ffc0000: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 39: PX16(16)x48000x4:7ffc0000: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 41: P16x48000x8: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 42: PX16(16)x48000x8:4: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 42: PX16(16)x48000x8:4: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 45: PX16(16)x48000x8:43f: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 45: PX16(16)x48000x8:43f: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 47: PX16(16)x48000x8:8000063f: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 47: PX16(16)x48000x8:8000063f: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 48: PX16(16)x48000x8:80000000: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 48: PX16(16)x48000x8:80000000: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 49: PX16(16)x48000x8:7ffc063f: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 49: PX16(16)x48000x8:7ffc063f: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 50: PX16(16)x48000x8:7ffc0000: waveOutOpen(0) got result 0x000001, expected 00000000
+wave.c:2139: Test marked todo: test 50: PX16(16)x48000x8:7ffc0000: waveOutOpen(DIRECT) got result 0x000001, expected 00000000
+wave.c:2119: Test marked todo: test 51: PX0(0)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 52: P0x48000x2: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 53: PX1(1)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 54: P1x48000x2: waveOutOpen(0) got result 00000000, expected 0x000020
+wave.c:2139: Test marked todo: test 54: P1x48000x2: waveOutOpen(DIRECT) got result 00000000, expected 0x000020
+wave.c:2119: Test marked todo: test 55: PX15(15)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 56: P15x48000x2: waveOutOpen(0) got result 00000000, expected 0x000020
+wave.c:2139: Test marked todo: test 56: P15x48000x2: waveOutOpen(DIRECT) got result 00000000, expected 0x000020
+wave.c:2119: Test marked todo: test 57: PX16(0)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 63: PX16(17)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 68: PX24(25)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 69: PX32(0)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 76: PX32(33)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 79: PX64(64)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 80: P64x48000x2: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 81: PX96(96)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 82: P96x48000x2: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 83: PX100(100)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 84: P100x48000x2: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 85: FX0(0)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 86: F0x48000x2: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 87: FX1(1)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 88: F1x48000x2: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 89: FX15(15)x48000x2:3: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Test marked todo: test 90: F15x48000x2: waveOutOpen(0) got result 0x00000b, expected 0x000020
+wave.c:2119: Line has been silenced after 42 occurrences
+wave.c:2074: Test marked todo: test 116: A8x48000x2: waveOutOpen(QUERY) got result 0x000020, expected 00000000
+wave.c:2074: Test marked todo: test 128: MU8x48000x2: waveOutOpen(QUERY) got result 0x000020, expected 00000000
+wave.c:2139: Test marked todo: test 163, nBlockAlign = 0: P16x48000x2: waveOutOpen(DIRECT) got result 00000000, expected 0x000020
+wave.c:2139: Test marked todo: test 165, nBlockAlign += 1: P16x48000x2: waveOutOpen(DIRECT) got result 00000000, expected 0x000020
+wave.c:2139: Test marked todo: test 167, nBlockAlign -= 1: P16x48000x2: waveOutOpen(DIRECT) got result 00000000, expected 0x000020
+0750:wave: Silenced 35 todos, 0 skips and 0 traces.
+0750:wave: 7268 tests executed (64 marked as todo, 0 as flaky, 3 failures), 0 skipped.

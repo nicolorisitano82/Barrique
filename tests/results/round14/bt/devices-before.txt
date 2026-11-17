@@ -1,0 +1,57 @@
+Audio:
+
+    Devices:
+
+        Microfono di iPhone:
+
+          Input Channels: 1
+          Manufacturer: Apple Inc.
+          Current SampleRate: 48000
+          Transport: Unknown
+          Input Source: Default
+
+        AirPods Pro:
+
+          Default Input Device: Yes
+          Input Channels: 1
+          Manufacturer: Apple Inc.
+          Current SampleRate: 24000
+          Transport: Bluetooth
+          Input Source: Default
+
+        AirPods Pro:
+
+          Default Output Device: Yes
+          Default System Output Device: Yes
+          Manufacturer: Apple Inc.
+          Output Channels: 2
+          Current SampleRate: 48000
+          Transport: Bluetooth
+          Output Source: Default
+
+        BlackHole 2ch:
+
+          Input Channels: 2
+          Manufacturer: Existential Audio Inc.
+          Output Channels: 2
+          Current SampleRate: 48000
+          Transport: Virtual
+          Input Source: Default
+          Output Source: Default
+
+        Microfono MacBook Pro:
+
+          Input Channels: 1
+          Manufacturer: Apple Inc.
+          Current SampleRate: 48000
+          Transport: Built-in
+          Input Source: Microfono MacBook Pro
+
+        Altoparlanti MacBook Pro:
+
+          Manufacturer: Apple Inc.
+          Output Channels: 2
+          Current SampleRate: 48000
+          Transport: Built-in
+          Output Source: Altoparlanti MacBook Pro
+

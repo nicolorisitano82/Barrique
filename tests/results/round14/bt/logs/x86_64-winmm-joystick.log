@@ -1,0 +1,2 @@
+joystick.c:116: Tests skipped: This test requires a real joystick.
+03c0:joystick: 34 tests executed (0 marked as todo, 0 as flaky, 0 failures), 1 skipped.

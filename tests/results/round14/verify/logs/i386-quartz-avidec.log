@@ -1,0 +1,32 @@
+avidec.c:332: Test marked todo: Got hr 0x80004002, expected 0.
+avidec.c:343: Test marked todo: Got hr 0x80004002, expected 0.
+avidec.c:719: Test marked todo: Got hr 0.
+avidec.c:732: Test marked todo: Got hr 0.
+avidec.c:735: Test marked todo: Got hr 0.
+avidec.c:740: Test marked todo: Got hr 0.
+avidec.c:743: Test marked todo: Got hr 0.
+avidec.c:1512: Test marked todo: Got size 123.
+avidec.c:1553: Test marked todo: Got size 123.
+avidec.c:1558: Test marked todo: Got hr 0.
+avidec.c:1584: Test marked todo: Got size 123.
+avidec.c:121: Test marked todo: Input types didn't match.
+avidec.c:1411: Test marked todo: Got hr 0x8004020a.
+avidec.c:1052: Test marked todo: Got hr 0.
+avidec.c:1736: Test marked todo: Got 1 calls to Receive().
+avidec.c:1746: Test marked todo: Got 2 calls to Receive().
+avidec.c:1050: Test marked todo: Got hr 0.
+avidec.c:1054: Test marked todo: Got hr 0x1.
+avidec.c:1755: Test marked todo: Got 1 calls to Receive().
+avidec.c:1054: Test marked todo: Got hr 0x1.
+avidec.c:1763: Test marked todo: Got 2 calls to Receive().
+avidec.c:121: Test marked todo: Input types didn't match.
+avidec.c:216: Test marked todo: Input types didn't match.
+avidec.c:1052: Test marked todo: Got hr 0.
+avidec.c:1736: Test marked todo: Got 1 calls to Receive().
+avidec.c:1746: Test marked todo: Got 2 calls to Receive().
+avidec.c:1050: Test marked todo: Got hr 0.
+avidec.c:1054: Test marked todo: Got hr 0x1.
+avidec.c:1755: Test marked todo: Got 1 calls to Receive().
+avidec.c:1054: Test marked todo: Got hr 0x1.
+avidec.c:1763: Test marked todo: Got 2 calls to Receive().
+0538:avidec: 968 tests executed (31 marked as todo, 0 as flaky, 0 failures), 0 skipped.

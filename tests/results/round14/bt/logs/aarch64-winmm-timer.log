@@ -1,0 +1,20 @@
+timer.c:62: wPeriodMin = 1, wPeriodMax = 65535
+timer.c:115: period = 1, resolution = 0
+timer.c:142: min = 0, max = 2, average = 1.000000, standard deviation = 0.515079
+timer.c:115: period = 1, resolution = 1
+timer.c:142: min = 0, max = 2, average = 1.010101, standard deviation = 0.524891
+timer.c:115: period = 10, resolution = 0
+timer.c:142: min = 8, max = 12, average = 9.989899, standard deviation = 0.775913
+timer.c:115: period = 10, resolution = 1
+timer.c:142: min = 8, max = 12, average = 10.000000, standard deviation = 0.769309
+timer.c:115: period = 10, resolution = 10
+timer.c:142: min = 8, max = 12, average = 10.000000, standard deviation = 0.728431
+timer.c:115: period = 20, resolution = 0
+timer.c:142: min = 18, max = 22, average = 19.989899, standard deviation = 0.762648
+timer.c:115: period = 20, resolution = 1
+timer.c:142: min = 19, max = 21, average = 19.989899, standard deviation = 0.749149
+timer.c:115: period = 20, resolution = 10
+timer.c:142: min = 19, max = 21, average = 20.000000, standard deviation = 0.755929
+timer.c:115: period = 20, resolution = 20
+timer.c:142: min = 19, max = 21, average = 20.000000, standard deviation = 0.769309
+0724:timer: 88 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.

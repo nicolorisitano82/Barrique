@@ -1,0 +1,26 @@
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:1086: Test marked todo: mixerOpen: MMSYSERR_NOERROR expected, got MMSYSERR_NOTSUPPORTED
+mixer.c:984: --- Testing ANSI functions ---
+mixer.c:987: found 7 Mixer devices
+mixer.c:395:   0: "Speakers (AirPods Pro di Nicolò" 256.1 (255:255)
+mixer.c:395:   1: "Speakers (Altoparlanti MacBook " 256.1 (255:255)
+mixer.c:395:   2: "Speakers (BlackHole 2ch)" 256.1 (255:255)
+mixer.c:395:   3: "Microphone (AirPods Pro di Nico" 256.1 (255:255)
+mixer.c:395:   4: "Microphone (BlackHole 2ch)" 256.1 (255:255)
+mixer.c:395:   5: "Microphone (Microfono di iPhone" 256.1 (255:255)
+mixer.c:395:   6: "Microphone (Microfono MacBook P" 256.1 (255:255)
+mixer.c:1004: --- Testing WCHAR functions ---
+mixer.c:1007: found 7 Mixer devices
+mixer.c:779:   0: "Speakers (AirPods Pro di Nicolò" 256.1 (255:255)
+mixer.c:779:   1: "Speakers (Altoparlanti MacBook " 256.1 (255:255)
+mixer.c:779:   2: "Speakers (BlackHole 2ch)" 256.1 (255:255)
+mixer.c:779:   3: "Microphone (AirPods Pro di Nico" 256.1 (255:255)
+mixer.c:779:   4: "Microphone (BlackHole 2ch)" 256.1 (255:255)
+mixer.c:779:   5: "Microphone (Microfono di iPhone" 256.1 (255:255)
+mixer.c:779:   6: "Microphone (Microfono MacBook P" 256.1 (255:255)
+06fc:mixer: 347 tests executed (7 marked as todo, 0 as flaky, 0 failures), 0 skipped.

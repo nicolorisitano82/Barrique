@@ -1,0 +1,177 @@
+capture.c:442: Returned periods: 20.0000 ms 0.3333 ms
+capture.c:454: pwfx: 000000700CD57600
+capture.c:455: Tag: fffe
+capture.c:456: bits: 32
+capture.c:457: chan: 1
+capture.c:458: rate: 24000
+capture.c:459: align: 4
+capture.c:460: extra: 22
+capture.c:465: Res: 32
+capture.c:466: Mask: 0
+capture.c:467: Alg: FLOAT
+capture.c:534: Returned latency: 30.0000 ms
+capture.c:285: GetBufferSize 11970 period size 480
+capture.c:211: Test marked todo: read 10 packets: packet 0: First GetBuffer returns 3066977349312 device QPC, second GetBuffer returns 3066977350553
+capture.c:211: Test marked todo: read 10 packets: packet 1: First GetBuffer returns 3066977538197 device QPC, second GetBuffer returns 3066977538540
+capture.c:211: Test marked todo: read 10 packets: packet 2: First GetBuffer returns 3066977737670 device QPC, second GetBuffer returns 3066977737868
+capture.c:211: Test marked todo: read 10 packets: packet 3: First GetBuffer returns 3066977936542 device QPC, second GetBuffer returns 3066977936736
+capture.c:211: Test marked todo: read 10 packets: packet 4: First GetBuffer returns 3066978137092 device QPC, second GetBuffer returns 3066978137286
+capture.c:211: Test marked todo: read 10 packets: packet 5: First GetBuffer returns 3066978374272 device QPC, second GetBuffer returns 3066978374465
+capture.c:211: Test marked todo: read 10 packets: packet 6: First GetBuffer returns 3066978558417 device QPC, second GetBuffer returns 3066978558613
+capture.c:211: Test marked todo: read 10 packets: packet 7: First GetBuffer returns 3066978733202 device QPC, second GetBuffer returns 3066978733414
+capture.c:211: Test marked todo: read 10 packets: packet 8: First GetBuffer returns 3066981563561 device QPC, second GetBuffer returns 3066981563754
+capture.c:211: Test marked todo: read 10 packets: packet 9: First GetBuffer returns 3066981766522 device QPC, second GetBuffer returns 3066981766973
+capture.c:304: Test marked todo: read 10 packets: No discontinuity at first packet
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 0: First GetBuffer returns 3066982523878 device QPC, second GetBuffer returns 3066982524187
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 1: First GetBuffer returns 3066982528462 device QPC, second GetBuffer returns 3066982528754
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 2: First GetBuffer returns 3066982536567 device QPC, second GetBuffer returns 3066982537282
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 3: First GetBuffer returns 3066982544867 device QPC, second GetBuffer returns 3066982545296
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 4: First GetBuffer returns 3066982756249 device QPC, second GetBuffer returns 3066982756833
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 5: First GetBuffer returns 3066982966370 device QPC, second GetBuffer returns 3066982967186
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 6: First GetBuffer returns 3066983144039 device QPC, second GetBuffer returns 3066983144351
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 7: First GetBuffer returns 3066983371538 device QPC, second GetBuffer returns 3066983372063
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 8: First GetBuffer returns 3066983562910 device QPC, second GetBuffer returns 3066983563222
+capture.c:211: Test marked todo: sleep and read 10 packets: packet 9: First GetBuffer returns 3066983767277 device QPC, second GetBuffer returns 3066983767590
+capture.c:336: Test marked todo: overrun and read 75 packets: GCP 11040 vs. BufferSize 11970
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 0: First GetBuffer returns 3066989825897 device QPC, second GetBuffer returns 3066989826765
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 1: First GetBuffer returns 3066989830612 device QPC, second GetBuffer returns 3066989830904
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 2: First GetBuffer returns 3066989834554 device QPC, second GetBuffer returns 3066989834837
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 3: First GetBuffer returns 3066989841818 device QPC, second GetBuffer returns 3066989842236
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 4: First GetBuffer returns 3066989846401 device QPC, second GetBuffer returns 3066989846844
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 5: First GetBuffer returns 3066989850833 device QPC, second GetBuffer returns 3066989851248
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 6: First GetBuffer returns 3066989855525 device QPC, second GetBuffer returns 3066989855942
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 7: First GetBuffer returns 3066989859820 device QPC, second GetBuffer returns 3066989860150
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 8: First GetBuffer returns 3066989863344 device QPC, second GetBuffer returns 3066989863676
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 9: First GetBuffer returns 3066989867210 device QPC, second GetBuffer returns 3066989867545
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 10: First GetBuffer returns 3066989870863 device QPC, second GetBuffer returns 3066989871203
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 11: First GetBuffer returns 3066989875076 device QPC, second GetBuffer returns 3066989875417
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 12: First GetBuffer returns 3066989879215 device QPC, second GetBuffer returns 3066989879553
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 13: First GetBuffer returns 3066989883334 device QPC, second GetBuffer returns 3066989883675
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 14: First GetBuffer returns 3066989887100 device QPC, second GetBuffer returns 3066989887442
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 15: First GetBuffer returns 3066989891312 device QPC, second GetBuffer returns 3066989891664
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 16: First GetBuffer returns 3066989895494 device QPC, second GetBuffer returns 3066989895827
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 17: First GetBuffer returns 3066989900957 device QPC, second GetBuffer returns 3066989901251
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 18: First GetBuffer returns 3066989906631 device QPC, second GetBuffer returns 3066989906915
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 19: First GetBuffer returns 3066989910216 device QPC, second GetBuffer returns 3066989910497
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 20: First GetBuffer returns 3066989913456 device QPC, second GetBuffer returns 3066989913745
+capture.c:211: Test marked todo: overrun and read 75 packets: packet 21: First GetBuffer returns 3066989916709 device QPC, second GetBuffer returns 3066989917148
+capture.c:211: Line has been silenced after 42 occurrences
+capture.c:342: Test marked todo: overrun and read 75 packets: No discontinuity
+capture.c:1249: Test marked todo: got 0x80004001.
+capture.c:678: exclusive: test 0: FX32(32)x24000x1:0: Initialize() succeeded
+capture.c:678: exclusive: test 1: F32x24000x1: Initialize() succeeded
+capture.c:678: exclusive: test 4: FX32(32)x24000x1:0: Initialize() succeeded
+capture.c:678: exclusive: test 5: F32x24000x1: Initialize() succeeded
+capture.c:678: exclusive: test 6: FX32(32)x24000x1:4: Initialize() succeeded
+capture.c:678: exclusive: test 7: FX32(32)x24000x1:3: Initialize() succeeded
+capture.c:678: exclusive: test 8: FX32(32)x24000x1:10: Initialize() succeeded
+capture.c:678: exclusive: test 9: FX32(32)x24000x1:10010: Initialize() succeeded
+capture.c:678: exclusive: test 10: FX32(32)x24000x1:63f: Initialize() succeeded
+capture.c:678: exclusive: test 11: FX32(32)x24000x1:80000004: Initialize() succeeded
+capture.c:678: exclusive: test 12: FX32(32)x24000x1:80000000: Initialize() succeeded
+capture.c:678: exclusive: test 13: FX32(32)x24000x1:7ffc0004: Initialize() succeeded
+capture.c:678: exclusive: test 14: FX32(32)x24000x1:7ffc0000: Initialize() succeeded
+capture.c:659: exclusive: test 15: FX32(32)x24000x2:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 15: FX32(32)x24000x2:0: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 15: FX32(32)x24000x2:0: Initialize() returns 88890008
+capture.c:678: exclusive: test 16: F32x24000x2: Initialize() succeeded
+capture.c:678: exclusive: test 17: FX32(32)x24000x2:4: Initialize() succeeded
+capture.c:678: exclusive: test 18: FX32(32)x24000x2:3: Initialize() succeeded
+capture.c:678: exclusive: test 19: FX32(32)x24000x2:10: Initialize() succeeded
+capture.c:678: exclusive: test 20: FX32(32)x24000x2:10010: Initialize() succeeded
+capture.c:678: exclusive: test 21: FX32(32)x24000x2:63f: Initialize() succeeded
+capture.c:678: exclusive: test 22: FX32(32)x24000x2:80000004: Initialize() succeeded
+capture.c:678: exclusive: test 23: FX32(32)x24000x2:80000003: Initialize() succeeded
+capture.c:678: exclusive: test 24: FX32(32)x24000x2:80000000: Initialize() succeeded
+capture.c:659: exclusive: test 25: FX32(32)x24000x2:7ffc0003: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 25: FX32(32)x24000x2:7ffc0003: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 25: FX32(32)x24000x2:7ffc0003: Initialize() returns 88890008
+capture.c:659: exclusive: test 26: FX32(32)x24000x2:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 26: FX32(32)x24000x2:7ffc0000: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 26: FX32(32)x24000x2:7ffc0000: Initialize() returns 88890008
+capture.c:659: exclusive: test 27: FX32(32)x24000x4:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 27: FX32(32)x24000x4:0: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 27: FX32(32)x24000x4:0: Initialize() returns 88890008
+capture.c:678: exclusive: test 29: FX32(32)x24000x4:33: Initialize() succeeded
+capture.c:678: exclusive: test 30: FX32(32)x24000x4:80000033: Initialize() succeeded
+capture.c:678: exclusive: test 31: FX32(32)x24000x4:80000000: Initialize() succeeded
+capture.c:659: exclusive: test 32: FX32(32)x24000x4:7ffc0033: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 32: FX32(32)x24000x4:7ffc0033: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 32: FX32(32)x24000x4:7ffc0033: Initialize() returns 88890008
+capture.c:659: exclusive: test 33: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 33: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 33: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008
+capture.c:659: exclusive: test 34: FX32(32)x24000x4:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 34: FX32(32)x24000x4:0: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 34: FX32(32)x24000x4:0: Initialize() returns 88890008
+capture.c:678: exclusive: test 35: FX32(32)x24000x4:3f: Initialize() succeeded
+capture.c:678: exclusive: test 36: FX32(32)x24000x4:8000003f: Initialize() succeeded
+capture.c:678: exclusive: test 37: FX32(32)x24000x4:80000000: Initialize() succeeded
+capture.c:659: exclusive: test 38: FX32(32)x24000x4:7ffc003f: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 38: FX32(32)x24000x4:7ffc003f: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 38: FX32(32)x24000x4:7ffc003f: Initialize() returns 88890008
+capture.c:659: exclusive: test 39: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 39: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 39: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008
+capture.c:659: exclusive: test 40: FX32(32)x24000x8:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 40: FX32(32)x24000x8:0: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 40: FX32(32)x24000x8:0: Initialize() returns 88890008
+capture.c:678: exclusive: test 42: FX32(32)x24000x8:4: Initialize() succeeded
+capture.c:678: exclusive: test 43: FX32(32)x24000x8:3: Initialize() succeeded
+capture.c:678: exclusive: test 44: FX32(32)x24000x8:63f: Initialize() succeeded
+capture.c:678: exclusive: test 45: FX32(32)x24000x8:43f: Initialize() succeeded
+capture.c:678: exclusive: test 46: FX32(32)x24000x8:4bf: Initialize() succeeded
+capture.c:678: exclusive: test 47: FX32(32)x24000x8:8000063f: Initialize() succeeded
+capture.c:678: exclusive: test 48: FX32(32)x24000x8:80000000: Initialize() succeeded
+capture.c:659: exclusive: test 49: FX32(32)x24000x8:7ffc063f: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 49: FX32(32)x24000x8:7ffc063f: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 49: FX32(32)x24000x8:7ffc063f: Initialize() returns 88890008
+capture.c:659: exclusive: test 50: FX32(32)x24000x8:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 50: FX32(32)x24000x8:7ffc0000: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 50: FX32(32)x24000x8:7ffc0000: Initialize() returns 88890008
+capture.c:678: exclusive: test 61: PX16(16)x24000x1:0: Initialize() succeeded
+capture.c:678: exclusive: test 62: P16x24000x1: Initialize() succeeded
+capture.c:678: exclusive: test 66: PX24(24)x24000x1:0: Initialize() succeeded
+capture.c:678: exclusive: test 67: P24x24000x1: Initialize() succeeded
+capture.c:678: exclusive: test 74: PX32(24)x24000x1:0: Initialize() succeeded
+capture.c:678: exclusive: test 77: PX32(32)x24000x1:0: Initialize() succeeded
+capture.c:678: exclusive: test 78: P32x24000x1: Initialize() succeeded
+capture.c:678: Line has been silenced after 42 occurrences
+capture.c:659: exclusive: test 15: FX32(32)x24000x2:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 15: FX32(32)x24000x2:0: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 15: FX32(32)x24000x2:0: Initialize() returns 88890008
+capture.c:659: exclusive: test 25: FX32(32)x24000x2:7ffc0003: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 25: FX32(32)x24000x2:7ffc0003: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 25: FX32(32)x24000x2:7ffc0003: Initialize() returns 88890008
+capture.c:659: exclusive: test 26: FX32(32)x24000x2:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 26: FX32(32)x24000x2:7ffc0000: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 26: FX32(32)x24000x2:7ffc0000: Initialize() returns 88890008
+capture.c:659: exclusive: test 27: FX32(32)x24000x4:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 27: FX32(32)x24000x4:0: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 27: FX32(32)x24000x4:0: Initialize() returns 88890008
+capture.c:659: exclusive: test 32: FX32(32)x24000x4:7ffc0033: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 32: FX32(32)x24000x4:7ffc0033: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 32: FX32(32)x24000x4:7ffc0033: Initialize() returns 88890008
+capture.c:659: exclusive: test 33: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 33: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 33: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008
+capture.c:659: exclusive: test 34: FX32(32)x24000x4:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 34: FX32(32)x24000x4:0: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 34: FX32(32)x24000x4:0: Initialize() returns 88890008
+capture.c:659: exclusive: test 38: FX32(32)x24000x4:7ffc003f: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 38: FX32(32)x24000x4:7ffc003f: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 38: FX32(32)x24000x4:7ffc003f: Initialize() returns 88890008
+capture.c:659: exclusive: test 39: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 39: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 39: FX32(32)x24000x4:7ffc0000: Initialize() returns 88890008
+capture.c:659: exclusive: test 40: FX32(32)x24000x8:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 40: FX32(32)x24000x8:0: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 40: FX32(32)x24000x8:0: Initialize() returns 88890008
+capture.c:659: exclusive: test 49: FX32(32)x24000x8:7ffc063f: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 49: FX32(32)x24000x8:7ffc063f: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 49: FX32(32)x24000x8:7ffc063f: Initialize() returns 88890008
+capture.c:659: exclusive: test 50: FX32(32)x24000x8:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+capture.c:673: Test marked todo: exclusive: test 50: FX32(32)x24000x8:7ffc0000: Initialize() returns 88890008
+capture.c:703: Test marked todo: exclusive: test 50: FX32(32)x24000x8:7ffc0000: Initialize() returns 88890008
+0020:capture: Silenced 73 todos, 0 skips and 130 traces.
+0020:capture: 10251 tests executed (94 marked as todo, 0 as flaky, 0 failures), 0 skipped.

@@ -1,0 +1,94 @@
+vmr9.c:123: Test failed: Got hr 0x80040273.
+vmr9.c:130: Test failed: Got hr 0x80040273.
+vmr9.c:140: Test failed: Got hr 0x80040273.
+vmr9.c:144: Test failed: Got mode 0x1.
+vmr9.c:147: Test failed: Got hr 0x80040273.
+vmr9.c:190: Test failed: Got hr 0x80040273.
+vmr9.c:194: Test failed: Got mode 0x1.
+vmr9.c:237: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:243: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:246: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:271: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:289: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:47: Test failed: Got hr 0x80040273.
+vmr9.c:237: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:243: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:246: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:271: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:308: Test failed: Got hr 0x80004002, expected 0.
+vmr9.c:310: Test marked todo: Got hr 0, expected 0x80004002.
+vmr9.c:312: Test marked todo: Got hr 0, expected 0x80004002.
+vmr9.c:237: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:243: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:246: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:271: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:324: Test marked todo: Got hr 0, expected 0x80004002.
+vmr9.c:326: Test marked todo: Got hr 0, expected 0x80004002.
+vmr9.c:47: Test failed: Got hr 0x80040273.
+vmr9.c:237: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:243: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:246: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:271: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:338: Test marked todo: Got hr 0x80004002, expected 0.
+vmr9.c:545: Test marked todo: Got hr 0x1.
+vmr9.c:555: Test marked todo: Got hr 0x1.
+vmr9.c:556: Test marked todo: Got count 1.
+vmr9.c:565: Test marked todo: Got count 1.
+vmr9.c:614: Test marked todo: Got hr 0x80040216.
+vmr9.c:666: Test marked todo: Got hr 0x80040216.
+vmr9.c:740: Test marked todo: Got hr 0.
+vmr9.c:743: Test marked todo: Got hr 0.
+vmr9.c:47: Test failed: Got hr 0x80040273.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7c-524f-11ce-9f53-0020af0ba770} and bpp 15.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7c-524f-11ce-9f53-0020af0ba770} and bpp 16.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7c-524f-11ce-9f53-0020af0ba770} and bpp 24.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7c-524f-11ce-9f53-0020af0ba770} and bpp 32.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7b-524f-11ce-9f53-0020af0ba770} and bpp 15.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7b-524f-11ce-9f53-0020af0ba770} and bpp 16.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7b-524f-11ce-9f53-0020af0ba770} and bpp 24.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7b-524f-11ce-9f53-0020af0ba770} and bpp 32.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7d-524f-11ce-9f53-0020af0ba770} and bpp 15.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7d-524f-11ce-9f53-0020af0ba770} and bpp 16.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7d-524f-11ce-9f53-0020af0ba770} and bpp 24.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7d-524f-11ce-9f53-0020af0ba770} and bpp 32.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7e-524f-11ce-9f53-0020af0ba770} and bpp 15.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7e-524f-11ce-9f53-0020af0ba770} and bpp 16.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7e-524f-11ce-9f53-0020af0ba770} and bpp 24.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1702: Test failed: Got hr 0x80040273 for subtype {e436eb7e-524f-11ce-9f53-0020af0ba770} and bpp 32.
+vmr9.c:1706: Test failed: Got hr 0x1.
+vmr9.c:1708: Test failed: Got hr 0x1.
+vmr9.c:1719: Test failed: Got hr 0x80040273.
+vmr9.c:1722: Test failed: Got hr 0x80040273.
+vmr9.c:1741: Test failed: Got hr 0x80040273.
+vmr9.c:1744: Test failed: Got hr 0x80040209.
+vmr9.c:1745: Test failed: Got peer 00000000.

@@ -129,8 +129,8 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 - ✅ Passo 0, base di partenza (giro 5, 2026-11-15).
 - ✅ Grafica a 64 bit sotto HVF: stringhe e buffer GL, blocco e use-after-free in winemac (giro 6, 2026-11-16).
 - ✅ Passo 1, FreeType e font (giro 7, 2026-11-16): FreeType incluso con `@rpath`, 35 unità migliorate. Dal test di fumo: `fork()` da un thread Windows sotto HVF (installer VC++, crash all'uscita dei processi), winedbg e wineserver col debugger.
-- 🔧 Passo 2, audio (giro 8, in corso): timer di coreaudio, salvataggio del registro in un processo figlio (via il buco audio di ~60 ms ogni 20 s). 96 kHz provato; resta il Bluetooth.
-- 🔧 Passo 3, video (giro 10, in corso): GStreamer 1.28 con gst-libav sopra FFmpeg LGPL compilati da noi in `deps/`; Media Foundation decodifica H.264, HEVC, VP9, AAC, MP3, WMV2/WMA2 sulle tre architetture. Verificati i386 (correzione WoW64) e MPEG in DirectShow. Giro 12: MPEG-1/2 anche in Media Foundation (gestore `.mpg/.vob/.ts`, decoder MPEG MFT, MP2 in `mp3dmod`), ok sulle tre architetture. Giro 13: mf `transform` da crash a 0 fallimenti sulle tre architetture (encoder H.264 di VideoToolbox, MPEG audio MFT a sé, `swscale` con `accurate_rnd` su ARM), mfreadwrite 0 fallimenti.
+- ✅ Passo 2, audio (giri 8 e 14): timer di coreaudio, salvataggio del registro in un processo figlio (via il buco audio di ~60 ms ogni 20 s). 44,1/48/96 kHz e Bluetooth (AirPods) senza periodi persi.
+- ✅ Passo 3, video (giri 10-14): GStreamer 1.28 con gst-libav sopra FFmpeg LGPL compilati da noi in `deps/`; Media Foundation decodifica H.264, HEVC, VP9, AAC, MP3, WMV2/WMA2 sulle tre architetture. Verificati i386 (correzione WoW64) e MPEG in DirectShow. Giro 12: MPEG-1/2 anche in Media Foundation (gestore `.mpg/.vob/.ts`, decoder MPEG MFT, MP2 in `mp3dmod`), ok sulle tre architetture. Giro 13: mf `transform` da crash a 0 fallimenti sulle tre architetture (encoder H.264 di VideoToolbox, MPEG audio MFT a sé, `swscale` con `accurate_rnd` su ARM), mfreadwrite 0 fallimenti. Giro 14: decodifica VideoToolbox misurata (~4× meno CPU, bit-exact) ma spenta, rompe MPEG-2 e `h264dec`; riferimenti di prova più severi (dY 0,00).
 - ✅ Passo 1b, qualità del testo (giro 11): Retina a 192 DPI nei default dei prefissi della `.app`, Selawik/Carlito/Caladea per Segoe UI/Calibri/Cambria, sostituzioni CJK anche per DirectWrite, fallback DirectWrite sui font macOS. Giro 12: i programmi non DPI-aware sono scalati 2× da Wine come su Windows.
 - ⬜ Passi 4-7: memoria GPU, Vulkan/MoltenVK, banco di prova grafico, Direct3D.
 
@@ -140,7 +140,7 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
   - D3D12 con VKD3D-Proton.
 - ⬜ **[MS]** OpenGL 4.6 su Metal (WineMetalGL) al posto del GL 4.1 di Apple.
 - ⬜ **[MS]** MoltenVK con cache delle pipeline.
-- 🔧 **[MS]** FFmpeg (VideoToolbox/AudioToolbox) e GStreamer/gst-libav per `winedmo`, `winegstreamer`, Media Foundation e DirectShow (passo 3 di FASE5-AV).
+- ✅ **[MS]** FFmpeg (VideoToolbox/AudioToolbox) e GStreamer/gst-libav per `winedmo`, `winegstreamer`, Media Foundation e DirectShow (passo 3 di FASE5-AV).
 - ⬜ **[MS]** Controller: winebus con SDL2 + IOHID (XInput e DirectInput).
 - ⬜ **[MS]** Mouse raw con GCMouse e schermo intero nativo di macOS.
 - 🔧 **[MS]** Font:

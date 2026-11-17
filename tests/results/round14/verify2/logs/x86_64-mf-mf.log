@@ -1,0 +1,151 @@
+mf.c:2862: Test marked todo: Unexpected hr 0.
+mf.c:2869: Test marked todo: Unexpected hr 0xc00d36fc.
+mf.c:3015: Test marked todo: got 2 GetMediaTypeByIndex
+mf.c:3344: Test marked todo: expected test_media_sink_GetStreamSinkCount
+mf.c:3399: Test marked todo: Release returned 2
+mf.c:3402: Test marked todo: Release returned 1
+mf.c:3405: Test marked todo: Release returned 1
+mf.c:3408: Test marked todo: Release returned 2
+mf.c:5888: Test marked todo: Release returned 1
+mf.c:6116: Test marked todo: Release returned 1
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:03.085: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+transform.c:1415: created L"C:\\users\\nicolo\\AppData\\Local\\Temp\\rgb32frame-grabber.bmp"
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:03.217: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+transform.c:1415: created L"C:\\users\\nicolo\\AppData\\Local\\Temp\\nv12frame-grabber.bmp"
+mf.c:6755: Test marked todo: Got hr 0x80004002, expected 0.
+mf.c:6808: Test marked todo: Got hr 0x80004002, expected 0.
+mf.c:6849: Test marked todo: "MF_MT_SUBTYPE": IsMediaTypeSupported returned 0.
+mf.c:6574: Test marked todo: Unexpected hr 0x80004002.
+mf.c:6574: Test marked todo: Unexpected hr 0x80004002.
+mf.c:7027: Test marked todo: Unexpected hr 0.
+mf.c:7038: Test marked todo: Unexpected hr 0x102.
+mf.c:7042: Test marked todo: Unexpected hr 0x102.
+mf.c:6574: Test marked todo: Unexpected hr 0x80004002.
+mf.c:7165: Test marked todo: Unexpected instance.
+mf.c:7169: Test marked todo: Unexpected hr 0.
+mf.c:7306: Test marked todo: Unexpected hr 0x80004002.
+mf.c:7310: Test marked todo: Unexpected hr 0x80004002.
+mf.c:7479: Test marked todo: Unexpected hr 0.
+mf.c:7499: Test marked todo: Unexpected hr 0x102.
+mf.c:7514: Test marked todo: Unexpected hr 0x102.
+mf.c:7519: Test marked todo: Unexpected hr 0x102.
+mf.c:7525: Test marked todo: Unexpected hr 0x102.
+mf.c:7537: Test marked todo: Unexpected time 0.
+mf.c:7617: Test marked todo: Unexpected hr 0.
+mf.c:7644: Test marked todo: Unexpected hr 0.
+mf.c:7684: Test marked todo: Unexpected hr 0x102.
+mf.c:7691: Test marked todo: Unexpected time 2000000.
+mf.c:7702: Test marked todo: Unexpected hr 0x102.
+mf.c:7702: Test marked todo: Unexpected hr 0x102.
+mf.c:7702: Test marked todo: Unexpected hr 0x102.
+mf.c:7702: Test marked todo: Unexpected hr 0x102.
+mf.c:7702: Test marked todo: Unexpected hr 0x102.
+mf.c:7702: Test marked todo: Unexpected hr 0x102.
+mf.c:7702: Test marked todo: Unexpected hr 0x102.
+mf.c:7754: Test marked todo: Unexpected hr 0x102.
+mf.c:7759: Test marked todo: Unexpected hr 0x102.
+mf.c:7765: Test marked todo: Unexpected hr 0x102.
+mf.c:7780: Test marked todo: Unexpected hr 0.
+mf.c:7832: Test marked todo: Unexpected hr 0x102.
+mf.c:8160: Test marked todo: Got hr 0x80004001, expected 0.
+mf.c:8161: Test marked todo: Got hr 0x80004001, expected 0.
+mf.c:8162: Test marked todo: Got hr 0x80004001, expected 0.
+mf.c:8163: Test marked todo: Got hr 0x80004001, expected 0.
+mf.c:8164: Test marked todo: Got hr 0x80004001, expected 0.
+mf.c:8165: Test marked todo: Got hr 0x80004001, expected 0.
+mf.c:8166: Test marked todo: Got hr 0x80004001, expected 0.
+mf.c:8219: Test marked todo: Unexpected instance.
+mf.c:8231: Test marked todo: Unexpected instance.
+mf.c:8241: Test marked todo: Release returned 1
+mf.c:8690: Test marked todo: got hr 0xc00d36e6
+mf.c:8698: Test marked todo: got caps 0x5
+mf.c:8666: Test failed: got hr 0x800c0008
+mf.c:8666: Test marked todo: got hr 0xc00d36c3
+mf.c:8666: Test marked todo: got hr 0xc00d36c3
+mf.c:8666: Test marked todo: got hr 0xc00d36c3
+mf.c:8711: Test marked todo: got hr 0xc00d36c3
+mf.c:8714: Test marked todo: got hr 0xc00d36c3
+mf.c:8718: Test marked todo: got hr 0x800c0008
+mf.c:8721: Test marked todo: got hr 0x800c0008
+mf.c:8724: Test marked todo: got hr 0xc00d36c3
+mf.c:8727: Test marked todo: got hr 0xc00d36c3
+mf.c:8730: Test marked todo: got hr 0xc00d36c3
+mf.c:8734: Test marked todo: got hr 0
+mf.c:8737: Test marked todo: got hr 0x800c0008
+mf.c:8740: Test marked todo: got hr 0xc00d36c3
+mf.c:8743: Test marked todo: got hr 0xc00d36c3
+mf.c:8746: Test marked todo: got hr 0xc00d36c3
+mf.c:9160: Test marked todo: Unexpected hr 0x80004001.
+mf.c:9162: Test marked todo: Unexpected flags 0xdeadbeef.
+mf.c:9169: Test marked todo: Got hr 0x80004002, expected 0.
+mf.c:9344: Test marked todo: Unexpected hr 0x80004001.
+mf.c:9347: Test marked todo: Unexpected hr 0x80004001.
+mf.c:9373: Test marked todo: Unexpected hr 0.
+mf.c:9376: Test marked todo: Unexpected hr 0.
+mf.c:9379: Test marked todo: Unexpected hr 0.
+mf.c:9382: Test marked todo: Unexpected hr 0x80004001.
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.206: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mf.c:9572: Test marked todo: Unexpected frame size 0
+mf.c:9585: Test marked todo: Unexpected frame size 0
+mf.c:9588: Test marked todo: Unexpected frame size 0x4000000048
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.298: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mf.c:10183: Test marked todo: got 0xc00d36e6.
+mf.c:10183: Test marked todo: got 0xc00d36e6.
+mf.c:10183: Test marked todo: got 0xc00d36e6.
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.469: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.512: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.546: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.593: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mf.c:10023: Test marked todo: Test 1: Unexpected hr 0xc00d36b2.
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.626: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.672: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.710: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:32.747: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mf.c:11216: Test marked todo: expected test_media_sink_GetPresentationClock
+mf.c:11219: Test marked todo: expected test_media_sink_GetStreamSinkCount
+mf.c:11252: Test marked todo: expected test_media_sink_GetPresentationClock
+mf.c:11254: Test marked todo: expected test_media_sink_GetStreamSinkCount
+mf.c:11280: Test marked todo: expected test_media_sink_GetPresentationClock
+mf.c:11282: Test marked todo: expected test_media_sink_GetStreamSinkCount
+mf.c:11341: Test marked todo: expected test_media_sink_GetPresentationClock
+mf.c:11343: Test marked todo: expected test_media_sink_GetStreamSinkCount
+mf.c:11533: Test marked todo: expected test_media_sink_GetPresentationClock
+mf.c:11551: Test marked todo: expected test_media_sink_GetPresentationClock
+mf.c:11553: Test marked todo: expected test_transform_ProcessMessage_START_OF_STREAM
+mf.c:11555: Test marked todo: expected test_media_sink_GetStreamSinkCount
+mf.c:11588: Test marked todo: expected test_media_sink_GetPresentationClock
+mf.c:11603: Test marked todo: expected test_media_sink_GetPresentationClock
+mf.c:11605: Test marked todo: expected test_transform_ProcessMessage_START_OF_STREAM
+mf.c:11612: Test marked todo: expected test_media_sink_GetStreamSinkCount
+mf.c:1189: Test marked todo: unexpected call test_media_sink_clock_sink_OnClockSetRate
+mf.c:11639: Test marked todo: Unexpected hr 0x102.
+mf.c:11735: Test marked todo: expected test_media_sink_GetStreamSinkCount
+mf.c:11783: Test marked todo: expected test_media_sink_GetStreamSinkCount
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:34.134: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:34.274: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:34.413: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:34.483: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:34.546: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:34.683: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:65603): GStreamer-Video-CRITICAL **: 15:17:34.722: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mf.c:12295: Test marked todo: expected test_media_sink_GetStreamSinkCount
+0020:mf: 10176 tests executed (109 marked as todo, 0 as flaky, 1 failure), 0 skipped.

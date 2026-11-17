@@ -117,7 +117,7 @@ Misura: programma di prova `tests/av/textshot.exe` (tabella di font e dimensioni
 - **Programmi non DPI-aware (giro 12)**: `tests/av/dpitest.c` apre una finestra per contesto (non DPI-aware, system-aware, per-monitor v2) con cornice 300×150 logica, testo a 10 pt e scacchiera di 1 pixel; `tests/av/winbounds.swift` legge da macOS la dimensione reale delle finestre (CGWindowList, senza permesso di registrazione schermo). In `prefix-retina` le tre finestre misurano 340×232 punti (680×464 pixel): la non DPI-aware vede 96 DPI e 340×200, e Wine la ingrandisce 2× come Windows (un po' sfocata, come su Windows); le altre due vedono 192 DPI, 680×400, testo nitido. Uguale su aarch64, x86_64, i686. A 96 DPI (`prefix-tests`) tutte a 340×200.
 - Aperti: ebraico, arabo e thai in DirectWrite ricadono su Tahoma (che li ha); il default nella `.app` (fase 6).
 
-## Passo 2: audio 🔧
+## Passo 2: audio ✅
 
 **In corso (2026-11-16).** Giro di base (`tests/results/round8/base`), giro dopo la correzione di coreaudio (`after`, `compare.txt`: nessuna regressione, 6 unità migliorate) e giro col salvataggio del registro in un figlio (`fork`, `smoke`, `apps.out`). Restano da provare 96 kHz e un dispositivo Bluetooth.
 - `tests/av/tone.c` scritto e compilato per aarch64, x86_64, i686 (`samples/phase5/tone-*.exe`): WASAPI, waveOut, DirectSound, XAudio2, periodi persi e risvegli in ritardo, periodo del motore audio.
@@ -141,8 +141,11 @@ Misura: programma di prova `tests/av/textshot.exe` (tabella di font e dimensioni
 - Prestazioni: CPU del processo durante 60 s di riproduzione, da non peggiorare nei passi successivi.
 - Cancello: test senza regressioni, `tone.exe` ok sulle tre architetture a 44,1 e 48 kHz, nessun periodo perso a 10 ms.
 - **Dispositivo a 96 kHz (2026-11-16, `round8/r96`, `run96.sh`)**: `tone.exe` con tutte e quattro le API, 20 s, a 44,1/48/96 kHz sulle tre architetture: 33 su 36 senza periodi persi; un periodo perso di ~31 ms in WASAPI aarch64 a 48 e 96 kHz (il buffer WASAPI è di 30 ms) e uno all'avvio in XAudio2 i686 a 44,1 kHz. Il periodo del dispositivo resta 10 ms. Test audio contro `fork`: nessuna regressione, tre `capture` migliorati (microfono dell'iPhone assente). Resta da provare un dispositivo Bluetooth.
+- **Bluetooth (2026-11-17, giro 14, `tests/results/round14`, AirPods)**: `tone.exe` con le quattro API a 48 e 44,1 kHz sulle tre architetture: nessun periodo perso (`bt.log`). Test audio (`bt.sh`): nessuna regressione dovuta al Bluetooth, winmm `mci` migliorato; i timeout di `capture` i386 (dsound, winmm) e i fallimenti di `wave`/`midi` sono quelli già noti (microfono Continuity dell'iPhone, 3 o 4 dispositivi a seconda del momento). All'ascolto si sentivano dei buchi: sono i cambi di API di `tone.exe`, che chiude e riapre il flusso, e l'apertura del microfono che porta le AirPods in HFP. Prova di 60 s continui (`bt2.sh`): `afplay` e Wine WASAPI senza interruzioni udibili, WASAPI 5576 periodi, 0 persi, 1 risveglio in ritardo (22 ms).
 
-## Passo 3: video (Media Foundation e DirectShow) 🔧
+**Chiuso (2026-11-17).** Cancello rispettato: test senza regressioni, `tone.exe` ok sulle tre architetture a 44,1 e 48 kHz (anche 96 kHz e Bluetooth). Restano fuori dal passo: latenza col periodo minimo di 5 ms, stato FP per `AudioConverterNew`, comportamento senza permesso del microfono.
+
+## Passo 3: video (Media Foundation e DirectShow) ✅
 
 Upstream Wine ha già il backend FFmpeg (`winedmo`), che nella nostra build è compilato. GStreamer non lo usiamo: CrossOver lo include ma senza i plugin WMA (segnalato dagli utenti), è più grande e non serve.
 
@@ -186,7 +189,18 @@ Risultato: `mpeg2.mpg` (MPEG-2 + MP2) ok sulle tre architetture, 50/50 fotogramm
 
 Risultato (`round13/verify`): mf `transform` 0 fallimenti sulle tre architetture (prima crash), mfreadwrite 0 (erano 11), mfplat, mfmediaengine, mf `topology` ok; `mfplay` ok su 7 file × 3 architetture. Instabile, da indagare: su i386 un processo figlio del test mfplat ogni tanto si appende (timeout, 1 fallimento): `mfplat u1` in verify, `mfplat startup` in una delle due riprove (l'altra ok, `round13/mfplat-i386-*`); nel giro 10 passava. Sembra una questione di tempi nell'avvio/chiusura dei processi sotto i386/FEX, non legata alle modifiche del giro. Da tenere presente: gli altri percorsi NEON di `swscale` (scalatura) sotto ARM64EC non sono verificati.
 
-Aperti: gli avvisi di GStreamer (`gst_video_info_from_caps`, `gst_object_unref`) e `video_frame_wrap_buffer` di mfplat; HEVC e H.264 con VideoToolbox (oggi decoder software di FFmpeg, da misurare); copia degli IOSurface (passo 4).
+**Decodifica con VideoToolbox (giro 14, `tests/results/round14`).** `vtdec_hw` di `applemedia` (rango primary + 1) prende H.264 e HEVC dopo `h264parse`/`h265parse`. File 1080p di 10 s a 30 fps (`samples/phase5/media-perf`, `vt.sh`): uscita identica a gst-libav (differenza 0,000 per fotogramma); CPU utente H.264 1,95 → 0,49 s (aarch64), 2,16 → 0,61 s (x86_64), HEVC simile; tempo reale uguale (domina l'avvio). Acceso di default però (`verify.sh`) rompe tre cose:
+- MPEG-2: `vtdec_hw` accetta `video/mpeg` mpegversion 2 e non produce fotogrammi (0/50 sulle tre architetture);
+- H.264 4:4:4: accettato anche quello, fotogrammi sbagliati invece di lasciare il posto a gst-libav;
+- mf `transform` `h264dec`: 128–147 fallimenti (`ProcessOutput` 0xd0000023, campioni vuoti, cambio di risoluzione), l'uscita asincrona non va d'accordo con `wg_transform`.
+
+Quindi `vtdec` e `vtdec_hw` restano spenti (`GST_PLUGIN_FEATURE_RANK=vtdec:NONE,vtdec_hw:NONE`, impostato solo se manca: `GST_PLUGIN_FEATURE_RANK=vtdec:NONE` lo riaccende per prova). Usarlo davvero vuol dire limitarlo a H.264/HEVC 4:2:0 e rendere sincrona l'uscita: lavoro futuro, vale ~4× di CPU in meno.
+
+Prova più severa: `mkref.py` calcolava la luminanza dei riferimenti con `-pix_fmt gray` (gamma piena) mentre Wine dà NV12 a gamma limitata, da qui uno scarto fisso di ~2 che la tolleranza nascondeva. Ora usa il piano Y di `yuv420p`: tutti i file coincidono con dY 0,00 (WMV2 0,21, non bit-exact) e `cmpref.py` ha tolleranza 0,5. H.264 High 4:4:4 (`samples/phase5/media-unsupported`): il source reader lo rifiuta (0xc00d36bb) come Windows, il cui decoder H.264 prende solo 4:2:0.
+
+Verifica finale (`round14/verify2`, vtdec spento): `mfplay` ok su 7 file × 3 architetture, MPEG-2 compreso; mf `transform` 0 fallimenti, mfreadwrite 0, mf `topology` ok; mf `mf` 1-2 fallimenti come nel giro 13 (`mf.c:8666`, 0x800c0008: URL di rete). Nel giro completo (`round14/verify`) quartz ha gli stessi fallimenti del giro 11 (`mpegaudio` 10, `mpegvideo` 7, i386 `vmr7` 4 e `vmr9` in crash).
+
+**Chiuso (2026-11-17).** Cancello: mf, mfplat, mfreadwrite senza regressioni, quartz come prima, `mfplay` ok sulle tre architetture, librerie tutte in `deps/`. Aperti, fuori dal passo: decodifica VideoToolbox (sopra), audio AC3, avvisi di GStreamer (`gst_video_info_from_caps`, `gst_object_unref`) e `video_frame_wrap_buffer` di mfplat, figlio di mfplat i386 che ogni tanto si appende, percorsi NEON di `swscale` (scalatura) sotto ARM64EC, copia degli IOSurface (passo 4), fallimenti quartz `mpegaudio`/`mpegvideo`.
 
 ## Passo 4: memoria della GPU e la VM, esperimento ⬜ ⚠️
 

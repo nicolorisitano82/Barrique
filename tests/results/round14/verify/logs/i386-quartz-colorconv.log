@@ -1,0 +1,114 @@
+colorconv.c:967: Test marked todo: Got hr 0x80004002, expected 0.
+colorconv.c:980: Test marked todo: Got hr 0x80004002, expected 0.
+colorconv.c:983: Test marked todo: Got hr 0x80004002, expected 0.
+colorconv.c:1765: Test marked todo: Got hr 0x80004005.
+colorconv.c:1770: Test marked todo: Allocators didn't match.
+colorconv.c:2120: Test marked todo: Got sample refcount 0.
+colorconv.c:2122: Test marked todo: Expected media type to have been checked.
+colorconv.c:2236: Test marked todo: test 0: Sync point should not be set.
+colorconv.c:2193: Test marked todo: test 1: Time end should be set.
+colorconv.c:2208: Test marked todo: test 1: Media time start should be set.
+colorconv.c:2209: Test marked todo: test 1: Media time end should be set.
+colorconv.c:2210: Test marked todo: test 1: Got media start time 0.
+colorconv.c:2212: Test marked todo: test 1: Got media end time 0.
+colorconv.c:2208: Test marked todo: test 2: Media time start should be set.
+colorconv.c:2209: Test marked todo: test 2: Media time end should be set.
+colorconv.c:2210: Test marked todo: test 2: Got media start time 0.
+colorconv.c:2212: Test marked todo: test 2: Got media end time 0.
+colorconv.c:2208: Test marked todo: test 3: Media time start should be set.
+colorconv.c:2209: Test marked todo: test 3: Media time end should be set.
+colorconv.c:2210: Test marked todo: test 3: Got media start time 0.
+colorconv.c:2212: Test marked todo: test 3: Got media end time 0.
+colorconv.c:2230: Test marked todo: test 3: Preroll should not be set.
+colorconv.c:2208: Test marked todo: test 4: Media time start should be set.
+colorconv.c:2209: Test marked todo: test 4: Media time end should be set.
+colorconv.c:2210: Test marked todo: test 4: Got media start time 0.
+colorconv.c:2212: Test marked todo: test 4: Got media end time 0.
+colorconv.c:2208: Test marked todo: test 5: Media time start should be set.
+colorconv.c:2209: Test marked todo: test 5: Media time end should be set.
+colorconv.c:2210: Test marked todo: test 5: Got media start time 0.
+colorconv.c:2212: Test marked todo: test 5: Got media end time 0.
+colorconv.c:2236: Test marked todo: test 5: Sync point should not be set.
+colorconv.c:2208: Test marked todo: test 6: Media time start should be set.
+colorconv.c:2209: Test marked todo: test 6: Media time end should be set.
+colorconv.c:2210: Test marked todo: test 6: Got media start time 0.
+colorconv.c:2212: Test marked todo: test 6: Got media end time 0.
+colorconv.c:2236: Test marked todo: test 6: Sync point should not be set.
+colorconv.c:643: Test marked todo: QualityControl not implemented.
+colorconv.c:2208: Test marked todo: test 7: Media time start should be set.
+colorconv.c:2209: Test marked todo: test 7: Media time end should be set.
+colorconv.c:2210: Test marked todo: test 7: Got media start time 0.
+colorconv.c:2212: Test marked todo: test 7: Got media end time 0.
+colorconv.c:2256: Test marked todo: Got sample refcount 0.
+colorconv.c:2258: Test marked todo: Expected media type to have been checked.
+colorconv.c:299: Test marked todo: Unexpected call to IMediaSample::SetTime.
+colorconv.c:2310: Test marked todo: Got 100% difference.
+colorconv.c:1894: Test marked todo: bottom-up: image size 0: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: bottom-up: image size 0: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: bottom-up: image size 0: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: bottom-up: image size 0: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: bottom-up: image size 0: Got 18% difference.
+colorconv.c:1894: Test marked todo: bottom-up: image size 1: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: bottom-up: image size 1: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: bottom-up: image size 1: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: bottom-up: image size 1: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: bottom-up: image size 1: Got 18% difference.
+colorconv.c:1894: Test marked todo: bottom-up: image size 2: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: bottom-up: image size 2: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: bottom-up: image size 2: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: bottom-up: image size 2: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: bottom-up: image size 2: Got 100% difference.
+colorconv.c:1894: Test marked todo: bottom-up: image size 3: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: bottom-up: image size 3: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: bottom-up: image size 3: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: bottom-up: image size 3: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: bottom-up: image size 3: Got 100% difference.
+colorconv.c:1894: Test marked todo: bottom-up: image size 4: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: bottom-up: image size 4: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: bottom-up: image size 4: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: bottom-up: image size 4: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: bottom-up: image size 4: Got 100% difference.
+colorconv.c:1894: Test marked todo: bottom-up: image size 5: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: bottom-up: image size 5: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: bottom-up: image size 5: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: bottom-up: image size 5: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: bottom-up: image size 5: Got 100% difference.
+colorconv.c:2330: Test marked todo: Got sample refcount 0.
+colorconv.c:2332: Test marked todo: Expected media type to have been checked.
+colorconv.c:299: Test marked todo: Unexpected call to IMediaSample::SetTime.
+colorconv.c:2387: Test marked todo: Got 100% difference.
+colorconv.c:1894: Test marked todo: top-down: image size 0: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: top-down: image size 0: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: top-down: image size 0: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: top-down: image size 0: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: top-down: image size 0: Got 18% difference.
+colorconv.c:1894: Test marked todo: top-down: image size 1: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: top-down: image size 1: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: top-down: image size 1: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: top-down: image size 1: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: top-down: image size 1: Got 18% difference.
+colorconv.c:1894: Test marked todo: top-down: image size 2: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: top-down: image size 2: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: top-down: image size 2: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: top-down: image size 2: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: top-down: image size 2: Got 100% difference.
+colorconv.c:1894: Test marked todo: top-down: image size 3: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: top-down: image size 3: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: top-down: image size 3: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: top-down: image size 3: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: top-down: image size 3: Got 100% difference.
+colorconv.c:1894: Test marked todo: top-down: image size 4: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: top-down: image size 4: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: top-down: image size 4: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: top-down: image size 4: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: top-down: image size 4: Got 100% difference.
+colorconv.c:1894: Test marked todo: top-down: image size 5: Got sample refcount 0.
+colorconv.c:1896: Test marked todo: top-down: image size 5: Expected media type to have been checked.
+colorconv.c:522: Test marked todo: top-down: image size 5: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: top-down: image size 5: Unexpected call to IMediaSample::SetTime.
+colorconv.c:1957: Test marked todo: top-down: image size 5: Got 100% difference.
+colorconv.c:522: Test marked todo: Not expecting call to IMemAllocator::GetBuffer.
+colorconv.c:299: Test marked todo: Unexpected call to IMediaSample::SetTime.
+colorconv.c:299: Test marked todo: Unexpected call to IMediaSample::SetTime.
+colorconv.c:2644: Test marked todo: Expected allocator to have been decommitted twice
+055c:colorconv: 5447 tests executed (113 marked as todo, 0 as flaky, 0 failures), 0 skipped.

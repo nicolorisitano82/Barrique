@@ -1,0 +1,165 @@
+
+(wine:61445): GStreamer-Video-CRITICAL **: 15:08:12.324: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:961: Test marked todo: test.mp4: Got subtype {3231564e-0000-0010-8000-00aa00389b71}.
+mfplat.c:969: Test marked todo: test.mp4: Unexpected hr 0.
+mfplat.c:1021: Test marked todo: test.mp4: Got stride 160.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1047: Line has been silenced after 42 occurrences
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1068: Test marked todo: test.mp4: Unexpected stream index 0.
+mfplat.c:1099: Test marked todo: test.mp4: Unexpected stream index 1.
+mfplat.c:1120: Test marked todo: test.mp4: Unexpected stream index 1.
+
+(wine:61445): GStreamer-Video-CRITICAL **: 15:08:12.380: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+mfplat.c:2747: Test marked todo: vp 0 adv 0: Unexpected hr 0.
+mfplat.c:2987: Test marked todo: vp 0 adv 0: Unexpected hr 0xc00d5212.
+mfplat.c:3086: Test marked todo: vp 0 adv 0: "MF_MT_AVG_BIT_ERROR_RATE" missing, hr 0xc00d36e6
+mfplat.c:3086: Test marked todo: vp 0 adv 0: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:3115: Test marked todo: vp 0 adv 0: "MF_MT_AVG_BIT_ERROR_RATE" missing, hr 0xc00d36e6
+mfplat.c:3115: Test marked todo: vp 0 adv 0: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:3145: Test marked todo: vp 0 adv 0: "MF_MT_AVG_BIT_ERROR_RATE" missing, hr 0xc00d36e6
+mfplat.c:3145: Test marked todo: vp 0 adv 0: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:2747: Test marked todo: vp 1 adv 0: Unexpected hr 0.
+mfplat.c:2757: Test marked todo: vp 1 adv 0: Unexpected hr 0.
+mfplat.c:2846: Test marked todo: vp 1 adv 0: "MF_MT_ALL_SAMPLES_INDEPENDENT" missing, hr 0xc00d36e6
+mfplat.c:2846: Test marked todo: vp 1 adv 0: "MF_MT_DEFAULT_STRIDE" missing, hr 0xc00d36e6
+mfplat.c:2846: Test marked todo: vp 1 adv 0: "MF_MT_INTERLACE_MODE" missing, hr 0xc00d36e6
+mfplat.c:2846: Test marked todo: vp 1 adv 0: "MF_MT_SAMPLE_SIZE" missing, hr 0xc00d36e6
+mfplat.c:2882: Test marked todo: vp 1 adv 0: Unexpected hr 0.
+mfplat.c:3086: Test marked todo: vp 1 adv 0: "MF_MT_AVG_BIT_ERROR_RATE" missing, hr 0xc00d36e6
+mfplat.c:3086: Test marked todo: vp 1 adv 0: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:3115: Test marked todo: vp 1 adv 0: "MF_MT_AVG_BIT_ERROR_RATE" missing, hr 0xc00d36e6
+mfplat.c:3115: Test marked todo: vp 1 adv 0: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:3145: Test marked todo: vp 1 adv 0: "MF_MT_AVG_BIT_ERROR_RATE" missing, hr 0xc00d36e6
+mfplat.c:3145: Test marked todo: vp 1 adv 0: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:2747: Test marked todo: vp 0 adv 1: Unexpected hr 0.
+mfplat.c:2770: Test marked todo: vp 0 adv 1: "MF_MT_ALL_SAMPLES_INDEPENDENT" missing, hr 0xc00d36e6
+mfplat.c:2770: Test marked todo: vp 0 adv 1: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:2770: Test marked todo: vp 0 adv 1: "MF_MT_INTERLACE_MODE" missing, hr 0xc00d36e6
+mfplat.c:2844: Test marked todo: vp 0 adv 1: "MF_MT_ALL_SAMPLES_INDEPENDENT" missing, hr 0xc00d36e6
+mfplat.c:2844: Test marked todo: vp 0 adv 1: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:2844: Test marked todo: vp 0 adv 1: "MF_MT_INTERLACE_MODE" missing, hr 0xc00d36e6
+mfplat.c:2889: Test marked todo: vp 0 adv 1: "MF_MT_ALL_SAMPLES_INDEPENDENT" missing, hr 0xc00d36e6
+mfplat.c:2889: Test marked todo: vp 0 adv 1: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:2889: Test marked todo: vp 0 adv 1: "MF_MT_INTERLACE_MODE" missing, hr 0xc00d36e6
+mfplat.c:2993: Test marked todo: vp 0 adv 1: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:2993: Test marked todo: vp 0 adv 1: "MF_MT_INTERLACE_MODE" mismatch, type 19, value 7
+mfplat.c:3086: Test marked todo: vp 0 adv 1: "MF_MT_AVG_BIT_ERROR_RATE" missing, hr 0xc00d36e6
+mfplat.c:3086: Test marked todo: vp 0 adv 1: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:3115: Test marked todo: vp 0 adv 1: "MF_MT_AVG_BIT_ERROR_RATE" missing, hr 0xc00d36e6
+mfplat.c:3115: Test marked todo: vp 0 adv 1: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:3145: Test marked todo: vp 0 adv 1: "MF_MT_AVG_BIT_ERROR_RATE" missing, hr 0xc00d36e6
+mfplat.c:3145: Test marked todo: vp 0 adv 1: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:3749: Test marked todo: "MF_MT_ALL_SAMPLES_INDEPENDENT" missing, hr 0xc00d36e6
+mfplat.c:3749: Test marked todo: "MF_MT_FIXED_SIZE_SAMPLES" missing, hr 0xc00d36e6
+mfplat.c:3749: Test marked todo: "MF_MT_DEFAULT_STRIDE" missing, hr 0xc00d36e6
+mfplat.c:3749: Test marked todo: "MF_MT_SAMPLE_SIZE" missing, hr 0xc00d36e6
+mfplat.c:3510: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3511: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3514: Test marked todo: Unexpected hr 0x80004002.
+mfplat.c:3510: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3511: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3514: Test marked todo: Unexpected hr 0x80004002.
+mfplat.c:3942: Test marked todo: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:3942: Test marked todo: "MF_MT_INTERLACE_MODE" missing, hr 0xc00d36e6
+mfplat.c:3955: Test marked todo: Unexpected hr 0.
+mfplat.c:3972: Test marked todo: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:3972: Test marked todo: "MF_MT_INTERLACE_MODE" missing, hr 0xc00d36e6
+mfplat.c:3510: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3511: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3514: Test marked todo: Unexpected hr 0x80004002.
+mfplat.c:3510: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3511: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3514: Test marked todo: Unexpected hr 0x80004002.
+mfplat.c:3510: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3511: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3514: Test marked todo: Unexpected hr 0x80004002.
+mfplat.c:4290: Test marked todo: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:4290: Test marked todo: "MF_MT_INTERLACE_MODE" missing, hr 0xc00d36e6
+mfplat.c:4303: Test marked todo: "MF_MT_COMPRESSED" missing, hr 0xc00d36e6
+mfplat.c:4303: Test marked todo: "MF_MT_INTERLACE_MODE" missing, hr 0xc00d36e6
+mfplat.c:3510: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3511: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3514: Test marked todo: Unexpected hr 0x80004002.
+mfplat.c:3510: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3511: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3514: Test marked todo: Unexpected hr 0x80004002.
+mfplat.c:3510: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3511: Test marked todo: Got hr 0x80004002, expected 0.
+mfplat.c:3514: Test marked todo: Unexpected hr 0x80004002.
+mfplat.c:2246: Test marked todo: GetServiceForStream returned 0x80004002.
+mfplat.c:2306: Test marked todo: GetServiceForStream returned 0.
+mfplat.c:2308: Test marked todo: Unexpected sink 000000700D2BB860.
+mfplat.c:2480: Test marked todo: Finalize returned 0x80004001.
+mfplat.c:2483: Test marked todo: Finalize returned 0x80004001.
+mfplat.c:2488: Test marked todo: CreateFileW failed.
+mfplat.c:1341: Test marked todo: h264 aspect ratio: output desc 0: "MF_MT_PIXEL_ASPECT_RATIO" present, hr 0
+mfplat.c:1341: Test marked todo: h264 aspect ratio: output desc 1: "MF_MT_PIXEL_ASPECT_RATIO" present, hr 0
+mfplat.c:1341: Test marked todo: h264 aspect ratio: output desc 2: "MF_MT_PIXEL_ASPECT_RATIO" present, hr 0
+mfplat.c:1341: Test marked todo: h264 aspect ratio: output desc 3: "MF_MT_PIXEL_ASPECT_RATIO" present, hr 0
+039c:mfplat: Silenced 4 todos, 0 skips and 0 traces.
+039c:mfplat: 3219 tests executed (158 marked as todo, 0 as flaky, 0 failures), 0 skipped.

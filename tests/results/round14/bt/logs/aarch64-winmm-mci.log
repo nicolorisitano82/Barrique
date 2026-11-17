@@ -1,0 +1,49 @@
+mci.c:235: Test marked todo: open notify: MCIERR_EXTENSION_NOT_FOUND
+mci.c:238: Test marked todo: open new: MCIERR_MISSING_DEVICE_NAME
+mci.c:241: Test marked todo: open new: MCIERR_UNSUPPORTED_FUNCTION
+mci.c:245: Test marked todo: status wait wait: MCIERR_UNSUPPORTED_FUNCTION
+mci.c:248: Test marked todo: status 2xlength: MCIERR_UNSUPPORTED_FUNCTION
+mci.c:251: Test marked todo: status length+position: 0=NOERROR
+mci.c:255: Test marked todo: status length+position: 0=NOERROR
+mci.c:264: Test marked todo: status avivideo nokeyword: MCIERR_MISSING_PARAMETER
+mci.c:274: Test marked todo: status 2(position) track 3: MCIERR_UNSUPPORTED_FUNCTION
+mci.c:277: Test marked todo: status 0x4: MCIERR_UNRECOGNIZED_COMMAND
+mci.c:284: Test marked todo: status 4(mode) notify: MCIERR_UNRECOGNIZED_COMMAND
+mci.c:289: Test marked todo: set milliseconds: 0=NOERROR
+mci.c:292: Test marked todo: set milliseconds ms: 0=NOERROR
+mci.c:295: Test marked todo: capability can (space) save: MCIERR_UNRECOGNIZED_COMMAND
+mci.c:298: Test marked todo: status nsa: MCIERR_UNRECOGNIZED_COMMAND
+mci.c:322: Test marked todo: open all: MCIERR_EXTENSION_NOT_FOUND
+mci.c:343: Test marked todo: pause all: MCIERR_CANNOT_USE_ALL
+mci.c:422: [MCI] with 7 drivers
+mci.c:458: locale-dependent time format: milliseconds (ms)
+mci.c:688: Test marked todo: mci info new file returned 0=NOERROR
+mci.c:692: Test marked todo: status x length initial: MCIERR_UNSUPPORTED_FUNCTION
+mci.c:723: Test marked todo: mci set bitspersample 4 returned 0=NOERROR
+mci.c:765: Test marked todo: mci status position gave 2360, expected 2000, some tests will fail
+mci.c:774: Test marked todo: recorded 75520 bytes, expected 64000
+mci.c:784: Test marked todo: recorded 37760 samples, expected 32000
+mci.c:798: Test marked todo: Save must not rename the original file; DeleteFileA returned 2
+mci.c:810: Test marked todo: mci delete returned MCIERR_UNRECOGNIZED_COMMAND
+mci.c:814: Test marked todo: mci status length after delete gave 2360, expected 600
+mci.c:845: Test marked todo: mci status length gave 2360, expected 2000, some tests will fail.
+mci.c:855: Test marked todo: got 0001 instead of MCI_NOTIFY_xyz 0000 from command cue immediate
+mci.c:860: Test marked todo: mci status mode: stopped, expected (pseudo)paused
+mci.c:870: Waiting for delayed notification from cue aborted by play
+mci.c:870: Test marked todo: Expect message 0004 from cue aborted by play
+mci.c:877: Waiting for delayed notification from play from 0 to 0
+mci.c:877: Test marked todo: Expect message 0001 from play from 0 to 0
+mci.c:947: Waiting for delayed notification from play to 250 wait notify
+mci.c:947: Test marked todo: Expect message 0001 from play to 250 wait notify
+mci.c:1007: position after Sleep: 1000ms
+mci.c:1012: Test marked todo: 1000ms is not in the expected 350-600ms range
+mci.c:1033: position while paused: 1000ms
+mci.c:1044: Test marked todo: Expected full pathname from info file: tempfile.wav
+mci.c:1055: position once stopped: 1000ms
+mci.c:1069: Test marked todo: mci status position: 2360
+mci.c:1130: Test marked todo: mci pause (space) wait returned MCIERR_EXTENSION_NOT_FOUND
+mci.c:1141: position after resume: 667ms
+mci.c:1187: Test marked todo: mci auto-open notify returned MCIERR_FILE_NOT_FOUND
+mci.c:1259: Test marked todo: mci status auto-open notify returned 0=NOERROR
+mci.c:1261: Wine style MCI auto-close upon notification
+03d4:mci: 794 tests executed (38 marked as todo, 0 as flaky, 0 failures), 0 skipped.

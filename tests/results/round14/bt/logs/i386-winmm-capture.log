@@ -1,0 +1,26 @@
+capture.c:658: found 3 WaveIn devices
+capture.c:399:   0: "Microphone (Microfono MacBook P" ({3660B88F-7315-4309-8286-D3A128496386}) 256.1 (255:255)
+capture.c:402:      channels=2 formats=fffff
+capture.c:470: waveInOpen(0): WAVE_FORMAT_MULAW not supported
+capture.c:489: waveInOpen(0): WAVE_FORMAT_ADPCM not supported
+capture.c:399:   1: "Microphone (BlackHole 2ch)" ({7AEB6826-D0D1-414C-AF02-AFF95DFA5916}) 256.1 (255:255)
+capture.c:402:      channels=2 formats=fffff
+capture.c:470: waveInOpen(1): WAVE_FORMAT_MULAW not supported
+capture.c:489: waveInOpen(1): WAVE_FORMAT_ADPCM not supported
+capture.c:399:   2: "Microphone (Microfono di iPhone" ({A37A6761-0568-41C0-A4E8-6B59BE3ADA31}) 256.1 (255:255)
+capture.c:402:      channels=2 formats=fffff
+capture.c:141: Test failed: waveInOpen(2): format=8000x 8x1 flags=50008(CALLBACK_EVENT|WAVE_FORMAT_DIRECT) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x 8x1 flags=50004(CALLBACK_EVENT|WAVE_MAPPED) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x 8x2 flags=50000(CALLBACK_EVENT) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x 8x2 flags=50008(CALLBACK_EVENT|WAVE_FORMAT_DIRECT) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x 8x2 flags=50004(CALLBACK_EVENT|WAVE_MAPPED) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x16x1 flags=50000(CALLBACK_EVENT) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x16x1 flags=50008(CALLBACK_EVENT|WAVE_FORMAT_DIRECT) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x16x1 flags=50004(CALLBACK_EVENT|WAVE_MAPPED) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x16x2 flags=50000(CALLBACK_EVENT) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x16x2 flags=50008(CALLBACK_EVENT|WAVE_FORMAT_DIRECT) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=8000x16x2 flags=50004(CALLBACK_EVENT|WAVE_MAPPED) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=11025x 8x1 flags=50000(CALLBACK_EVENT) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=11025x 8x1 flags=50008(CALLBACK_EVENT|WAVE_FORMAT_DIRECT) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=11025x 8x1 flags=50004(CALLBACK_EVENT|WAVE_MAPPED) rc=MMSYSERR_ERROR(Errore esterno non definito.)
+capture.c:141: Test failed: waveInOpen(2): format=11025x 8x2 flags=50000(CALLBACK_EVENT) rc=MMSYSERR_ERROR(Errore esterno non definito.)

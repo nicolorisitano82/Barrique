@@ -1,0 +1,5 @@
+13:26:19 afplay start
+13:27:19 afplay end
+13:27:22 wine wasapi start
+13:28:24 wine wasapi end rc=0 wasapi   device period 10.67 ms (minimum 0.31 ms), buffer 1536 frames wasapi   open=00000000 periods=5576 misses=0 late=1 max_gap=22.1ms at 39079ms RESULT: ok 
+BT2 DONE

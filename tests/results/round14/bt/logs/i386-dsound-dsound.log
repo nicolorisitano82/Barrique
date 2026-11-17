@@ -1,0 +1,52 @@
+dsound.c:208: Testing IDirectSound
+dsound.c:2004: *** Testing Primary Sound Driver -  ***
+dsound.c:2004: *** Testing Speakers (Altoparlanti MacBook Pro) - {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C} ***
+dsound.c:1215: testing duplicated buffer without notifications.
+dsound.c:1232: testing duplicated buffer with a notification.
+dsound.c:1243: testing original buffer with a notification.
+dsound.c:1912: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1912: Test marked todo: got buf 00A615BC expected 00000000
+dsound.c:1920: Test marked todo: got buf DEADBEEF expected 00000000
+dsound.c:1928: Test marked todo: got buf DEADBEEF expected 00000000
+dsound.c:1944: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1944: Test marked todo: got buf 00A5B7FC expected 00000000
+dsound.c:1944: Test marked todo: got bufsize 48000 expected 0
+dsound.c:1946: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 0, 00000000, 0) returned 00000000
+dsound.c:1947: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 0, 00000000, 0) returned 00000000
+dsound.c:1951: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1951: Test marked todo: got buf 00A615BC expected 00000000
+dsound.c:1951: Test marked todo: got bufsize 24000 expected 0
+dsound.c:1951: Test marked todo: got buf2 00A5B7FC expected 00000000
+dsound.c:1951: Test marked todo: got bufsize2 24000 expected 0
+dsound.c:1958: Test marked todo: IDirectSoundBuffer_Unlock(00A615BC, 48000, 00000000, 0) returned 80070057
+dsound.c:1959: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 3735928559, 00000000, 0) returned 80070057
+dsound.c:1961: Test marked todo: IDirectSoundBuffer_Unlock(00A615BC, 24000, 00000000, 0) returned 00000000
+dsound.c:1962: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 24000, 00000000, 0) returned 00000000
+dsound.c:1982: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 0, 00A5B7FC, 0) returned 00000000
+dsound.c:2004: *** Testing Speakers (BlackHole 2ch) - {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406} ***
+dsound.c:1215: testing duplicated buffer without notifications.
+dsound.c:1232: testing duplicated buffer with a notification.
+dsound.c:1243: testing original buffer with a notification.
+dsound.c:1912: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1912: Test marked todo: got buf 00A615BC expected 00000000
+dsound.c:1920: Test marked todo: got buf DEADBEEF expected 00000000
+dsound.c:1928: Test marked todo: got buf DEADBEEF expected 00000000
+dsound.c:1944: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1944: Test marked todo: got buf 00A5B7FC expected 00000000
+dsound.c:1944: Test marked todo: got bufsize 48000 expected 0
+dsound.c:1946: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 0, 00000000, 0) returned 00000000
+dsound.c:1947: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 0, 00000000, 0) returned 00000000
+dsound.c:1951: Test marked todo: IDirectSoundBuffer_Lock() returned 00000000, expected 80070057
+dsound.c:1951: Test marked todo: got buf 00A615BC expected 00000000
+dsound.c:1951: Test marked todo: got bufsize 24000 expected 0
+dsound.c:1951: Test marked todo: got buf2 00A5B7FC expected 00000000
+dsound.c:1951: Test marked todo: got bufsize2 24000 expected 0
+dsound.c:1958: Test marked todo: IDirectSoundBuffer_Unlock(00A615BC, 48000, 00000000, 0) returned 80070057
+dsound.c:1959: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 3735928559, 00000000, 0) returned 80070057
+dsound.c:1961: Test marked todo: IDirectSoundBuffer_Unlock(00A615BC, 24000, 00000000, 0) returned 00000000
+dsound.c:1962: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 24000, 00000000, 0) returned 00000000
+dsound.c:1982: Test marked todo: IDirectSoundBuffer_Unlock(00A5B7FC, 0, 00A5B7FC, 0) returned 00000000
+dsound.c:2117: dwMaxHwMixingAllBuffers: 1
+dsound.c:2118: dwMaxHwMixingStaticBuffers: 1
+dsound.c:2119: dwMaxHwMixingStreamingBuffers: 1
+0464:dsound: 7108 tests executed (38 marked as todo, 0 as flaky, 0 failures), 0 skipped.

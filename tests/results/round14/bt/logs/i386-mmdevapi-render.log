@@ -1,0 +1,214 @@
+render.c:221: Returned periods: 10.6667 ms 0.3125 ms
+render.c:233: pwfx: 00BB0C50
+render.c:234: Tag: fffe
+render.c:235: bits: 32
+render.c:236: chan: 2
+render.c:237: rate: 48000
+render.c:238: align: 8
+render.c:239: extra: 22
+render.c:244: Res: 32
+render.c:245: Mask: 3
+render.c:246: Alg: FLOAT
+render.c:399: Initialize(duration=0) GetBufferSize is 1536
+render.c:469: Returned latency: 26.5000 ms
+render.c:1117: Test marked todo: IAudioClient_GetService(IID_IAudioClockAdjustment) returned 00000000
+render.c:1527: Testing shared mode
+render.c:1559: Latency: 26.5000 ms
+render.c:1579: BufferSize 24000 estimated fragment 512 x 47 = 24064
+render.c:1604: Clock Frequency 384000
+render.c:1633: data at 00DB0000
+render.c:1684: padding 14272 past sleep #2
+render.c:1703: padding 13760 position 81920 past stop #2
+render.c:1737: data at 00DB0000
+render.c:1761: position 40960 past 100ms sleep #3
+render.c:1767: Tests skipped: Rerun with WINETEST_DEBUG=2 for GetPosition tests.
+render.c:1781: padding 18880 position 40960 past stop #3
+render.c:1810: data at 00DB0000 for prefill 22500
+render.c:1842: hpctime 355 after 350ms
+render.c:1861: hpctime 461 pcpos 461
+render.c:1866: padding 484 position 176128/22016 slept 450ms iteration 0
+render.c:1896: data at 00DE0000
+render.c:1861: hpctime 566 pcpos 567
+render.c:1866: padding 17864 position 217088/27136 slept 550ms iteration 1
+render.c:1901: data at 00DE0000 (small 6136)
+render.c:1861: hpctime 676 pcpos 677
+render.c:1866: padding 18368 position 262144/32768 slept 650ms iteration 2
+render.c:1901: data at 00DB6200 (small 5632)
+render.c:1861: hpctime 785 pcpos 785
+render.c:1866: padding 18880 position 303104/37888 slept 750ms iteration 3
+render.c:1901: data at 00DC1200 (small 5120)
+render.c:1861: hpctime 891 pcpos 892
+render.c:1866: padding 18880 position 344064/43008 slept 850ms iteration 4
+render.c:1901: data at 00DCB200 (small 5120)
+render.c:1861: hpctime 996 pcpos 996
+render.c:1866: padding 19392 position 380928/47616 slept 950ms iteration 5
+render.c:1901: data at 00DD5200 (small 4608)
+render.c:1861: hpctime 1102 pcpos 1103
+render.c:1866: padding 18880 position 421888/52736 slept 1050ms iteration 6
+render.c:1901: data at 00DE0000 (small 5120)
+render.c:1861: hpctime 1209 pcpos 1210
+render.c:1866: padding 18880 position 462848/57856 slept 1150ms iteration 7
+render.c:1901: data at 00DB9400 (small 5120)
+render.c:1861: hpctime 1316 pcpos 1317
+render.c:1866: padding 18368 position 507904/63488 slept 1250ms iteration 8
+render.c:1901: data at 00DC3400 (small 5632)
+render.c:1917: position 507904
+render.c:1926: position 699904 past underrun, 0 padding left, 87488 frames written
+render.c:1948: hpctime 2323 after underrun
+render.c:1539: Testing exclusive mode at 48000
+render.c:1559: Latency: 30.8333 ms
+render.c:1579: BufferSize 23760 estimated fragment 720 x 33 = 23760
+render.c:1604: Clock Frequency 48000
+render.c:1633: data at 00DB0000
+render.c:1684: padding 14400 past sleep #2
+render.c:1703: padding 14400 position 9360 past stop #2
+render.c:1737: data at 00DB0000
+render.c:1761: position 5040 past 100ms sleep #3
+render.c:1767: Tests skipped: Rerun with WINETEST_DEBUG=2 for GetPosition tests.
+render.c:1781: padding 18720 position 5040 past stop #3
+render.c:1810: data at 00DB0000 for prefill 22500
+render.c:1842: hpctime 354 after 350ms
+render.c:1861: hpctime 456 pcpos 457
+render.c:1866: padding 900 position 21600/21600 slept 450ms iteration 0
+render.c:1896: data at 00DD0000
+render.c:1861: hpctime 565 pcpos 565
+render.c:1866: padding 17640 position 27360/27360 slept 550ms iteration 1
+render.c:1901: data at 00DD0000 (small 6120)
+render.c:1861: hpctime 674 pcpos 674
+render.c:1866: padding 18720 position 32400/32400 slept 650ms iteration 2
+render.c:1901: data at 00DB3840 (small 5040)
+render.c:1861: hpctime 786 pcpos 786
+render.c:1866: padding 18720 position 37440/37440 slept 750ms iteration 3
+render.c:1901: data at 00DB8700 (small 5040)
+render.c:1861: hpctime 893 pcpos 893
+render.c:1866: padding 18000 position 43200/43200 slept 850ms iteration 4
+render.c:1901: data at 00DBD5C0 (small 5760)
+render.c:1861: hpctime 997 pcpos 997
+render.c:1866: padding 19440 position 47520/47520 slept 950ms iteration 5
+render.c:1901: data at 00DC2FC0 (small 4320)
+render.c:1861: hpctime 1145 pcpos 1146
+render.c:1866: padding 16560 position 54720/54720 slept 1050ms iteration 6
+render.c:1901: data at 00DB0000 (small 7200)
+render.c:1861: hpctime 1248 pcpos 1248
+render.c:1866: padding 18720 position 59760/59760 slept 1150ms iteration 7
+render.c:1901: data at 00DB7080 (small 5040)
+render.c:1861: hpctime 1353 pcpos 1353
+render.c:1866: padding 18720 position 64800/64800 slept 1250ms iteration 8
+render.c:1901: data at 00DBBF40 (small 5040)
+render.c:1917: position 64800
+render.c:1926: position 88560 past underrun, 0 padding left, 88560 frames written
+render.c:1948: hpctime 2361 after underrun
+render.c:2964: Should play 1500ms continuous tone with fragment size 720.
+render.c:3019: Released 72000=100x720 -720 frames at 48000 worth 1485ms in 1499ms
+render.c:2964: Should play 1500ms continuous tone with fragment size 720.
+render.c:3019: Released 71280=99x720 -1440 frames at 48000 worth 1455ms in 1488ms
+render.c:2964: Should play 1500ms continuous tone with fragment size 720.
+render.c:3019: Released 72000=100x720 -720 frames at 48000 worth 1485ms in 1492ms
+render.c:3122: got range: [-100.000000,0.000000]/1.000000
+render.c:3186: Test marked todo: SetSampleRate failed: 80004001
+render.c:3195: Test marked todo: SetSampleRate failed: 80004001
+render.c:972: exclusive: test 0: PX32(32)x48000x2:3: Initialize() succeeded
+render.c:972: exclusive: test 1: P32x48000x2: Initialize() succeeded
+render.c:951: exclusive: test 4: PX32(32)x48000x1:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 4: PX32(32)x48000x1:0: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 4: PX32(32)x48000x1:0: Initialize(RATEADJUST) returns 88890008
+render.c:972: exclusive: test 5: P32x48000x1: Initialize() succeeded
+render.c:972: exclusive: test 6: PX32(32)x48000x1:4: Initialize() succeeded
+render.c:972: exclusive: test 7: PX32(32)x48000x1:3: Initialize() succeeded
+render.c:972: exclusive: test 8: PX32(32)x48000x1:10: Initialize() succeeded
+render.c:972: exclusive: test 9: PX32(32)x48000x1:10010: Initialize() succeeded
+render.c:972: exclusive: test 10: PX32(32)x48000x1:63f: Initialize() succeeded
+render.c:972: exclusive: test 11: PX32(32)x48000x1:80000004: Initialize() succeeded
+render.c:972: exclusive: test 12: PX32(32)x48000x1:80000000: Initialize() succeeded
+render.c:951: exclusive: test 13: PX32(32)x48000x1:7ffc0004: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 13: PX32(32)x48000x1:7ffc0004: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 13: PX32(32)x48000x1:7ffc0004: Initialize(RATEADJUST) returns 88890008
+render.c:951: exclusive: test 14: PX32(32)x48000x1:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 14: PX32(32)x48000x1:7ffc0000: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 14: PX32(32)x48000x1:7ffc0000: Initialize(RATEADJUST) returns 88890008
+render.c:951: exclusive: test 15: PX32(32)x48000x2:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 15: PX32(32)x48000x2:0: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 15: PX32(32)x48000x2:0: Initialize(RATEADJUST) returns 88890008
+render.c:972: exclusive: test 16: P32x48000x2: Initialize() succeeded
+render.c:972: exclusive: test 17: PX32(32)x48000x2:4: Initialize() succeeded
+render.c:972: exclusive: test 18: PX32(32)x48000x2:3: Initialize() succeeded
+render.c:972: exclusive: test 19: PX32(32)x48000x2:10: Initialize() succeeded
+render.c:972: exclusive: test 20: PX32(32)x48000x2:10010: Initialize() succeeded
+render.c:972: exclusive: test 21: PX32(32)x48000x2:63f: Initialize() succeeded
+render.c:972: exclusive: test 22: PX32(32)x48000x2:80000004: Initialize() succeeded
+render.c:972: exclusive: test 23: PX32(32)x48000x2:80000003: Initialize() succeeded
+render.c:972: exclusive: test 24: PX32(32)x48000x2:80000000: Initialize() succeeded
+render.c:951: exclusive: test 25: PX32(32)x48000x2:7ffc0003: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 25: PX32(32)x48000x2:7ffc0003: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 25: PX32(32)x48000x2:7ffc0003: Initialize(RATEADJUST) returns 88890008
+render.c:951: exclusive: test 26: PX32(32)x48000x2:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 26: PX32(32)x48000x2:7ffc0000: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 26: PX32(32)x48000x2:7ffc0000: Initialize(RATEADJUST) returns 88890008
+render.c:951: exclusive: test 27: PX32(32)x48000x4:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 27: PX32(32)x48000x4:0: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 27: PX32(32)x48000x4:0: Initialize(RATEADJUST) returns 88890008
+render.c:972: exclusive: test 29: PX32(32)x48000x4:33: Initialize() succeeded
+render.c:972: exclusive: test 30: PX32(32)x48000x4:80000033: Initialize() succeeded
+render.c:972: exclusive: test 31: PX32(32)x48000x4:80000000: Initialize() succeeded
+render.c:951: exclusive: test 32: PX32(32)x48000x4:7ffc0033: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 32: PX32(32)x48000x4:7ffc0033: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 32: PX32(32)x48000x4:7ffc0033: Initialize(RATEADJUST) returns 88890008
+render.c:951: exclusive: test 33: PX32(32)x48000x4:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 33: PX32(32)x48000x4:7ffc0000: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 33: PX32(32)x48000x4:7ffc0000: Initialize(RATEADJUST) returns 88890008
+render.c:951: exclusive: test 34: PX32(32)x48000x4:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 34: PX32(32)x48000x4:0: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 34: PX32(32)x48000x4:0: Initialize(RATEADJUST) returns 88890008
+render.c:972: exclusive: test 35: PX32(32)x48000x4:3f: Initialize() succeeded
+render.c:972: exclusive: test 36: PX32(32)x48000x4:8000003f: Initialize() succeeded
+render.c:972: exclusive: test 37: PX32(32)x48000x4:80000000: Initialize() succeeded
+render.c:951: exclusive: test 38: PX32(32)x48000x4:7ffc003f: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 38: PX32(32)x48000x4:7ffc003f: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 38: PX32(32)x48000x4:7ffc003f: Initialize(RATEADJUST) returns 88890008
+render.c:951: exclusive: test 39: PX32(32)x48000x4:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 39: PX32(32)x48000x4:7ffc0000: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 39: PX32(32)x48000x4:7ffc0000: Initialize(RATEADJUST) returns 88890008
+render.c:951: exclusive: test 40: PX32(32)x48000x8:0: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 40: PX32(32)x48000x8:0: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 40: PX32(32)x48000x8:0: Initialize(RATEADJUST) returns 88890008
+render.c:972: exclusive: test 42: PX32(32)x48000x8:4: Initialize() succeeded
+render.c:972: exclusive: test 43: PX32(32)x48000x8:3: Initialize() succeeded
+render.c:972: exclusive: test 44: PX32(32)x48000x8:63f: Initialize() succeeded
+render.c:972: exclusive: test 45: PX32(32)x48000x8:43f: Initialize() succeeded
+render.c:972: exclusive: test 46: PX32(32)x48000x8:4bf: Initialize() succeeded
+render.c:972: exclusive: test 47: PX32(32)x48000x8:8000063f: Initialize() succeeded
+render.c:972: exclusive: test 48: PX32(32)x48000x8:80000000: Initialize() succeeded
+render.c:951: exclusive: test 49: PX32(32)x48000x8:7ffc063f: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 49: PX32(32)x48000x8:7ffc063f: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 49: PX32(32)x48000x8:7ffc063f: Initialize(RATEADJUST) returns 88890008
+render.c:951: exclusive: test 50: PX32(32)x48000x8:7ffc0000: Initialize() returns 88890008 while IsFormatSupported() returns 00000000
+render.c:966: Test marked todo: exclusive: test 50: PX32(32)x48000x8:7ffc0000: Initialize() returns 88890008
+render.c:998: Test marked todo: exclusive: test 50: PX32(32)x48000x8:7ffc0000: Initialize(RATEADJUST) returns 88890008
+render.c:972: exclusive: test 61: PX16(16)x48000x2:3: Initialize() succeeded
+render.c:972: exclusive: test 62: P16x48000x2: Initialize() succeeded
+render.c:972: exclusive: test 66: PX24(24)x48000x2:3: Initialize() succeeded
+render.c:972: exclusive: test 67: P24x48000x2: Initialize() succeeded
+render.c:972: exclusive: test 74: PX32(24)x48000x2:3: Initialize() succeeded
+render.c:972: exclusive: test 77: PX32(32)x48000x2:3: Initialize() succeeded
+render.c:972: exclusive: test 78: P32x48000x2: Initialize() succeeded
+render.c:972: exclusive: test 99: FX32(32)x48000x2:3: Initialize() succeeded
+render.c:972: exclusive: test 100: F32x48000x2: Initialize() succeeded
+render.c:972: exclusive: test 138: PX32(32)x8000x2:3: Initialize() succeeded
+render.c:972: Line has been silenced after 42 occurrences
+render.c:1016: Test marked todo: shared: test 30: PX32(32)x48000x4:80000033: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 31: PX32(32)x48000x4:80000000: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 32: PX32(32)x48000x4:7ffc0033: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 33: PX32(32)x48000x4:7ffc0000: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 35: PX32(32)x48000x4:3f: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 36: PX32(32)x48000x4:8000003f: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 37: PX32(32)x48000x4:80000000: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 38: PX32(32)x48000x4:7ffc003f: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 39: PX32(32)x48000x4:7ffc0000: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 42: PX32(32)x48000x8:4: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 45: PX32(32)x48000x8:43f: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 47: PX32(32)x48000x8:8000063f: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 48: PX32(32)x48000x8:80000000: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 49: PX32(32)x48000x8:7ffc063f: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+render.c:1016: Test marked todo: shared: test 50: PX32(32)x48000x8:7ffc0000: Initialize(AUTOCONVERTPCM) returns 80004005, expected 00000000
+0184:render: Silenced 0 todos, 0 skips and 44 traces.
+0184:render: 5218 tests executed (48 marked as todo, 0 as flaky, 0 failures), 2 skipped.

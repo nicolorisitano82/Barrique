@@ -1,0 +1,109 @@
+mfplay aarch64 h264-444.mp4 rc=0 video frames 59/50 max dY 0.39 FAIL RESULT: FAILED  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay aarch64 h264-aac.mp4 rc=0 video frames 50/50 max dY 0.00 ok audio frames 88201/88200 rate 44100/44100 ch 1/1 rms 2884/2884 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" "libav AAC (Advanced Audio Coding) decoder" 
+mfplay aarch64 hevc.mp4 rc=0 video frames 50/50 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay aarch64 mp3.mp3 rc=0 audio frames 89856/88200 rate 44100/44100 ch 1/1 rms 2726/2751 ok RESULT: ok  dec: "libav MP3 (MPEG audio layer 3) decoder" 
+mfplay aarch64 mpeg2.mpg rc=0 video frames 0/50 max dY 0.00 FAIL audio frames 88704/88704 rate 44100/44100 ch 1/1 rms 2887/2887 ok RESULT: FAILED  dec: 
+mfplay aarch64 pcm.wav rc=0 audio frames 88200/88200 rate 44100/44100 ch 1/1 rms 2896/2896 ok RESULT: ok  dec: 
+mfplay aarch64 vp9.webm rc=0 video frames 50/50 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay aarch64 wmv2-wma2.wmv rc=0 video frames 50/51 max dY 0.21 ok audio frames 90112/88064 rate 44100/44100 ch 1/1 rms 2865/2864 ok RESULT: ok  dec: "libav Windows Media Audio 2 decoder" "libav Windows Media Video 8 decoder" 
+mfplay aarch64 h264-1080p.mp4 rc=0 video frames 300/300 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay aarch64 hevc-1080p.mp4 rc=0 video frames 300/300 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay x86_64 h264-444.mp4 rc=0 video frames 60/50 max dY 0.44 FAIL RESULT: FAILED  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay x86_64 h264-aac.mp4 rc=0 video frames 50/50 max dY 0.00 ok audio frames 88201/88200 rate 44100/44100 ch 1/1 rms 2884/2884 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" "libav AAC (Advanced Audio Coding) decoder" 
+mfplay x86_64 hevc.mp4 rc=0 video frames 50/50 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay x86_64 mp3.mp3 rc=0 audio frames 89856/88200 rate 44100/44100 ch 1/1 rms 2726/2751 ok RESULT: ok  dec: "libav MP3 (MPEG audio layer 3) decoder" 
+mfplay x86_64 mpeg2.mpg rc=0 video frames 0/50 max dY 0.00 FAIL audio frames 88704/88704 rate 44100/44100 ch 1/1 rms 2887/2887 ok RESULT: FAILED  dec: 
+mfplay x86_64 pcm.wav rc=0 audio frames 88200/88200 rate 44100/44100 ch 1/1 rms 2896/2896 ok RESULT: ok  dec: 
+mfplay x86_64 vp9.webm rc=0 video frames 50/50 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay x86_64 wmv2-wma2.wmv rc=0 video frames 50/51 max dY 0.21 ok audio frames 90112/88064 rate 44100/44100 ch 1/1 rms 2865/2864 ok RESULT: ok  dec: "libav Windows Media Audio 2 decoder" "libav Windows Media Video 8 decoder" 
+mfplay x86_64 h264-1080p.mp4 rc=0 video frames 300/300 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay x86_64 hevc-1080p.mp4 rc=0 video frames 300/300 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay i686 h264-444.mp4 rc=0 video frames 50/50 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay i686 h264-aac.mp4 rc=0 video frames 50/50 max dY 0.00 ok audio frames 88201/88200 rate 44100/44100 ch 1/1 rms 2884/2884 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" "libav AAC (Advanced Audio Coding) decoder" 
+mfplay i686 hevc.mp4 rc=0 video frames 50/50 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay i686 mp3.mp3 rc=0 audio frames 89856/88200 rate 44100/44100 ch 1/1 rms 2726/2751 ok RESULT: ok  dec: "libav MP3 (MPEG audio layer 3) decoder" 
+mfplay i686 mpeg2.mpg rc=0 video frames 0/50 max dY 0.00 FAIL audio frames 88704/88704 rate 44100/44100 ch 1/1 rms 2887/2887 ok RESULT: FAILED  dec: 
+mfplay i686 pcm.wav rc=0 audio frames 88200/88200 rate 44100/44100 ch 1/1 rms 2896/2896 ok RESULT: ok  dec: 
+mfplay i686 vp9.webm rc=0 video frames 50/50 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay i686 wmv2-wma2.wmv rc=0 video frames 50/51 max dY 0.21 ok audio frames 90112/88064 rate 44100/44100 ch 1/1 rms 2865/2864 ok RESULT: ok  dec: "libav Windows Media Audio 2 decoder" "libav Windows Media Video 8 decoder" 
+mfplay i686 h264-1080p.mp4 rc=0 video frames 300/300 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+mfplay i686 hevc-1080p.mp4 rc=0 video frames 300/300 max dY 0.00 ok RESULT: ok  dec: "Apple VideoToolbox decoder (hardware only)" 
+aarch64 mf mf: fail (10205 tests, 1 failures, 44s)
+aarch64 mf topology: ok (8216 tests, 0 failures, 3s)
+aarch64 mf transform: fail (86394 tests, 140 failures, 3s)
+aarch64 mfplat mfplat: ok (5709847 tests, 0 failures, 10s)
+aarch64 mfreadwrite mfplat: ok (3219 tests, 0 failures, 2s)
+aarch64 mfmediaengine mfmediaengine: ok (791 tests, 0 failures, 6s)
+aarch64 quartz acmwrapper: ok (157 tests, 0 failures, 1s)
+aarch64 quartz avidec: ok (968 tests, 0 failures, 0s)
+aarch64 quartz avisplit: ok (885 tests, 0 failures, 2s)
+aarch64 quartz colorconv: ok (5447 tests, 0 failures, 0s)
+aarch64 quartz dsoundrender: ok (727 tests, 0 failures, 6s)
+aarch64 quartz filesource: ok (3377 tests, 0 failures, 1s)
+aarch64 quartz filtergraph: ok (7746 tests, 0 failures, 13s)
+aarch64 quartz filtermapper: ok (273 tests, 0 failures, 1s)
+aarch64 quartz memallocator: ok (488 tests, 0 failures, 0s)
+aarch64 quartz mpegaudio: fail (463 tests, 10 failures, 1s)
+aarch64 quartz mpeglayer3: ok (417 tests, 0 failures, 0s)
+aarch64 quartz mpegsplit: ok (1094 tests, 0 failures, 1s)
+aarch64 quartz mpegvideo: fail (1907 tests, 7 failures, 1s)
+aarch64 quartz passthrough: ok (23 tests, 0 failures, 0s)
+aarch64 quartz systemclock: ok (85 tests, 0 failures, 2s)
+aarch64 quartz videorenderer: ok (2512 tests, 0 failures, 10s)
+aarch64 quartz vmr7: ok (2123 tests, 0 failures, 12s)
+aarch64 quartz vmr9: ok (3909 tests, 0 failures, 17s)
+aarch64 quartz waveparser: ok (320 tests, 0 failures, 0s)
+aarch64 wmvcore wmvcore: ok (36995 tests, 0 failures, 3s)
+x86_64 mf mf: fail (10178 tests, 1 failures, 43s)
+x86_64 mf topology: ok (8216 tests, 0 failures, 3s)
+x86_64 mf transform: fail (86515 tests, 147 failures, 3s)
+x86_64 mfplat mfplat: ok (5709847 tests, 0 failures, 11s)
+x86_64 mfreadwrite mfplat: ok (3219 tests, 0 failures, 2s)
+x86_64 mfmediaengine mfmediaengine: ok (791 tests, 0 failures, 5s)
+x86_64 quartz acmwrapper: ok (157 tests, 0 failures, 1s)
+x86_64 quartz avidec: ok (968 tests, 0 failures, 0s)
+x86_64 quartz avisplit: ok (885 tests, 0 failures, 2s)
+x86_64 quartz colorconv: ok (5447 tests, 0 failures, 0s)
+x86_64 quartz dsoundrender: ok (727 tests, 0 failures, 6s)
+x86_64 quartz filesource: ok (3377 tests, 0 failures, 1s)
+x86_64 quartz filtergraph: ok (7746 tests, 0 failures, 13s)
+x86_64 quartz filtermapper: ok (271 tests, 0 failures, 1s)
+x86_64 quartz memallocator: ok (488 tests, 0 failures, 0s)
+x86_64 quartz mpegaudio: fail (463 tests, 10 failures, 1s)
+x86_64 quartz mpeglayer3: ok (417 tests, 0 failures, 0s)
+x86_64 quartz mpegsplit: ok (1094 tests, 0 failures, 1s)
+x86_64 quartz mpegvideo: fail (1907 tests, 7 failures, 1s)
+x86_64 quartz passthrough: ok (23 tests, 0 failures, 0s)
+x86_64 quartz systemclock: ok (85 tests, 0 failures, 2s)
+x86_64 quartz videorenderer: ok (2512 tests, 0 failures, 10s)
+x86_64 quartz vmr7: ok (2123 tests, 0 failures, 12s)
+x86_64 quartz vmr9: ok (3909 tests, 0 failures, 16s)
+x86_64 quartz waveparser: ok (320 tests, 0 failures, 0s)
+x86_64 wmvcore wmvcore: ok (36995 tests, 0 failures, 2s)
+i386 mf mf: fail (9851 tests, 2 failures, 43s)
+i386 mf topology: ok (7486 tests, 0 failures, 3s)
+i386 mf transform: fail (81036 tests, 128 failures, 3s)
+i386 mfplat mfplat: ok (5709585 tests, 0 failures, 8s)
+i386 mfreadwrite mfplat: ok (2802 tests, 0 failures, 2s)
+i386 mfmediaengine mfmediaengine: ok (791 tests, 0 failures, 5s)
+i386 quartz acmwrapper: ok (157 tests, 0 failures, 0s)
+i386 quartz avidec: ok (968 tests, 0 failures, 0s)
+i386 quartz avisplit: ok (885 tests, 0 failures, 2s)
+i386 quartz colorconv: ok (5447 tests, 0 failures, 1s)
+i386 quartz dsoundrender: ok (727 tests, 0 failures, 6s)
+i386 quartz filesource: ok (3377 tests, 0 failures, 1s)
+i386 quartz filtergraph: fail (7758 tests, 1 failures, 12s)
+i386 quartz filtermapper: ok (273 tests, 0 failures, 1s)
+i386 quartz memallocator: ok (488 tests, 0 failures, 0s)
+i386 quartz mpegaudio: fail (463 tests, 10 failures, 1s)
+i386 quartz mpeglayer3: ok (417 tests, 0 failures, 0s)
+i386 quartz mpegsplit: ok (1094 tests, 0 failures, 1s)
+i386 quartz mpegvideo: fail (1907 tests, 7 failures, 1s)
+i386 quartz passthrough: ok (23 tests, 0 failures, 0s)
+i386 quartz systemclock: ok (85 tests, 0 failures, 2s)
+i386 quartz videorenderer: ok (2512 tests, 0 failures, 11s)
+i386 quartz vmr7: fail (1767 tests, 4 failures, 8s)
+i386 quartz vmr9: crash (- tests, - failures, 1s)
+i386 quartz waveparser: ok (320 tests, 0 failures, 2s)
+i386 wmvcore wmvcore: ok (36995 tests, 0 failures, 2s)
+VERIFY DONE

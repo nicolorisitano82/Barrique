@@ -1,0 +1,39 @@
+videorenderer.c:80: Test marked todo: Got hr 0x80004002, expected 0.
+videorenderer.c:81: Test marked todo: Got hr 0x80004002, expected 0.
+videorenderer.c:82: Test marked todo: Got hr 0x80004002, expected 0.
+videorenderer.c:88: Test marked todo: Got hr 0x80004002, expected 0.
+videorenderer.c:106: Test marked todo: Got hr 0x80004002, expected 0.
+videorenderer.c:107: Test marked todo: Got hr 0x80004002, expected 0.
+videorenderer.c:721: Test marked todo: Got hr 0x8004020a.
+videorenderer.c:837: Test marked todo: Got hr 0x80040227.
+videorenderer.c:867: Test marked todo: Got hr 0.
+videorenderer.c:874: Test marked todo: Got hr 0x80040227.
+videorenderer.c:903: Test marked todo: Got hr 0.
+videorenderer.c:906: Test marked todo: Got hr 0.
+videorenderer.c:925: Test marked todo: Got hr 0.
+videorenderer.c:928: Test marked todo: Got hr 0.
+videorenderer.c:943: Test marked todo: Got hr 0.
+videorenderer.c:946: Test marked todo: Got hr 0.
+videorenderer.c:987: Test marked todo: Got hr 0x1.
+videorenderer.c:995: Test marked todo: Got hr 0.
+videorenderer.c:1009: Test marked todo: Got hr 0x1.
+videorenderer.c:1156: Test marked todo: Got hr 0x1.
+videorenderer.c:1183: Test marked todo: Got unexpected EC_COMPLETE.
+videorenderer.c:1185: Test marked todo: Expected EC_COMPLETE.
+videorenderer.c:1202: Test marked todo: Got hr 0.
+videorenderer.c:1209: Test marked todo: Got unexpected EC_COMPLETE.
+videorenderer.c:1223: Test marked todo: Got unexpected EC_COMPLETE.
+videorenderer.c:1267: Test marked todo: Got hr 0x80004003.
+videorenderer.c:1268: Test marked todo: Got size -559038737.
+videorenderer.c:1356: Test marked todo: Wait failed
+videorenderer.c:2438: Test marked todo: Got hr 0.
+videorenderer.c:2446: Test marked todo: Got hr 0.
+videorenderer.c:2452: Test marked todo: Got hr 0.
+videorenderer.c:2330: Test marked todo: Got hr 0.
+videorenderer.c:2357: Test marked todo: Got hr 0.
+videorenderer.c:2148: Test marked todo: Got style 0xcf0000.
+videorenderer.c:2487: Test marked todo: Got hr 0.
+videorenderer.c:2490: Test marked todo: Got hr 0.
+videorenderer.c:2902: Test marked todo: Got hr 0x80004003.
+videorenderer.c:2936: Test marked todo: Got hr 0x80004003.
+03cc:videorenderer: 2512 tests executed (38 marked as todo, 0 as flaky, 0 failures), 0 skipped.

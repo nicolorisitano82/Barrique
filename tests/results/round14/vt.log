@@ -1,0 +1,17 @@
+sw aarch64 h264-1080p.mp4 #1 rc=0 dec=[]  2.37 real 1.95 user 0.67 sys RESULT: FAILED
+sw aarch64 h264-1080p.mp4 #2 rc=0 dec=[]  1.07 real 1.98 user 0.64 sys RESULT: FAILED
+sw aarch64 hevc-1080p.mp4 #1 rc=0 dec=[]  1.10 real 2.11 user 0.63 sys RESULT: FAILED
+sw aarch64 hevc-1080p.mp4 #2 rc=0 dec=[]  1.10 real 2.10 user 0.63 sys RESULT: FAILED
+sw x86_64 h264-1080p.mp4 #1 rc=0 dec=[]  1.34 real 2.16 user 0.73 sys RESULT: FAILED
+sw x86_64 h264-1080p.mp4 #2 rc=0 dec=[]  1.30 real 2.12 user 0.68 sys RESULT: FAILED
+sw x86_64 hevc-1080p.mp4 #1 rc=0 dec=[]  1.25 real 2.23 user 0.64 sys RESULT: FAILED
+sw x86_64 hevc-1080p.mp4 #2 rc=0 dec=[]  1.22 real 2.18 user 0.62 sys RESULT: FAILED
+hw aarch64 h264-1080p.mp4 #1 rc=0 dec=[]  1.17 real 0.49 user 0.61 sys RESULT: FAILED
+hw aarch64 h264-1080p.mp4 #2 rc=0 dec=[]  1.17 real 0.50 user 0.61 sys RESULT: FAILED
+hw aarch64 hevc-1080p.mp4 #1 rc=0 dec=[]  1.12 real 0.48 user 0.57 sys RESULT: FAILED
+hw aarch64 hevc-1080p.mp4 #2 rc=0 dec=[]  1.16 real 0.48 user 0.59 sys RESULT: FAILED
+hw x86_64 h264-1080p.mp4 #1 rc=0 dec=[]  1.34 real 0.61 user 0.63 sys RESULT: FAILED
+hw x86_64 h264-1080p.mp4 #2 rc=0 dec=[]  1.27 real 0.59 user 0.60 sys RESULT: FAILED
+hw x86_64 hevc-1080p.mp4 #1 rc=0 dec=[]  1.30 real 0.60 user 0.60 sys RESULT: FAILED
+hw x86_64 hevc-1080p.mp4 #2 rc=0 dec=[]  1.26 real 0.59 user 0.59 sys RESULT: FAILED
+VT DONE

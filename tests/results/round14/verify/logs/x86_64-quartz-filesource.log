@@ -1,0 +1,9 @@
+filesource.c:128: Test marked todo: Got hr 0x80004002, expected 0.
+filesource.c:306: Running test for AVI.
+filesource.c:306: Running test for MPEG1 System.
+filesource.c:306: Running test for MPEG1 Video.
+filesource.c:306: Running test for MPEG1 Audio.
+filesource.c:306: Running test for MPEG2 Program.
+filesource.c:306: Running test for WAVE.
+filesource.c:306: Running test for unknown format.
+036c:filesource: 3377 tests executed (1 marked as todo, 0 as flaky, 0 failures), 0 skipped.

@@ -1,0 +1,14 @@
+waveparser.c:154: Test marked todo: Got hr 0x80004002, expected 0.
+waveparser.c:868: Test marked todo: Got caps 0x37.
+waveparser.c:895: Test marked todo: Got hr 0x1 for format {7b785572-8c82-11cf-bc0c-00aa00ac74f6}.
+waveparser.c:915: Test marked todo: Got hr 0x80070057.
+waveparser.c:919: Test marked todo: Got format {7b785574-8c82-11cf-bc0c-00aa00ac74f6}.
+waveparser.c:922: Test marked todo: Got hr 0.
+waveparser.c:924: Test marked todo: Got hr 0x1.
+waveparser.c:957: Test marked todo: Got hr 0x80070057.
+waveparser.c:958: Test marked todo: Got time 3735928559.
+waveparser.c:972: Test marked todo: Got hr 0x8004025c.
+waveparser.c:976: Test marked todo: Got rate 1.0000000000000000e+000.
+waveparser.c:979: Test marked todo: Got hr 0x8004025c.
+waveparser.c:982: Test marked todo: Got hr 0.
+073c:waveparser: 320 tests executed (13 marked as todo, 0 as flaky, 0 failures), 0 skipped.

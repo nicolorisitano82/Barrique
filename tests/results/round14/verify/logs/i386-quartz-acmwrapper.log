@@ -1,0 +1,4 @@
+acmwrapper.c:64: Test marked todo: Got hr 0x80004002, expected 0.
+acmwrapper.c:83: Test marked todo: Got hr 0x80004002, expected 0.
+acmwrapper.c:94: Test marked todo: Got hr 0x80004002, expected 0.
+052c:acmwrapper: 157 tests executed (3 marked as todo, 0 as flaky, 0 failures), 0 skipped.

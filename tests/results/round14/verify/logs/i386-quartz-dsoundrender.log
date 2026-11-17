@@ -1,0 +1,15 @@
+dsoundrender.c:118: Test marked todo: Got hr 0x80004002.
+dsoundrender.c:154: Test marked todo: Got hr 0x80004002, expected 0.
+dsoundrender.c:159: Test marked todo: Got hr 0x80004002, expected 0.
+dsoundrender.c:176: Test marked todo: Got hr 0x80004002, expected 0.
+dsoundrender.c:528: Test marked todo: Got hr 0x1.
+dsoundrender.c:539: Test marked todo: Got hr 0x1.
+dsoundrender.c:540: Test marked todo: Got count 0.
+dsoundrender.c:553: Test marked todo: Got count 0.
+dsoundrender.c:573: Test marked todo: Got hr 0x1.
+dsoundrender.c:582: Test marked todo: Got hr 0x1.
+dsoundrender.c:1474: Test marked todo: Got hr 0x1.
+dsoundrender.c:824: Test marked todo: Got hr 0x8004020a.
+dsoundrender.c:1106: Test marked todo: Got hr 0x1.
+dsoundrender.c:1170: Test marked todo: Got hr 0.
+01ec:dsoundrender: 727 tests executed (14 marked as todo, 0 as flaky, 0 failures), 0 skipped.

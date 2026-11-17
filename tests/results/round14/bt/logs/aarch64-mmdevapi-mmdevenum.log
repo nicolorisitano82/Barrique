@@ -1,0 +1,4 @@
+mmdevenum.c:114: Device found: {0.0.1.00000000}.{0CE6C2C3-A148-496B-A6AC-9C24F20B139B}
+mmdevenum.c:393: connector count: 1
+mmdevenum.c:408: connector 0 type: 1
+015c:mmdevenum: 72 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.

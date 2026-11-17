@@ -3,8 +3,8 @@
 
   mkref.py <media file>...  -> <file>.ref next to each file
 
-Per file: "video <frames> <mean Y of each frame...>" (luma 0-255, frame size
-from the stream) and "audio <sample frames> <rate> <channels> <rms>" (16-bit
+Per file: "video <frames> <mean Y of each frame...>" (Y plane, limited range,
+frame size from the stream) and "audio <sample frames> <rate> <channels> <rms>" (16-bit
 PCM at the stream's own rate and channels). mfplay.exe prints the same lines
 and cmpref.py compares them with a tolerance.
 """
@@ -28,9 +28,12 @@ for path in sys.argv[1:]:
     a = next((s for s in streams if s["codec_type"] == "audio"), None)
     if v:
         w, h = v["width"], v["height"]
-        raw = ffmpeg(["-i", path, "-map", "0:v:0", "-f", "rawvideo", "-pix_fmt", "gray"])
-        n = len(raw) // (w * h)
-        means = [sum(raw[i * w * h:(i + 1) * w * h]) / (w * h) for i in range(n)]
+        # the Y plane as decoded (limited range, like mfplay.exe's NV12), not
+        # "gray", which ffmpeg scales to full range (+2 on mean luma)
+        raw = ffmpeg(["-i", path, "-map", "0:v:0", "-f", "rawvideo", "-pix_fmt", "yuv420p"])
+        fs = w * h + 2 * ((w + 1) // 2) * ((h + 1) // 2)
+        n = len(raw) // fs
+        means = [sum(raw[i * fs:i * fs + w * h]) / (w * h) for i in range(n)]
         lines.append("video %d %s" % (n, " ".join("%.2f" % m for m in means)))
     if a:
         rate, ch = int(a["sample_rate"]), a["channels"]

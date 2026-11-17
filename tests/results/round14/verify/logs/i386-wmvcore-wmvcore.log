@@ -1,0 +1,245 @@
+wmvcore.c:187: Test marked todo: Got hr 0x80004002, expected 0.
+wmvcore.c:188: Test marked todo: Got hr 0x80004002, expected 0.
+wmvcore.c:189: Test marked todo: Got hr 0x80004002, expected 0.
+wmvcore.c:190: Test marked todo: Got hr 0x80004002, expected 0.
+wmvcore.c:330: Test marked todo: WMCheckURLExtension failed 0xc00d001c
+wmvcore.c:332: Test marked todo: WMCheckURLExtension failed 0xc00d001c
+wmvcore.c:334: Test marked todo: WMCheckURLExtension failed 0xc00d001c
+wmvcore.c:4167: Test marked todo: Got hr 0.
+wmvcore.c:4170: Test marked todo: Got hr 0.
+wmvcore.c:4173: Test marked todo: Got hr 0.
+wmvcore.c:4188: Test marked todo: Buffer vtbl didn't match.
+wmvcore.c:4197: Test marked todo: Unexpected buffer vtbl.
+wmvcore.c:1043: Test marked todo: Got hr 0x80004001.
+wmvcore.c:983: Test marked todo: L"AllowInterlacedOutput": Got hr 0x80004001.
+wmvcore.c:983: Test marked todo: L"DedicatedDeliveryThread": Got hr 0x80004001.
+wmvcore.c:983: Test marked todo: L"DeliverOnReceive": Got hr 0x80004001.
+wmvcore.c:983: Line has been silenced after 3 occurrences
+wmvcore.c:1017: Test marked todo: L"AllowInterlacedOutput": Got hr 0x80004001.
+wmvcore.c:1017: Test marked todo: L"DedicatedDeliveryThread": Got hr 0x80004001.
+wmvcore.c:1017: Test marked todo: L"DeliverOnReceive": Got hr 0x80004001.
+wmvcore.c:1017: Line has been silenced after 3 occurrences
+wmvcore.c:1189: Test marked todo: Changed thread 2 times.
+wmvcore.c:1436: Test marked todo: Changed thread 8 times.
+wmvcore.c:1577: Test marked todo: Stream 0: Got output number 0.
+wmvcore.c:1642: Test marked todo: Stream 0: Got hr 0.
+wmvcore.c:1732: Test marked todo: Stream 0: Format 0: Got hr 0xc00d0041.
+wmvcore.c:1732: Test marked todo: Stream 0: Format 1: Got hr 0xc00d0041.
+wmvcore.c:1732: Test marked todo: Stream 0: Format 2: Got hr 0xc00d0041.
+wmvcore.c:1732: Line has been silenced after 3 occurrences
+wmvcore.c:1577: Test marked todo: Stream 1: Got output number 1.
+wmvcore.c:1797: Test marked todo: Changed thread 2 times.
+wmvcore.c:1866: Test marked todo: Bitrates didn't match.
+wmvcore.c:1866: Test marked todo: Bitrates didn't match.
+wmvcore.c:2038: Test marked todo: 0/0: Got 0
+wmvcore.c:2041: Test marked todo: 0/0: Got 2
+wmvcore.c:2022: Test marked todo: 0/1: Got 0
+wmvcore.c:2038: Test marked todo: 1/1: Got 0
+wmvcore.c:2043: Test marked todo: 1/1: Got 0
+wmvcore.c:2022: Test marked todo: 1/2: Got 0
+wmvcore.c:2038: Test marked todo: 2/2: Got 0
+wmvcore.c:2043: Test marked todo: 2/2: Got 0
+wmvcore.c:2022: Test marked todo: 2/3: Got 0
+wmvcore.c:2038: Line has been silenced after 3 occurrences
+wmvcore.c:2043: Test marked todo: 3/3: Got 0
+wmvcore.c:2022: Line has been silenced after 3 occurrences
+wmvcore.c:2043: Line has been silenced after 3 occurrences
+wmvcore.c:3324: Test marked todo: Got hr 0x80004001.
+wmvcore.c:2780: Test marked todo: L"AllowInterlacedOutput": Got hr 0x80004001.
+wmvcore.c:2780: Test marked todo: L"DedicatedDeliveryThread": Got hr 0x80004001.
+wmvcore.c:2780: Test marked todo: L"DeliverOnReceive": Got hr 0x80004001.
+wmvcore.c:2780: Line has been silenced after 3 occurrences
+wmvcore.c:2814: Test marked todo: L"AllowInterlacedOutput": Got hr 0x80004001.
+wmvcore.c:2814: Test marked todo: L"DedicatedDeliveryThread": Got hr 0x80004001.
+wmvcore.c:2814: Test marked todo: L"DeliverOnReceive": Got hr 0x80004001.
+wmvcore.c:2814: Line has been silenced after 3 occurrences
+wmvcore.c:3561: Test marked todo: Got pts 20060000.
+wmvcore.c:3563: Test marked todo: Got pts 20460000.
+wmvcore.c:3565: Test marked todo: Got pts 19960000.
+wmvcore.c:3567: Test marked todo: Got pts 20424399.
+wmvcore.c:3582: Test marked todo: Got pts 20060000.
+wmvcore.c:3584: Test marked todo: Got pts 20460000.
+wmvcore.c:3586: Test marked todo: Got pts 19960000.
+wmvcore.c:3588: Test marked todo: Got pts 20424399.
+wmvcore.c:3604: Checking default settings.
+wmvcore.c:3605:   with stream selection
+wmvcore.c:2449: Test marked todo: Got time 2770001.
+wmvcore.c:2876: Test marked todo: Got pts 2320000.
+wmvcore.c:2878: Test marked todo: Got pts 2784399.
+wmvcore.c:2449: Test marked todo: Got time 2849999.
+wmvcore.c:2895: Test marked todo: Got pts 2780000.
+wmvcore.c:2897: Test marked todo: Got pts 3244399.
+wmvcore.c:2903: Test marked todo: Wait timed out.
+wmvcore.c:2914: Test marked todo: Got pts 2780000.
+wmvcore.c:2916: Test marked todo: Got pts 3244399.
+wmvcore.c:3027: Test marked todo: Got pts 19960000.
+wmvcore.c:3029: Test marked todo: Got pts 20424399.
+wmvcore.c:3607:   with sample allocation
+wmvcore.c:2529: Test marked todo: got wrong thread
+wmvcore.c:2535: Test marked todo: got wrong thread
+wmvcore.c:2529: Test marked todo: got wrong thread
+wmvcore.c:2535: Test marked todo: got wrong thread
+wmvcore.c:2529: Test marked todo: got wrong thread
+wmvcore.c:2531: Test marked todo: got wrong thread
+wmvcore.c:2535: Test marked todo: got wrong thread
+wmvcore.c:2529: Line has been silenced after 3 occurrences
+wmvcore.c:2531: Test marked todo: got wrong thread
+wmvcore.c:2535: Line has been silenced after 3 occurrences
+wmvcore.c:2531: Test marked todo: got wrong thread
+wmvcore.c:2531: Line has been silenced after 3 occurrences
+wmvcore.c:2449: Test marked todo: Got time 2770001.
+wmvcore.c:2869: Test marked todo: Got pts 2460000.
+wmvcore.c:2871: Test marked todo: Got pts 2860000.
+wmvcore.c:2876: Test marked todo: Got pts 2320000.
+wmvcore.c:2878: Test marked todo: Got pts 2784399.
+wmvcore.c:2449: Line has been silenced after 3 occurrences
+wmvcore.c:2888: Test marked todo: Got pts 2460000.
+wmvcore.c:2890: Test marked todo: Got pts 2860000.
+wmvcore.c:2895: Test marked todo: Got pts 2780000.
+wmvcore.c:2897: Test marked todo: Got pts 3244399.
+wmvcore.c:2903: Test marked todo: Wait timed out.
+wmvcore.c:2907: Test marked todo: Got pts 2460000.
+wmvcore.c:2909: Test marked todo: Got pts 2860000.
+wmvcore.c:2914: Test marked todo: Got pts 2780000.
+wmvcore.c:2916: Test marked todo: Got pts 3244399.
+wmvcore.c:3020: Test marked todo: Got pts 20060000.
+wmvcore.c:3022: Test marked todo: Got pts 20460000.
+wmvcore.c:3027: Test marked todo: Got pts 19960000.
+wmvcore.c:3029: Test marked todo: Got pts 20424399.
+wmvcore.c:2869: Test marked todo: Got pts 2460000.
+wmvcore.c:2871: Test marked todo: Got pts 2860000.
+wmvcore.c:2876: Test marked todo: Got pts 2320000.
+wmvcore.c:2878: Test marked todo: Got pts 2784399.
+wmvcore.c:2888: Test marked todo: Got pts 2460000.
+wmvcore.c:2890: Test marked todo: Got pts 2860000.
+wmvcore.c:2895: Test marked todo: Got pts 2780000.
+wmvcore.c:2897: Test marked todo: Got pts 3244399.
+wmvcore.c:2903: Test marked todo: Wait timed out.
+wmvcore.c:2907: Test marked todo: Got pts 2460000.
+wmvcore.c:2909: Test marked todo: Got pts 2860000.
+wmvcore.c:2914: Test marked todo: Got pts 2780000.
+wmvcore.c:2916: Test marked todo: Got pts 3244399.
+wmvcore.c:3020: Test marked todo: Got pts 20060000.
+wmvcore.c:3022: Test marked todo: Got pts 20460000.
+wmvcore.c:3027: Test marked todo: Got pts 19960000.
+wmvcore.c:3029: Test marked todo: Got pts 20424399.
+wmvcore.c:3609:   with compressed sample
+wmvcore.c:2869: Test marked todo: Got pts 2320000.
+wmvcore.c:2871: Test marked todo: Got pts 2320000.
+wmvcore.c:2878: Line has been silenced after 3 occurrences
+wmvcore.c:2890: Test marked todo: Got pts 2780000.
+wmvcore.c:2897: Line has been silenced after 3 occurrences
+wmvcore.c:2903: Line has been silenced after 3 occurrences
+wmvcore.c:2909: Test marked todo: Got pts 2780000.
+wmvcore.c:2914: Line has been silenced after 3 occurrences
+wmvcore.c:2916: Line has been silenced after 3 occurrences
+wmvcore.c:2929: Test marked todo: Got pts 6500000.
+wmvcore.c:2932: Test marked todo: Got pts 6460000.
+wmvcore.c:2945: Test marked todo: Got hr 0.
+wmvcore.c:2948: Test marked todo: Got hr 0.
+wmvcore.c:2951: Test marked todo: Got hr 0.
+wmvcore.c:2954: Test marked todo: Got hr 0.
+wmvcore.c:2958: Test marked todo: Got hr 0.
+wmvcore.c:2961: Test marked todo: Got hr 0.
+wmvcore.c:2964: Test marked todo: Got hr 0.
+wmvcore.c:2967: Test marked todo: Got hr 0.
+wmvcore.c:2985: Test marked todo: Got pts 13260000.
+wmvcore.c:2987: Test marked todo: Got pts 13660000.
+wmvcore.c:2989: Test marked todo: Got pts 13460000.
+wmvcore.c:2991: Test marked todo: Got pts 13924399.
+wmvcore.c:3022: Test marked todo: Got pts 19960000.
+wmvcore.c:3029: Line has been silenced after 3 occurrences
+wmvcore.c:3611:   with compressed sample allocation
+wmvcore.c:2484: Test marked todo: got wrong thread
+wmvcore.c:2490: Test marked todo: got wrong thread
+wmvcore.c:2484: Test marked todo: got wrong thread
+wmvcore.c:2486: Test marked todo: got wrong thread
+wmvcore.c:2490: Test marked todo: got wrong thread
+wmvcore.c:2484: Test marked todo: got wrong thread
+wmvcore.c:2486: Test marked todo: got wrong thread
+wmvcore.c:2490: Test marked todo: got wrong thread
+wmvcore.c:2484: Line has been silenced after 3 occurrences
+wmvcore.c:2486: Test marked todo: got wrong thread
+wmvcore.c:2490: Line has been silenced after 3 occurrences
+wmvcore.c:2486: Line has been silenced after 3 occurrences
+wmvcore.c:2869: Line has been silenced after 3 occurrences
+wmvcore.c:2871: Line has been silenced after 3 occurrences
+wmvcore.c:2890: Line has been silenced after 3 occurrences
+wmvcore.c:2909: Line has been silenced after 3 occurrences
+wmvcore.c:2929: Test marked todo: Got pts 6500000.
+wmvcore.c:2932: Test marked todo: Got pts 6460000.
+wmvcore.c:2945: Test marked todo: Got hr 0.
+wmvcore.c:2948: Test marked todo: Got hr 0.
+wmvcore.c:2951: Test marked todo: Got hr 0.
+wmvcore.c:2954: Test marked todo: Got hr 0.
+wmvcore.c:2958: Test marked todo: Got hr 0.
+wmvcore.c:2961: Test marked todo: Got hr 0.
+wmvcore.c:2964: Test marked todo: Got hr 0.
+wmvcore.c:2967: Test marked todo: Got hr 0.
+wmvcore.c:2985: Test marked todo: Got pts 13260000.
+wmvcore.c:2987: Test marked todo: Got pts 13660000.
+wmvcore.c:2989: Test marked todo: Got pts 13460000.
+wmvcore.c:2991: Test marked todo: Got pts 13924399.
+wmvcore.c:3022: Line has been silenced after 3 occurrences
+wmvcore.c:2929: Test marked todo: Got pts 6500000.
+wmvcore.c:2932: Test marked todo: Got pts 6460000.
+wmvcore.c:2945: Test marked todo: Got hr 0.
+wmvcore.c:2948: Test marked todo: Got hr 0.
+wmvcore.c:2951: Test marked todo: Got hr 0.
+wmvcore.c:2954: Test marked todo: Got hr 0.
+wmvcore.c:2958: Test marked todo: Got hr 0.
+wmvcore.c:2961: Test marked todo: Got hr 0.
+wmvcore.c:2964: Test marked todo: Got hr 0.
+wmvcore.c:2967: Test marked todo: Got hr 0.
+wmvcore.c:2985: Test marked todo: Got pts 13260000.
+wmvcore.c:2987: Test marked todo: Got pts 13660000.
+wmvcore.c:2989: Test marked todo: Got pts 13460000.
+wmvcore.c:2991: Test marked todo: Got pts 13924399.
+wmvcore.c:3615: Checking DedicatedDeliveryThread.
+wmvcore.c:3616:   with stream selection
+wmvcore.c:2322: Test marked todo: got wrong thread
+wmvcore.c:2322: Test marked todo: got wrong thread
+wmvcore.c:2322: Test marked todo: got wrong thread
+wmvcore.c:2322: Line has been silenced after 3 occurrences
+wmvcore.c:2876: Line has been silenced after 3 occurrences
+wmvcore.c:2895: Line has been silenced after 3 occurrences
+wmvcore.c:3027: Line has been silenced after 3 occurrences
+wmvcore.c:3618:   with sample allocation
+wmvcore.c:2335: Test marked todo: got wrong thread
+wmvcore.c:2335: Test marked todo: got wrong thread
+wmvcore.c:2335: Test marked todo: got wrong thread
+wmvcore.c:2335: Line has been silenced after 3 occurrences
+wmvcore.c:2888: Test marked todo: Got pts 2460000.
+wmvcore.c:2907: Test marked todo: Got pts 2460000.
+wmvcore.c:3020: Test marked todo: Got pts 20060000.
+wmvcore.c:2888: Line has been silenced after 3 occurrences
+wmvcore.c:2907: Line has been silenced after 3 occurrences
+wmvcore.c:3020: Line has been silenced after 3 occurrences
+wmvcore.c:3620:   with compressed sample
+wmvcore.c:2403: Test marked todo: got wrong thread
+wmvcore.c:2403: Test marked todo: got wrong thread
+wmvcore.c:2419: Test marked todo: got wrong thread
+wmvcore.c:2403: Test marked todo: got wrong thread
+wmvcore.c:2419: Test marked todo: got wrong thread
+wmvcore.c:2403: Line has been silenced after 3 occurrences
+wmvcore.c:2419: Test marked todo: got wrong thread
+wmvcore.c:2419: Line has been silenced after 3 occurrences
+wmvcore.c:2929: Line has been silenced after 3 occurrences
+wmvcore.c:2932: Line has been silenced after 3 occurrences
+wmvcore.c:2945: Line has been silenced after 3 occurrences
+wmvcore.c:2948: Line has been silenced after 3 occurrences
+wmvcore.c:2951: Line has been silenced after 3 occurrences
+wmvcore.c:2954: Line has been silenced after 3 occurrences
+wmvcore.c:2958: Line has been silenced after 3 occurrences
+wmvcore.c:2961: Line has been silenced after 3 occurrences
+wmvcore.c:2964: Line has been silenced after 3 occurrences
+wmvcore.c:2967: Line has been silenced after 3 occurrences
+wmvcore.c:2985: Line has been silenced after 3 occurrences
+wmvcore.c:2987: Line has been silenced after 3 occurrences
+wmvcore.c:2989: Line has been silenced after 3 occurrences
+wmvcore.c:2991: Line has been silenced after 3 occurrences
+wmvcore.c:3622:   with compressed sample allocation
+wmvcore.c:3778: Test marked todo: Output 0: Got hr 0.
+wmvcore.c:3892: Test marked todo: Output 1: Format 0: Got hr 0xc00d0041.
+0194:wmvcore: Silenced 3650 todos, 0 skips and 0 traces.
+0194:wmvcore: 36995 tests executed (183 marked as todo, 0 as flaky, 0 failures), 0 skipped.

@@ -1,0 +1,4 @@
+mcicda.c:111: Tests skipped: Cannot open any cdaudio device, MCIERR_CANNOT_LOAD_DRIVER.
+mcicda.c:559: Tests skipped: CD-ROM device likely not installed or disabled.
+mcicda.c:606: Test marked todo: STOP all returned MCIERR_CANNOT_USE_ALL
+06c0:mcicda: 6 tests executed (1 marked as todo, 0 as flaky, 0 failures), 2 skipped.

@@ -4500,7 +4500,7 @@ index 3199e36..849c7d6 100644
  
  /* wg_allocator_release_sample can be used to release any sample that was requested. */
 diff --git a/dlls/winegstreamer/unixlib.c b/dlls/winegstreamer/unixlib.c
-index ac671bb..96ffe83 100644
+index ac671bb..f264f7a 100644
 --- a/dlls/winegstreamer/unixlib.c
 +++ b/dlls/winegstreamer/unixlib.c
 @@ -27,6 +27,12 @@
@@ -4516,7 +4516,7 @@ index ac671bb..96ffe83 100644
  
  #include <gst/gst.h>
  #include <gst/video/video.h>
-@@ -275,6 +281,34 @@ NTSTATUS wg_init_gstreamer(void *arg)
+@@ -275,6 +281,38 @@ NTSTATUS wg_init_gstreamer(void *arg)
          setenv("GST_DEBUG", "1", FALSE);
      setenv("GST_DEBUG_NO_COLOR", "1", FALSE);
  
@@ -4531,8 +4531,12 @@ index ac671bb..96ffe83 100644
 +        struct stat st;
 +
 +        setenv("GST_REGISTRY_FORK", "no", FALSE);
-+        /* VideoToolbox (applemedia) is there for its H.264 encoder; decoding
-+         * stays on gst-libav until vtdec is validated */
++        /* VideoToolbox (applemedia): only vtenc_h264, the H.264 encoder.
++         * vtdec_hw decodes H.264/HEVC bit exact with ~4x less CPU, but it
++         * claims MPEG-2 and 4:4:4 H.264 and then outputs nothing or junk
++         * instead of failing over to gst-libav, and its asynchronous output
++         * breaks the decoder MFTs (mf:transform h264dec), so both decoders
++         * stay off. GST_PLUGIN_FEATURE_RANK=vtdec:NONE turns vtdec_hw on. */
 +        setenv("GST_PLUGIN_FEATURE_RANK", "vtdec:NONE,vtdec_hw:NONE", FALSE);
 +        if (!getenv("GST_PLUGIN_SYSTEM_PATH_1_0") && dladdr((void *)wg_init_gstreamer, &info) && info.dli_fname
 +                && strlen(info.dli_fname) < sizeof(dir) - 32)

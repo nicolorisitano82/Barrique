@@ -1,0 +1,7 @@
+tone: 48000 Hz, 10 s per API, 10 ms period, 64-bit
+wasapi   device period 10.67 ms (minimum 0.31 ms), buffer 1536 frames
+wasapi   open=00000000 periods=936 misses=0 late=1 max_gap=23.6ms at 3673ms
+waveout  open=00000000 periods=1000 misses=0 late=0 max_gap=14.2ms at 8475ms
+dsound   open=00000000 periods=997 misses=0 late=0 max_gap=10.5ms at 7663ms
+xaudio2  open=00000000 periods=1002 misses=0 late=0 max_gap=9.6ms at 2413ms
+RESULT: ok

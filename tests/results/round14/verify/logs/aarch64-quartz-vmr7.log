@@ -1,0 +1,189 @@
+vmr7.c:171: Test marked todo: Got hr 0x80004001.
+vmr7.c:180: Test marked todo: Got hr 0x80004001.
+vmr7.c:181: Test marked todo: Got count 20.
+vmr7.c:199: Test marked todo: Got hr 0x80004001.
+vmr7.c:200: Test marked todo: Got count 20.
+vmr7.c:232: Test marked todo: Got hr 0x80004002, expected 0.
+vmr7.c:238: Test marked todo: Got hr 0x80004002, expected 0.
+vmr7.c:240: Test marked todo: Got hr 0x80004002, expected 0.
+vmr7.c:241: Test marked todo: Got hr 0x80004002, expected 0.
+vmr7.c:243: Test marked todo: Got hr 0x80004002, expected 0.
+vmr7.c:266: Test marked todo: Got hr 0x80004002, expected 0.
+vmr7.c:284: Test marked todo: Got hr 0x80004002, expected 0.
+vmr7.c:300: Test marked todo: Got hr 0, expected 0x80004002.
+vmr7.c:302: Test marked todo: Got hr 0, expected 0x80004002.
+vmr7.c:313: Test marked todo: Got hr 0, expected 0x80004002.
+vmr7.c:315: Test marked todo: Got hr 0, expected 0x80004002.
+vmr7.c:317: Test marked todo: Got hr 0, expected 0x80004002.
+vmr7.c:517: Test marked todo: Got hr 0x1.
+vmr7.c:528: Test marked todo: Got hr 0x1.
+vmr7.c:529: Test marked todo: Got count 1.
+vmr7.c:539: Test marked todo: Got count 1.
+vmr7.c:592: Test marked todo: Got hr 0x80040216.
+vmr7.c:647: Test marked todo: Got hr 0x80040216.
+vmr7.c:725: Test marked todo: Got hr 0.
+vmr7.c:1503: Test marked todo: Got hr 0x80004005.
+vmr7.c:1541: Test marked todo: Got hr 0.
+vmr7.c:908: Test marked todo: Got hr 0x8004020a.
+vmr7.c:937: Test marked todo: Got hr 0x80004003.
+vmr7.c:943: Test marked todo: Got hr 0.
+vmr7.c:1068: Test marked todo: Got hr 0.
+vmr7.c:1104: Test marked todo: Got hr 0.
+vmr7.c:1107: Test marked todo: Got hr 0.
+vmr7.c:1126: Test marked todo: Got hr 0.
+vmr7.c:1129: Test marked todo: Got hr 0.
+vmr7.c:1145: Test marked todo: Got hr 0.
+vmr7.c:1148: Test marked todo: Got hr 0.
+vmr7.c:1198: Test marked todo: Got hr 0.
+vmr7.c:1288: Test marked todo: Got hr 0x80004003.
+vmr7.c:1289: Test marked todo: Got size -559038737.
+vmr7.c:1293: Test marked todo: Got hr 0x80004001.
+vmr7.c:1408: Test marked todo: Wait failed
+vmr7.c:2452: Test marked todo: Got hr 0.
+vmr7.c:2460: Test marked todo: Got hr 0.
+vmr7.c:2466: Test marked todo: Got hr 0.
+vmr7.c:2497: Test marked todo: Got hr 0x8004020a.
+vmr7.c:2347: Test marked todo: Got hr 0.
+vmr7.c:2374: Test marked todo: Got hr 0.
+vmr7.c:2165: Test marked todo: Got style 0xcf0000.
+vmr7.c:2525: Test marked todo: Got hr 0.
+vmr7.c:2527: Test marked todo: Got hr 0.
+vmr7.c:2941: Test marked todo: Got hr 0x80004003.
+vmr7.c:2955: Test marked todo: Got hr 0x8004020a.
+vmr7.c:2982: Test marked todo: Got hr 0x80004003.
+vmr7.c:3004: Test marked todo: Got hr 0x8004020a.
+vmr7.c:3081: Test marked todo: Got hr 0x8004020a.
+vmr7.c:3876: Test marked todo: Test 0: Compression 0, depth 32: Got flags 0x102f.
+vmr7.c:3878: Test marked todo: Test 0: Compression 0, depth 32: Expected caps 0x10004070, got 0x10004078.
+vmr7.c:3910: Test marked todo: Test 0: Compression 0, depth 32: Got flags 0x102f.
+vmr7.c:3912: Test marked todo: Test 0: Compression 0, depth 32: Expected caps 0x10004054, got 0x1000405c.
+vmr7.c:3923: Test marked todo: Test 0: Compression 0, depth 32: Got flags 0x102f.
+vmr7.c:3925: Test marked todo: Test 0: Compression 0, depth 32: Expected caps 0x10004050, got 0x10004058.
+vmr7.c:3876: Test marked todo: Test 3: Compression 0x3231564e, depth 12: Got flags 0x102f.
+vmr7.c:3878: Test marked todo: Test 3: Compression 0x3231564e, depth 12: Expected caps 0x10004070, got 0x10004078.
+vmr7.c:3910: Test marked todo: Test 3: Compression 0x3231564e, depth 12: Got flags 0x102f.
+vmr7.c:3912: Test marked todo: Test 3: Compression 0x3231564e, depth 12: Expected caps 0x10004054, got 0x1000405c.
+vmr7.c:3923: Test marked todo: Test 3: Compression 0x3231564e, depth 12: Got flags 0x102f.
+vmr7.c:3925: Test marked todo: Test 3: Compression 0x3231564e, depth 12: Expected caps 0x10004050, got 0x10004058.
+vmr7.c:3876: Test marked todo: Test 4: Compression 0x32315659, depth 12: Got flags 0x102f.
+vmr7.c:3878: Test marked todo: Test 4: Compression 0x32315659, depth 12: Expected caps 0x10004070, got 0x10004078.
+vmr7.c:3910: Test marked todo: Test 4: Compression 0x32315659, depth 12: Got flags 0x102f.
+vmr7.c:3912: Test marked todo: Test 4: Compression 0x32315659, depth 12: Expected caps 0x10004054, got 0x1000405c.
+vmr7.c:3923: Test marked todo: Test 4: Compression 0x32315659, depth 12: Got flags 0x102f.
+vmr7.c:3925: Test marked todo: Test 4: Compression 0x32315659, depth 12: Expected caps 0x10004050, got 0x10004058.
+vmr7.c:3876: Test marked todo: Test 5: Compression 0x59565955, depth 16: Got flags 0x102f.
+vmr7.c:3878: Test marked todo: Test 5: Compression 0x59565955, depth 16: Expected caps 0x10004070, got 0x10004078.
+vmr7.c:3910: Test marked todo: Test 5: Compression 0x59565955, depth 16: Got flags 0x102f.
+vmr7.c:3912: Test marked todo: Test 5: Compression 0x59565955, depth 16: Expected caps 0x10004054, got 0x1000405c.
+vmr7.c:3923: Test marked todo: Test 5: Compression 0x59565955, depth 16: Got flags 0x102f.
+vmr7.c:3925: Test marked todo: Test 5: Compression 0x59565955, depth 16: Expected caps 0x10004050, got 0x10004058.
+vmr7.c:3876: Test marked todo: Test 6: Compression 0x32595559, depth 16: Got flags 0x102f.
+vmr7.c:3878: Test marked todo: Test 6: Compression 0x32595559, depth 16: Expected caps 0x10004070, got 0x10004078.
+vmr7.c:3910: Test marked todo: Test 6: Compression 0x32595559, depth 16: Got flags 0x102f.
+vmr7.c:3912: Test marked todo: Test 6: Compression 0x32595559, depth 16: Expected caps 0x10004054, got 0x1000405c.
+vmr7.c:3923: Test marked todo: Test 6: Compression 0x32595559, depth 16: Got flags 0x102f.
+vmr7.c:3925: Test marked todo: Test 6: Compression 0x32595559, depth 16: Expected caps 0x10004050, got 0x10004058.
+vmr7.c:3876: Test marked todo: Test 7: Compression 0x3, depth 32: Got flags 0x102f.
+vmr7.c:3878: Test marked todo: Test 7: Compression 0x3, depth 32: Expected caps 0x10004070, got 0x10004078.
+vmr7.c:3910: Test marked todo: Test 7: Compression 0x3, depth 32: Got flags 0x102f.
+vmr7.c:3912: Test marked todo: Test 7: Compression 0x3, depth 32: Expected caps 0x10004054, got 0x1000405c.
+vmr7.c:3923: Test marked todo: Test 7: Compression 0x3, depth 32: Got flags 0x102f.
+vmr7.c:3925: Test marked todo: Test 7: Compression 0x3, depth 32: Expected caps 0x10004050, got 0x10004058.
+vmr7.c:3604: Test marked todo: Got unexpected refcount 1.
+vmr7.c:3385: Test marked todo: Compression 0, depth 32: Got minimum buffer count 1.
+vmr7.c:3386: Test marked todo: Compression 0, depth 32: Got maximum buffer count 1.
+vmr7.c:3388: Test marked todo: Compression 0, depth 32: Got aspect ratio width 32.
+vmr7.c:3389: Test marked todo: Compression 0, depth 32: Got aspect ratio height 16.
+vmr7.c:3392: Test marked todo: Compression 0, depth 32: Got buffer count 1.
+vmr7.c:3636: Test marked todo: Compression 0, depth 32: Got allocatesurface_count 1, prev_allocatesurface_count 0.
+vmr7.c:3648: Test marked todo: Compression 0, depth 32: Got hr 0x8004020a.
+vmr7.c:908: Test marked todo: Compression 0, depth 32: Got hr 0x8004020a.
+vmr7.c:937: Test marked todo: Compression 0, depth 32: Got hr 0x80004003.
+vmr7.c:943: Test marked todo: Compression 0, depth 32: Got hr 0.
+vmr7.c:3672: Test marked todo: Compression 0, depth 32: Got allocatesurface_count 1, prev_allocatesurface_count 1.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3385: Test marked todo: Compression 0x3231564e, depth 12: Got minimum buffer count 1.
+vmr7.c:3386: Test marked todo: Compression 0x3231564e, depth 12: Got maximum buffer count 1.
+vmr7.c:3388: Test marked todo: Compression 0x3231564e, depth 12: Got aspect ratio width 32.
+vmr7.c:3389: Test marked todo: Compression 0x3231564e, depth 12: Got aspect ratio height 16.
+vmr7.c:3392: Test marked todo: Compression 0x3231564e, depth 12: Got buffer count 1.
+vmr7.c:3636: Test marked todo: Compression 0x3231564e, depth 12: Got allocatesurface_count 2, prev_allocatesurface_count 1.
+vmr7.c:3648: Test marked todo: Compression 0x3231564e, depth 12: Got hr 0x8004020a.
+vmr7.c:908: Test marked todo: Compression 0x3231564e, depth 12: Got hr 0x8004020a.
+vmr7.c:937: Test marked todo: Compression 0x3231564e, depth 12: Got hr 0x80004003.
+vmr7.c:943: Test marked todo: Compression 0x3231564e, depth 12: Got hr 0.
+vmr7.c:3672: Test marked todo: Compression 0x3231564e, depth 12: Got allocatesurface_count 2, prev_allocatesurface_count 2.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3385: Test marked todo: Compression 0x32315659, depth 12: Got minimum buffer count 1.
+vmr7.c:3386: Test marked todo: Compression 0x32315659, depth 12: Got maximum buffer count 1.
+vmr7.c:3388: Test marked todo: Compression 0x32315659, depth 12: Got aspect ratio width 32.
+vmr7.c:3389: Test marked todo: Compression 0x32315659, depth 12: Got aspect ratio height 16.
+vmr7.c:3392: Test marked todo: Compression 0x32315659, depth 12: Got buffer count 1.
+vmr7.c:3636: Test marked todo: Compression 0x32315659, depth 12: Got allocatesurface_count 3, prev_allocatesurface_count 2.
+vmr7.c:3648: Test marked todo: Compression 0x32315659, depth 12: Got hr 0x8004020a.
+vmr7.c:908: Test marked todo: Compression 0x32315659, depth 12: Got hr 0x8004020a.
+vmr7.c:937: Test marked todo: Compression 0x32315659, depth 12: Got hr 0x80004003.
+vmr7.c:943: Test marked todo: Compression 0x32315659, depth 12: Got hr 0.
+vmr7.c:3672: Test marked todo: Compression 0x32315659, depth 12: Got allocatesurface_count 3, prev_allocatesurface_count 3.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3385: Test marked todo: Compression 0x59565955, depth 16: Got minimum buffer count 1.
+vmr7.c:3386: Test marked todo: Compression 0x59565955, depth 16: Got maximum buffer count 1.
+vmr7.c:3388: Test marked todo: Compression 0x59565955, depth 16: Got aspect ratio width 32.
+vmr7.c:3389: Test marked todo: Compression 0x59565955, depth 16: Got aspect ratio height 16.
+vmr7.c:3392: Test marked todo: Compression 0x59565955, depth 16: Got buffer count 1.
+vmr7.c:3636: Test marked todo: Compression 0x59565955, depth 16: Got allocatesurface_count 4, prev_allocatesurface_count 3.
+vmr7.c:3648: Test marked todo: Compression 0x59565955, depth 16: Got hr 0x8004020a.
+vmr7.c:908: Test marked todo: Compression 0x59565955, depth 16: Got hr 0x8004020a.
+vmr7.c:937: Test marked todo: Compression 0x59565955, depth 16: Got hr 0x80004003.
+vmr7.c:943: Test marked todo: Compression 0x59565955, depth 16: Got hr 0.
+vmr7.c:3672: Test marked todo: Compression 0x59565955, depth 16: Got allocatesurface_count 4, prev_allocatesurface_count 4.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3385: Test marked todo: Compression 0x32595559, depth 16: Got minimum buffer count 1.
+vmr7.c:3386: Test marked todo: Compression 0x32595559, depth 16: Got maximum buffer count 1.
+vmr7.c:3388: Test marked todo: Compression 0x32595559, depth 16: Got aspect ratio width 32.
+vmr7.c:3389: Test marked todo: Compression 0x32595559, depth 16: Got aspect ratio height 16.
+vmr7.c:3392: Test marked todo: Compression 0x32595559, depth 16: Got buffer count 1.
+vmr7.c:3636: Test marked todo: Compression 0x32595559, depth 16: Got allocatesurface_count 5, prev_allocatesurface_count 4.
+vmr7.c:3648: Test marked todo: Compression 0x32595559, depth 16: Got hr 0x8004020a.
+vmr7.c:908: Test marked todo: Compression 0x32595559, depth 16: Got hr 0x8004020a.
+vmr7.c:937: Test marked todo: Compression 0x32595559, depth 16: Got hr 0x80004003.
+vmr7.c:943: Test marked todo: Compression 0x32595559, depth 16: Got hr 0.
+vmr7.c:3672: Test marked todo: Compression 0x32595559, depth 16: Got allocatesurface_count 5, prev_allocatesurface_count 5.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3461: Test marked todo: Got unexpected surface.
+vmr7.c:3307: Test marked todo: Got unexpected surface.
+vmr7.c:3310: Test marked todo: Got aspect ratio width 32.
+vmr7.c:3311: Test marked todo: Got aspect ratio height 16.
+vmr7.c:3642: Tests skipped: Compression 0x30355649, depth 16: Format is not supported, hr 0x8004022a.
+0440:vmr7: 2123 tests executed (187 marked as todo, 0 as flaky, 0 failures), 1 skipped.

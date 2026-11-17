@@ -1,0 +1,17 @@
+mmio.c:89: ckid RIFF cksize 0080 fccType AVI  off 0008 flags 0000
+mmio.c:100: ckid LIST cksize 0074 fccType hdrl off 0014 flags 0000
+mmio.c:110: ckid avih cksize 0038 fccType      off 0020 flags 0000
+mmio.c:124: ckid LIST cksize 0028 fccType strl off 0060 flags 0000
+mmio.c:134: ckid strh cksize 001c fccType      off 006c flags 0000
+mmio.c:76: No optional msrle.avi file. Skipping the test
+mmio.c:243: No optional msrle.avi file. Skipping the test
+mmio.c:537: Test marked todo: failed to parse file name, error 0xdead
+mmio.c:538: Test marked todo: got error 0xdead
+mmio.c:542: Test marked todo: expected L"C:\\users\\nicolo\\AppData\\Local\\Temp\\very_long_filename_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", got L"very_long_filename_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+mmio.c:547: Test marked todo: failed to parse file name, error 0xdead
+mmio.c:548: Test marked todo: got error 0xdead
+mmio.c:550: Test marked todo: expected "very_long_filename_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", got "C:\\users\\nicolo\\AppData\\Local\\Temp\\very_long_filename_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+mmio.c:562: Test marked todo: expected L"C:\\users\\nicolo\\AppData\\Local\\Temp\\test_mmio_path", got L"test_mmio_path"
+mmio.c:568: Test marked todo: got error 0xdead
+mmio.c:602: No optional msrle.avi file. Skipping the test
+045c:mmio: 367 tests executed (8 marked as todo, 0 as flaky, 0 failures), 0 skipped.

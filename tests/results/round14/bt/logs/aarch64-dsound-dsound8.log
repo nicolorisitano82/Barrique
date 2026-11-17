@@ -1,0 +1,19 @@
+dsound8.c:196: Testing IDirectSound8
+dsound8.c:927: *** Testing Primary Sound Driver -  ***
+dsound8.c:927: *** Testing Speakers (AirPods Pro di Nicolò) - {0.0.0.00000000}.{F4E32BF2-D389-486E-963A-134FFEC2F562} ***
+dsound8.c:927: *** Testing Speakers (Altoparlanti MacBook Pro) - {0.0.0.00000000}.{56CF8C5D-F98C-4C48-9C5B-C25C728E373C} ***
+dsound8.c:927: *** Testing Speakers (BlackHole 2ch) - {0.0.0.00000000}.{B10B0D41-FFB3-4E73-8396-2358A330D406} ***
+dsound8.c:1025: dwMaxHwMixingAllBuffers: 1
+dsound8.c:1026: dwMaxHwMixingStaticBuffers: 1
+dsound8.c:1027: dwMaxHwMixingStreamingBuffers: 1
+dsound8.c:1072: guid: 0000000000000000, desc: Primary Sound Driver
+dsound8.c:1072: guid: 000000700C85A880, desc: Speakers (AirPods Pro di Nicolò)
+dsound8.c:1072: guid: 000000700C85A890, desc: Speakers (Altoparlanti MacBook Pro)
+dsound8.c:1072: guid: 000000700C85A8A0, desc: Speakers (BlackHole 2ch)
+dsound8.c:1208: 0xf5f
+dsound8.c:1902: Test marked todo: got: 00000010
+dsound8.c:1643: Test marked todo: Got result 0x5.
+dsound8.c:1652: Test marked todo: Got result 0x5.
+dsound8.c:1708: Test marked todo: Got hr 0.
+dsound8.c:1836: Test marked todo: Got result 0.
+0170:dsound8: 10814 tests executed (5 marked as todo, 0 as flaky, 0 failures), 0 skipped.
