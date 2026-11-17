@@ -1,0 +1,10 @@
+i386 dxgi dxgi: crash (- tests, - failures, 25s)
+i386 d3d11 d3d11: crash (4 tests, 0 failures, 63s)
+i386 d3d12 d3d12: crash (- tests, - failures, 5s)
+i386 d3d10core d3d10core: ok (0 tests, 0 failures, 58s)
+i386 d3d9 d3d9ex: crash (- tests, - failures, 2s)
+i386 d3d9 device: timeout (- tests, - failures, 180s)
+i386 d3d9 stateblock: ok (14738 tests, 0 failures, 3s)
+i386 d3d9 visual: crash (- tests, - failures, 1s)
+host faults:
+DIAG7 DONE

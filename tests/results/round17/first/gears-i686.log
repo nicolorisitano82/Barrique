@@ -1,0 +1,6 @@
+gears: 4320 vertices (2160, 1080, 1080), 640x480, 5.0 s per API, 32-bit build
+gl     ok   fps   3304.7  frames  16524  first   353 ms  red 24.2% green 6.3% blue 4.7%  Apple M3 Max, GL 2.1 Metal - 91.7
+d3d9   ok   fps   2027.7  frames  10139  first   275 ms  red 24.2% green 6.3% blue 4.7%  NVIDIA GeForce 6800
+d3d11  FAIL shaders: 0x80070057  NVIDIA GeForce 6800, level 9_3
+d3d12  ok   fps    354.1  frames   1772  first   438 ms  red 24.2% green 6.3% blue 4.7%  NVIDIA GeForce 6800
+RESULT gears FAILED 3/4

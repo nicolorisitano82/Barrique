@@ -1,0 +1,16 @@
+i386 dxgi dxgi: crash (- tests, - failures, 28s)
+i386 d3d11 d3d11: crash (4 tests, 0 failures, 63s)
+i386 d3d12 d3d12: crash (- tests, - failures, 5s)
+i386 d3d10core d3d10core: ok (0 tests, 0 failures, 59s)
+i386 d3d9 d3d9ex: crash (- tests, - failures, 2s)
+i386 d3d9 device: crash (- tests, - failures, 11s)
+i386 d3d9 stateblock: ok (14738 tests, 0 failures, 3s)
+i386 d3d9 visual: crash (- tests, - failures, 2s)
+i386 opengl32 opengl: crash (- tests, - failures, 4s)
+aarch64 opengl32 opengl: crash (- tests, - failures, 4s)
+aarch64 d3d9 d3d9ex: fail (2951 tests, 24 failures, 42s)
+aarch64 d3d9 device: crash (- tests, - failures, 53s)
+aarch64 d3d9 stateblock: ok (14738 tests, 0 failures, 3s)
+aarch64 d3d9 visual: timeout (- tests, - failures, 180s)
+refusals:
+DIAG5 DONE

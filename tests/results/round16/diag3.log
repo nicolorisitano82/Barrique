@@ -1,0 +1,8 @@
+aarch64 vulkan-1 vulkan: fail (1173 tests, 13 failures, 4s)
+x86_64 vulkan-1 vulkan: timeout (- tests, - failures, 180s)
+i386 vulkan-1 vulkan: fail (1173 tests, 13 failures, 3s)
+i386 d3d12 d3d12: ok (3 tests, 0 failures, 4s)
+aarch64 dxgi dxgi: crash (- tests, - failures, 4s)
+aarch64 d3d11 d3d11: fail (3865 tests, 2 failures, 5s)
+refusals:
+DIAG3 DONE

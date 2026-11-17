@@ -1,0 +1,494 @@
+[mvk-info] MoltenVK version 1.4.2, supporting Vulkan version 1.4.357.
+	The following 154 Vulkan extensions are supported:
+	VK_KHR_16bit_storage v1
+	VK_KHR_8bit_storage v1
+	VK_KHR_bind_memory2 v1
+	VK_KHR_buffer_device_address v1
+	VK_KHR_calibrated_timestamps v1
+	VK_KHR_copy_commands2 v1
+	VK_KHR_create_renderpass2 v1
+	VK_KHR_dedicated_allocation v3
+	VK_KHR_deferred_host_operations v4
+	VK_KHR_depth_stencil_resolve v1
+	VK_KHR_descriptor_update_template v1
+	VK_KHR_device_group v4
+	VK_KHR_device_group_creation v1
+	VK_KHR_driver_properties v1
+	VK_KHR_dynamic_rendering v1
+	VK_KHR_dynamic_rendering_local_read v1
+	VK_KHR_external_fence v1
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_format_feature_flags2 v2
+	VK_KHR_fragment_shader_barycentric v1
+	VK_KHR_get_memory_requirements2 v1
+	VK_KHR_get_physical_device_properties2 v2
+	VK_KHR_get_surface_capabilities2 v1
+	VK_KHR_global_priority v1
+	VK_KHR_image_format_list v1
+	VK_KHR_imageless_framebuffer v1
+	VK_KHR_incremental_present v2
+	VK_KHR_index_type_uint8 v1
+	VK_KHR_line_rasterization v1
+	VK_KHR_load_store_op_none v1
+	VK_KHR_maintenance1 v2
+	VK_KHR_maintenance2 v1
+	VK_KHR_maintenance3 v1
+	VK_KHR_maintenance4 v2
+	VK_KHR_maintenance5 v1
+	VK_KHR_maintenance6 v1
+	VK_KHR_maintenance7 v1
+	VK_KHR_maintenance8 v1
+	VK_KHR_maintenance9 v1
+	VK_KHR_map_memory2 v1
+	VK_KHR_multiview v1
+	VK_KHR_portability_subset v1
+	VK_KHR_present_id v1
+	VK_KHR_present_id2 v1
+	VK_KHR_present_wait v1
+	VK_KHR_present_wait2 v1
+	VK_KHR_push_descriptor v2
+	VK_KHR_relaxed_block_layout v1
+	VK_KHR_robustness2 v1
+	VK_KHR_sampler_mirror_clamp_to_edge v3
+	VK_KHR_sampler_ycbcr_conversion v14
+	VK_KHR_separate_depth_stencil_layouts v1
+	VK_KHR_shader_draw_parameters v1
+	VK_KHR_shader_expect_assume v1
+	VK_KHR_shader_float_controls v4
+	VK_KHR_shader_float_controls2 v1
+	VK_KHR_shader_float16_int8 v1
+	VK_KHR_shader_fma v1
+	VK_KHR_shader_integer_dot_product v1
+	VK_KHR_shader_maximal_reconvergence v1
+	VK_KHR_shader_non_semantic_info v1
+	VK_KHR_shader_quad_control v1
+	VK_KHR_shader_relaxed_extended_instruction v1
+	VK_KHR_shader_subgroup_extended_types v1
+	VK_KHR_shader_subgroup_rotate v2
+	VK_KHR_shader_subgroup_uniform_control_flow v1
+	VK_KHR_shader_terminate_invocation v1
+	VK_KHR_spirv_1_4 v1
+	VK_KHR_storage_buffer_storage_class v1
+	VK_KHR_surface v25
+	VK_KHR_surface_maintenance1 v1
+	VK_KHR_surface_protected_capabilities v1
+	VK_KHR_swapchain v70
+	VK_KHR_swapchain_maintenance1 v1
+	VK_KHR_swapchain_mutable_format v1
+	VK_KHR_synchronization2 v1
+	VK_KHR_timeline_semaphore v2
+	VK_KHR_uniform_buffer_standard_layout v1
+	VK_KHR_variable_pointers v1
+	VK_KHR_vertex_attribute_divisor v1
+	VK_KHR_vulkan_memory_model v3
+	VK_KHR_zero_initialize_workgroup_memory v1
+	VK_EXT_4444_formats v1
+	VK_EXT_buffer_device_address v2
+	VK_EXT_calibrated_timestamps v2
+	VK_EXT_debug_marker v4
+	VK_EXT_debug_report v10
+	VK_EXT_debug_utils v2
+	VK_EXT_depth_clip_control v1
+	VK_EXT_descriptor_indexing v2
+	VK_EXT_extended_dynamic_state v1
+	VK_EXT_extended_dynamic_state2 v1
+	VK_EXT_extended_dynamic_state3 v2
+	VK_EXT_external_memory_host v1
+	VK_EXT_external_memory_metal v1
+	VK_EXT_fragment_shader_interlock v1
+	VK_EXT_global_priority v2
+	VK_EXT_global_priority_query v1
+	VK_EXT_hdr_metadata v3
+	VK_EXT_headless_surface v1
+	VK_EXT_host_image_copy v1
+	VK_EXT_host_query_reset v1
+	VK_EXT_image_2d_view_of_3d v1
+	VK_EXT_image_robustness v1
+	VK_EXT_index_type_uint8 v1
+	VK_EXT_inline_uniform_block v1
+	VK_EXT_layer_settings v2
+	VK_EXT_legacy_dithering v2
+	VK_EXT_line_rasterization v1
+	VK_EXT_load_store_op_none v1
+	VK_EXT_memory_budget v1
+	VK_EXT_metal_objects v2
+	VK_EXT_metal_surface v1
+	VK_EXT_non_seamless_cube_map v1
+	VK_EXT_pipeline_creation_cache_control v3
+	VK_EXT_pipeline_creation_feedback v1
+	VK_EXT_pipeline_robustness v1
+	VK_EXT_post_depth_coverage v1
+	VK_EXT_primitive_topology_list_restart v1
+	VK_EXT_private_data v1
+	VK_EXT_provoking_vertex v1
+	VK_EXT_robustness2 v1
+	VK_EXT_sample_locations v1
+	VK_EXT_sampler_filter_minmax v2
+	VK_EXT_scalar_block_layout v1
+	VK_EXT_separate_stencil_usage v1
+	VK_EXT_shader_atomic_float v1
+	VK_EXT_shader_demote_to_helper_invocation v1
+	VK_EXT_shader_stencil_export v1
+	VK_EXT_shader_subgroup_ballot v1
+	VK_EXT_shader_subgroup_vote v1
+	VK_EXT_shader_viewport_index_layer v1
+	VK_EXT_subgroup_size_control v2
+	VK_EXT_surface_maintenance1 v1
+	VK_EXT_swapchain_colorspace v5
+	VK_EXT_swapchain_maintenance1 v1
+	VK_EXT_texel_buffer_alignment v1
+	VK_EXT_texture_compression_astc_hdr v1
+	VK_EXT_tooling_info v1
+	VK_EXT_vertex_attribute_divisor v3
+	VK_AMD_gpu_shader_half_float v2
+	VK_AMD_negative_viewport_height v1
+	VK_AMD_shader_image_load_store_lod v1
+	VK_AMD_shader_trinary_minmax v1
+	VK_GOOGLE_display_timing v1
+	VK_IMG_format_pvrtc v1
+	VK_INTEL_shader_integer_functions2 v1
+	VK_MVK_macos_surface v3
+	VK_MVK_moltenvk v37
+	VK_NV_fragment_shader_barycentric v1
+[mvk-info] GPU device:
+	model: Apple M3 Max
+	type: Integrated
+	vendorID: 0x106b
+	deviceID: 0x1b030209
+	pipelineCacheUUID: 000028A2-1B03-0209-0000-000100000000
+	GPU memory available: 28753 MB
+	GPU memory used: 0 MB
+	Metal Shading Language 4.0
+	supports the following GPU Features:
+		GPU Family Metal 4
+		GPU Family Apple 9
+		GPU Family Mac 1
+		GPU Family Mac 2
+		Read-Write Texture Tier 2
+[mvk-info] Created VkInstance for Vulkan version 1.0.357, as requested by app, with the following 4 Vulkan extensions enabled:
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_get_physical_device_properties2 v2
+[mvk-info] MoltenVK version 1.4.2, supporting Vulkan version 1.4.357.
+	The following 154 Vulkan extensions are supported:
+	VK_KHR_16bit_storage v1
+	VK_KHR_8bit_storage v1
+	VK_KHR_bind_memory2 v1
+	VK_KHR_buffer_device_address v1
+	VK_KHR_calibrated_timestamps v1
+	VK_KHR_copy_commands2 v1
+	VK_KHR_create_renderpass2 v1
+	VK_KHR_dedicated_allocation v3
+	VK_KHR_deferred_host_operations v4
+	VK_KHR_depth_stencil_resolve v1
+	VK_KHR_descriptor_update_template v1
+	VK_KHR_device_group v4
+	VK_KHR_device_group_creation v1
+	VK_KHR_driver_properties v1
+	VK_KHR_dynamic_rendering v1
+	VK_KHR_dynamic_rendering_local_read v1
+	VK_KHR_external_fence v1
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_format_feature_flags2 v2
+	VK_KHR_fragment_shader_barycentric v1
+	VK_KHR_get_memory_requirements2 v1
+	VK_KHR_get_physical_device_properties2 v2
+	VK_KHR_get_surface_capabilities2 v1
+	VK_KHR_global_priority v1
+	VK_KHR_image_format_list v1
+	VK_KHR_imageless_framebuffer v1
+	VK_KHR_incremental_present v2
+	VK_KHR_index_type_uint8 v1
+	VK_KHR_line_rasterization v1
+	VK_KHR_load_store_op_none v1
+	VK_KHR_maintenance1 v2
+	VK_KHR_maintenance2 v1
+	VK_KHR_maintenance3 v1
+	VK_KHR_maintenance4 v2
+	VK_KHR_maintenance5 v1
+	VK_KHR_maintenance6 v1
+	VK_KHR_maintenance7 v1
+	VK_KHR_maintenance8 v1
+	VK_KHR_maintenance9 v1
+	VK_KHR_map_memory2 v1
+	VK_KHR_multiview v1
+	VK_KHR_portability_subset v1
+	VK_KHR_present_id v1
+	VK_KHR_present_id2 v1
+	VK_KHR_present_wait v1
+	VK_KHR_present_wait2 v1
+	VK_KHR_push_descriptor v2
+	VK_KHR_relaxed_block_layout v1
+	VK_KHR_robustness2 v1
+	VK_KHR_sampler_mirror_clamp_to_edge v3
+	VK_KHR_sampler_ycbcr_conversion v14
+	VK_KHR_separate_depth_stencil_layouts v1
+	VK_KHR_shader_draw_parameters v1
+	VK_KHR_shader_expect_assume v1
+	VK_KHR_shader_float_controls v4
+	VK_KHR_shader_float_controls2 v1
+	VK_KHR_shader_float16_int8 v1
+	VK_KHR_shader_fma v1
+	VK_KHR_shader_integer_dot_product v1
+	VK_KHR_shader_maximal_reconvergence v1
+	VK_KHR_shader_non_semantic_info v1
+	VK_KHR_shader_quad_control v1
+	VK_KHR_shader_relaxed_extended_instruction v1
+	VK_KHR_shader_subgroup_extended_types v1
+	VK_KHR_shader_subgroup_rotate v2
+	VK_KHR_shader_subgroup_uniform_control_flow v1
+	VK_KHR_shader_terminate_invocation v1
+	VK_KHR_spirv_1_4 v1
+	VK_KHR_storage_buffer_storage_class v1
+	VK_KHR_surface v25
+	VK_KHR_surface_maintenance1 v1
+	VK_KHR_surface_protected_capabilities v1
+	VK_KHR_swapchain v70
+	VK_KHR_swapchain_maintenance1 v1
+	VK_KHR_swapchain_mutable_format v1
+	VK_KHR_synchronization2 v1
+	VK_KHR_timeline_semaphore v2
+	VK_KHR_uniform_buffer_standard_layout v1
+	VK_KHR_variable_pointers v1
+	VK_KHR_vertex_attribute_divisor v1
+	VK_KHR_vulkan_memory_model v3
+	VK_KHR_zero_initialize_workgroup_memory v1
+	VK_EXT_4444_formats v1
+	VK_EXT_buffer_device_address v2
+	VK_EXT_calibrated_timestamps v2
+	VK_EXT_debug_marker v4
+	VK_EXT_debug_report v10
+	VK_EXT_debug_utils v2
+	VK_EXT_depth_clip_control v1
+	VK_EXT_descriptor_indexing v2
+	VK_EXT_extended_dynamic_state v1
+	VK_EXT_extended_dynamic_state2 v1
+	VK_EXT_extended_dynamic_state3 v2
+	VK_EXT_external_memory_host v1
+	VK_EXT_external_memory_metal v1
+	VK_EXT_fragment_shader_interlock v1
+	VK_EXT_global_priority v2
+	VK_EXT_global_priority_query v1
+	VK_EXT_hdr_metadata v3
+	VK_EXT_headless_surface v1
+	VK_EXT_host_image_copy v1
+	VK_EXT_host_query_reset v1
+	VK_EXT_image_2d_view_of_3d v1
+	VK_EXT_image_robustness v1
+	VK_EXT_index_type_uint8 v1
+	VK_EXT_inline_uniform_block v1
+	VK_EXT_layer_settings v2
+	VK_EXT_legacy_dithering v2
+	VK_EXT_line_rasterization v1
+	VK_EXT_load_store_op_none v1
+	VK_EXT_memory_budget v1
+	VK_EXT_metal_objects v2
+	VK_EXT_metal_surface v1
+	VK_EXT_non_seamless_cube_map v1
+	VK_EXT_pipeline_creation_cache_control v3
+	VK_EXT_pipeline_creation_feedback v1
+	VK_EXT_pipeline_robustness v1
+	VK_EXT_post_depth_coverage v1
+	VK_EXT_primitive_topology_list_restart v1
+	VK_EXT_private_data v1
+	VK_EXT_provoking_vertex v1
+	VK_EXT_robustness2 v1
+	VK_EXT_sample_locations v1
+	VK_EXT_sampler_filter_minmax v2
+	VK_EXT_scalar_block_layout v1
+	VK_EXT_separate_stencil_usage v1
+	VK_EXT_shader_atomic_float v1
+	VK_EXT_shader_demote_to_helper_invocation v1
+	VK_EXT_shader_stencil_export v1
+	VK_EXT_shader_subgroup_ballot v1
+	VK_EXT_shader_subgroup_vote v1
+	VK_EXT_shader_viewport_index_layer v1
+	VK_EXT_subgroup_size_control v2
+	VK_EXT_surface_maintenance1 v1
+	VK_EXT_swapchain_colorspace v5
+	VK_EXT_swapchain_maintenance1 v1
+	VK_EXT_texel_buffer_alignment v1
+	VK_EXT_texture_compression_astc_hdr v1
+	VK_EXT_tooling_info v1
+	VK_EXT_vertex_attribute_divisor v3
+	VK_AMD_gpu_shader_half_float v2
+	VK_AMD_negative_viewport_height v1
+	VK_AMD_shader_image_load_store_lod v1
+	VK_AMD_shader_trinary_minmax v1
+	VK_GOOGLE_display_timing v1
+	VK_IMG_format_pvrtc v1
+	VK_INTEL_shader_integer_functions2 v1
+	VK_MVK_macos_surface v3
+	VK_MVK_moltenvk v37
+	VK_NV_fragment_shader_barycentric v1
+[mvk-info] GPU device:
+	model: Apple M3 Max
+	type: Integrated
+	vendorID: 0x106b
+	deviceID: 0x1b030209
+	pipelineCacheUUID: 000028A2-1B03-0209-0000-000100000000
+	GPU memory available: 28753 MB
+	GPU memory used: 0 MB
+	Metal Shading Language 4.0
+	supports the following GPU Features:
+		GPU Family Metal 4
+		GPU Family Apple 9
+		GPU Family Mac 1
+		GPU Family Mac 2
+		Read-Write Texture Tier 2
+[mvk-info] Created VkInstance for Vulkan version 1.0.357, as requested by app, with the following 4 Vulkan extensions enabled:
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_get_physical_device_properties2 v2
+d3d9ex.c:494: GetDisplayModeEx returned Width = 1512, Height = 982, RefreshRate = 120, Format = 16, ScanLineOrdering = 1, rotation = 1.
+d3d9ex.c:427: Adapter luid: 00000000:000003f4.
+d3d9ex.c:569: Tests skipped: Graphics mode is not supported.
+d3d9ex.c:813: Test marked todo: Failed to create surface, hr 0x80004001.
+d3d9ex.c:830: Test marked todo: Got unexpected hr 0x80004001.
+d3d9ex.c:1000: Test failed: Got screen width 1512, expected 960.
+d3d9ex.c:1001: Test failed: Got screen height 982, expected 600.
+d3d9ex.c:1067: Test failed: Got screen width 1512, expected 1024.
+d3d9ex.c:1068: Test failed: Got screen height 982, expected 640.
+d3d9ex.c:1127: Test failed: Screen width is 1512, expected 1024.
+d3d9ex.c:1128: Test failed: Screen height is 982, expected 640.
+d3d9ex.c:1140: Test failed: Screen width is 1512, expected 1024.
+d3d9ex.c:1141: Test failed: Screen height is 982, expected 640.
+d3d9ex.c:1510: Test failed: Got screen width 1512, expected 960.
+d3d9ex.c:1511: Test failed: Got screen height 982, expected 600.
+d3d9ex.c:1579: Test failed: Got screen width 1512, expected 1024.
+d3d9ex.c:1580: Test failed: Got screen height 982, expected 640.
+d3d9ex.c:1646: Test failed: Got screen width 1512, expected 1024.
+d3d9ex.c:1647: Test failed: Got screen height 982, expected 640.
+d3d9ex.c:1706: Test failed: Screen width is 1512, expected 1024.
+d3d9ex.c:1707: Test failed: Screen height is 982, expected 640.
+d3d9ex.c:1721: Test failed: Screen width is 1512, expected 1024.
+d3d9ex.c:1722: Test failed: Screen height is 982, expected 640.
+d3d9ex.c:2026: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:2446: Tests skipped: This GPU supports SM3, skipping unsupported shader test.
+d3d9ex.c:2885: device_window 000000000012006E, focus_window 0000000000120068, dummy_window 00000000000F006A.
+d3d9ex.c:2938: Test marked todo: Got unexpected hr 0, i=0.
+d3d9ex.c:2940: Test marked todo: Got unexpected hr 0, i=0.
+d3d9ex.c:2949: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=0.
+d3d9ex.c:2990: Test failed: Got unexpected screen size 1512x982.
+d3d9ex.c:3007: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=0.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x47 for window 0000000000120068.
+d3d9ex.c:3100: Test marked flaky: Expected message 0x7e for window 0x1, but didn't receive it, i=0.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x86 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x6 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x8 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x281 for window 0000000000120068.
+d3d9ex.c:2885: device_window 000000000010006A, focus_window 000000000017006C, dummy_window 0000000000070072.
+d3d9ex.c:2938: Test marked todo: Got unexpected hr 0, i=1.
+d3d9ex.c:2940: Test marked todo: Got unexpected hr 0, i=1.
+d3d9ex.c:2949: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=1.
+d3d9ex.c:2990: Test failed: Got unexpected screen size 1512x982.
+d3d9ex.c:3007: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=1.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 000000000017006C.
+d3d9ex.c:3100: Test marked flaky: Expected message 0x7e for window 0x1, but didn't receive it, i=1.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x86 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x6 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x8 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x281 for window 000000000017006C.
+d3d9ex.c:3220: Test marked todo: Expected the device window to be hidden, i=1.
+d3d9ex.c:3303: device_window 0000000000080072, focus_window 0000000000080070, dummy_window 0000000000140068.
+d3d9ex.c:3516: Test marked todo: Expected device window style 0x4cf0000, got 0x940b0000, i=0.
+d3d9ex.c:3521: Test marked todo: Expected device window extended style 0x100, got 0x8, i=0.
+d3d9ex.c:3540: Test marked todo: Client rect and window rect are equal, i=0.
+d3d9ex.c:3600: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=0.
+d3d9ex.c:3605: Test marked todo: Expected device window extended style 0x108, got 0x8, i=0.
+d3d9ex.c:3633: Test marked todo: Expected device window style 0x4cf0000, got 0xb40b0000, i=0.
+d3d9ex.c:3637: Test marked todo: Expected device window extended style 0x100, got 0x8, i=0.
+d3d9ex.c:3516: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=1.
+d3d9ex.c:3521: Test marked todo: Expected device window extended style 0x100, got 0x8, i=1.
+d3d9ex.c:3540: Test marked todo: Client rect and window rect are equal, i=1.
+d3d9ex.c:3600: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=1.
+d3d9ex.c:3605: Test marked todo: Expected device window extended style 0x108, got 0x8, i=1.
+d3d9ex.c:3633: Test marked todo: Expected device window style 0x34cf0000, got 0xb40b0000, i=1.
+d3d9ex.c:3637: Test marked todo: Expected device window extended style 0x100, got 0x8, i=1.
+d3d9ex.c:3516: Test marked todo: Expected device window style 0x4cf0000, got 0x840b0000, i=2.
+d3d9ex.c:3521: Test marked todo: Expected device window extended style 0x100, got 0, i=2.
+d3d9ex.c:3534: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=2.
+d3d9ex.c:3540: Test marked todo: Client rect and window rect are equal, i=2.
+d3d9ex.c:3552: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=2.
+d3d9ex.c:3600: Test marked todo: Expected device window style 0x4cf0000, got 0x840b0000, i=2.
+d3d9ex.c:3605: Test marked todo: Expected device window extended style 0x100, got 0, i=2.
+d3d9ex.c:3633: Test marked todo: Expected device window style 0x4cf0000, got 0x840b0000, i=2.
+d3d9ex.c:3637: Test marked todo: Expected device window extended style 0x100, got 0, i=2.
+d3d9ex.c:3516: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=3.
+d3d9ex.c:3521: Test marked todo: Expected device window extended style 0x100, got 0, i=3.
+d3d9ex.c:3534: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=3.
+d3d9ex.c:3540: Test marked todo: Client rect and window rect are equal, i=3.
+d3d9ex.c:3552: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=3.
+d3d9ex.c:3600: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=3.
+d3d9ex.c:3605: Test marked todo: Expected device window extended style 0x100, got 0, i=3.
+d3d9ex.c:3633: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=3.
+d3d9ex.c:3637: Test marked todo: Expected device window extended style 0x100, got 0, i=3.
+d3d9ex.c:4026: Test marked todo: Got unexpected hr 0x80004001.
+d3d9ex.c:4027: Test marked todo: Got unexpected iface 00000000DEADBEEF.
+d3d9ex.c:4540: Test marked todo: Test 2D 0: Got unexpected hr 0.
+d3d9ex.c:4540: Test marked todo: Test 2D 2: Got unexpected hr 0.
+d3d9ex.c:4540: Test marked todo: Test 2D 3: Got unexpected hr 0.
+d3d9ex.c:4540: Test marked todo: Test 2D 6: Got unexpected hr 0.
+d3d9ex.c:4402: Test marked todo: Test 2D 23: Got unexpected hr 0.
+d3d9ex.c:4402: Test marked todo: Test 2D 30: Got unexpected hr 0.
+d3d9ex.c:4418: Test marked todo: Test CUBE 23: Got unexpected hr 0.
+d3d9ex.c:4418: Test marked todo: Test CUBE 30: Got unexpected hr 0.
+d3d9ex.c:4471: Test marked todo: Test PLAIN 1: Got unexpected hr 0.
+d3d9ex.c:4471: Test marked todo: Test PLAIN 8: Got unexpected hr 0.
+d3d9ex.c:4471: Test marked todo: Test PLAIN 22: Got unexpected hr 0.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 0: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 1: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 2: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 3: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 4: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 5: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 6: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 7: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 8: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 9: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 10: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 11: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 12: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 13: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 14: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 15: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 16: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 17: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 18: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 19: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 20: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 21: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 22: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 23: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 24: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 25: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 26: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 27: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 28: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 29: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 30: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 31: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 32: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 33: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 34: Got unexpected hr 0x80004001.
+0020:d3d9ex: 2951 tests executed (107 marked as todo, 2 as flaky, 24 failures), 3 skipped.

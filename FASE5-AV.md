@@ -247,11 +247,21 @@ Nessuno dei tipi di memoria della GPU che abbiamo trovato manda in panic. Quindi
 - **MoltenVK senza `vkGetPhysicalDevicePresentRectanglesKHR`:** il test chiamava un puntatore nullo. win32u ora la emula (un rettangolo grande quanto `currentExtent`) e winevulkan la dichiara disponibile con `VK_KHR_surface`.
 
 Risultati (`round16/vk2`): vulkan-1 1173 controlli con 19 fallimenti su tutte e tre le architetture quando arriva in fondo (prima: istanza non creata, `vr -3`); d3d12 su vkd3d e MoltenVK 671 controlli, 0 fallimenti su aarch64 e x86_64 (prima saltati); d3d11 invariato (15 fallimenti, wined3d GL). Aperti:
-- I fallimenti di vulkan-1 sono finestre ridimensionate o minimizzate: MoltenVK risponde `VK_ERROR_OUT_OF_DATE_KHR` all'acquisizione dove Windows non lo fa, e win32u non può nasconderlo (senza immagine valida). Dopo uno di questi il test ogni tanto si blocca (attesa infinita su una fence: una volta x86_64, una volta aarch64).
-- i386: d3d12 non crea il device (vkd3d a 32 bit), d3d11 0 controlli.
-- dxgi in crash sulle tre architetture: ora che d3d12 funziona, `test_create_swapchain` arriva a una parte che crea un device D3D10 con BGRA a livello 10_0 e non controlla il risultato; wined3d sul GL 2.1 di Apple arriva solo a 9.x. Su Windows i due vanno insieme: si risolve con un D3D10/11 a livello ≥ 10 (renderer Vulkan di wined3d o DXMT, passo 7).
+- ~~Finestre ridimensionate o minimizzate~~ (giro 16, `diag3`): il codice era `VK_SUBOPTIMAL_KHR` (1000001003), non `OUT_OF_DATE`. Con l'area client vuota win32u porta la swapchain al minimo dell'host (1 pixel) e MoltenVK la vede diversa dal layer. win32u ha già lo scaling della swapchain per questo (`VkSwapchainPresentScalingCreateInfoEXT`), ma richiede `VK_EXT_surface_maintenance1`, che non veniva mai attivata: **bug di Wine upstream**, il flag `has_VK_KHR_win32_surface` è azzerato due righe prima di essere controllato. Corretto: vulkan-1 da 19 a 13 fallimenti su aarch64 e i386, e i 13 rimasti sono tutti "Test succeeded inside todo block" (formati BGRA come su Windows, marcati todo per Linux).
+- **Finestra nascosta, blocco:** MoltenVK rende di nuovo disponibile un'immagine della swapchain solo quando macOS conferma che il drawable è stato mostrato (`addPresentedHandler`). Su una finestra nascosta la conferma può non arrivare: l'acquisizione successiva con timeout infinito resta ferma (test "hidden", ogni tanto, una volta per architettura). Su Windows presentare su una finestra nascosta finisce subito; un gioco minimizzato su Mac si bloccherebbe allo stesso modo. Da fare: in win32u, per le finestre non visibili, non presentare all'host ma attendere i semafori con un submit vuoto e restituire l'immagine con `vkReleaseSwapchainImagesEXT` (ora disponibile con `swapchain_maintenance1`), oppure in MoltenVK chiudere la presentazione quando il layer non è visibile.
+- ~~i386: `CreateDXGIFactory` fallisce con `DXGI_ERROR_UNSUPPORTED`~~ (giro 16, `diag4`-`diag11`). La grafica a 32 bit era rotta dai giri 5-6 per cinque bug WoW64 sotto HVF, tutti della stessa famiglia (indirizzi Windows sotto 4 GB usati senza traduzione, o interi tradotti come indirizzi):
+  1. opengl32/win32u: gli oggetti client OpenGL (contesti `HGLRC`, pbuffer, sync) sono memoria Windows e il lato host li usava all'indirizzo Windows: ogni `wglCreateContextAttribsARB` a 32 bit finiva in un errore dell'host, wined3d restava senza adapter. Ora `opengl_client_ptr` in `include/wine/opengl_driver.h`.
+  2. opengl32: `copy_wow64_ptr32s` (array di puntatori di `glShaderSource`) leggeva l'array all'indirizzo Windows.
+  3. opengl32: 128 parametri `GLintptr`/`GLsizeiptr` dei thunk passavano da `ULongToPtr` (512 KB diventavano `0xe000080000`): ora `ULongToHandle`, anche nel generatore `make_opengl`.
+  4. win32u: `vkMapMemory` della memoria importata restituisce un puntatore nella finestra bassa dell'host; ora riconvertito nell'indirizzo Windows invece di essere scartato.
+  5. (sopra) winevulkan: handle degli oggetti client e handle Windows.
 
-## Passo 6: banco di prova grafico ⬜
+  Risultati i386 (`diag11`), ora uguali a quelli a 64 bit: d3d12 671 controlli 0 fallimenti (prima nessun device), d3d11 3917 e 15 (prima 0 controlli), d3d9 `device` 160737 e 19, `visual` 211908 e 18, `d3d9ex` 2957 e 2, `stateblock` 14738 e 0 (prima 0-13 controlli); nessun errore dell'host. dxgi e opengl32 si fermano negli stessi punti dei 64 bit (device D3D10 BGRA; `glGetFramebufferParameteriv` GL 4.3).
+  Rischio noto, non trattato: i parametri che sono puntatori o offset a seconda del buffer legato (`pointer`, `indices`, `indirect`, `pixels`, circa 70) passano da `ULongToPtr`: gli offset ≥ 64 KB verrebbero tradotti. I test non lo mostrano; la correzione è guardare il buffer legato (`GL_ARRAY_BUFFER_BINDING` ecc.) prima di tradurre.
+- aarch64 d3d9 `device`/`visual`: nei giri `diag5`/`diag6` una volta crash/timeout, una volta come nel giro 15; nei log cambi di risoluzione falliti (`display settings returned -2`), nessun errore dell'host. Instabili, da tenere d'occhio.
+- dxgi in crash su aarch64 e x86_64: ora che d3d12 funziona, `test_create_swapchain` arriva a una parte che crea un device D3D10 con BGRA a livello 10_0 e non controlla il risultato. wined3d non ci arriva né con GL 2.1 (solo 9.x) né col renderer Vulkan su MoltenVK (`WINE_D3D_CONFIG=renderer=vulkan`, `diag3`: livello 0xa000 rifiutato, probabilmente perché Metal non ha geometry shader: non verificato). Si risolve solo con DXMT (passo 7). Con il renderer Vulkan d3d11 scende comunque da 15 a 2 fallimenti (3865 controlli): da valutare come default per i programmi D3D9-11 a livello 9.x.
+
+## Passo 6: banco di prova grafico 🔧
 
 Si costruisce prima dei backend D3D, così ognuno nasce già misurato.
 
@@ -260,6 +270,21 @@ Si costruisce prima dei backend D3D, così ognuno nasce già misurato.
 - I test si eseguono col livello di validazione di Metal attivo (`MTL_DEBUG_LAYER=1`, `MTL_SHADER_VALIDATION=1`): un errore di validazione conta come fallimento. Per capire un problema: `MTL_HUD_ENABLED=1` e `gpucapture` (macOS 27), come consiglia Apple per il GPTK.
 - **Prestazioni:** tempo per fotogramma di ogni campione, registrato a ogni giro; un peggioramento oltre il 5% va spiegato.
 - **Programmi veri:** demo e giochi gratuiti scelti più avanti (con approvazione per i download), con un elenco fisso per ogni backend.
+
+**Primo campione: `tests/av/gears.c` (2026-11-17, giro 17, `tests/results/round17`).** Ingranaggi nello stile di glxgears (geometria nostra) con OpenGL 1.5 (pipeline fissa, vertex buffer), D3D9 (pipeline fissa), D3D11 e D3D12 (HLSL compilato con `d3dcompiler_47`). Per ogni API: adapter, tempo al primo fotogramma, FPS con vsync spento, e un controllo su un fotogramma fisso riletto (ognuno dei tre ingranaggi rosso/verde/blu ≥ 0,3% dei pixel). In OpenGL l'ingranaggio blu sta oltre i 64 KB del vertex buffer: un offset scambiato per un indirizzo da WoW64 lo farebbe sparire. `gears.exe [gl|d3d9|d3d11|d3d12|all] [secondi] [larghezza altezza]`, codice d'uscita = API fallite.
+
+| FPS 640×480 | aarch64 | x86_64 | i686 |
+|---|---|---|---|
+| OpenGL (GL 2.1 di Apple) | 2781 | 3221 | 3305 |
+| D3D9, wined3d su GL | 2307 | 2206 | 2028 |
+| D3D9, wined3d su Vulkan (`renderer=vulkan`) | 346 | 363 | 366 |
+| D3D12 (vkd3d, MoltenVK) | 352 | 361 | 354 |
+| D3D11 | fallisce | fallisce | fallisce |
+
+- Compatibilità: dove funziona, stessa immagine su tutte le API e le architetture (rosso 24,2%, verde 6,3%, blu 4,7%); su i386 l'ingranaggio oltre 64 KB c'è.
+- **D3D11 non crea shader** né con wined3d su GL né col suo renderer Vulkan: il device arriva solo al livello 9_3 e `CreateVertexShader` (bytecode `vs_4_0_level_9_3`) fallisce in `wined3d_shader_create_vs` con `E_INVALIDARG`. Probabile limite di wined3d sotto il livello 10 (non verificato nel codice). D3D10/11 veri chiedono DXMT (passo 7).
+- **Tutto ciò che passa da Vulkan/MoltenVK si ferma a ~350 fps** (D3D9 su Vulkan e D3D12 uguali), cioè ~2,85 ms fissi per fotogramma: costo della presentazione (win32u/winemac/CAMetalLayer), non del disegno. Da misurare prima del passo 7: un gioco a 60 fps non lo nota, ma è il tetto di ogni backend Vulkan e Metal costruito sopra.
+- Tempo al primo fotogramma 40-440 ms; con wined3d su Vulkan l'avvio di D3D9/D3D12 è più rapido (38-224 ms).
 
 ## Passo 7: Direct3D ⬜
 

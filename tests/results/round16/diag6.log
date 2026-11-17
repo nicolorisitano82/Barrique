@@ -1,0 +1,6 @@
+aarch64 d3d9 device: timeout (- tests, - failures, 120s)
+aarch64 d3d9 visual: fail (211908 tests, 18 failures, 41s)
+i386 d3d9 device: crash (- tests, - failures, 11s)
+i386 d3d11 d3d11: crash (4 tests, 0 failures, 66s)
+i386 d3d12 d3d12: crash (- tests, - failures, 5s)
+DIAG6 DONE

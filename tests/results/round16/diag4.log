@@ -1,0 +1,3 @@
+i386 dxgi dxgi: crash (- tests, - failures, 4s)
+aarch64 dxgi dxgi: crash (- tests, - failures, 25s)
+DIAG4 DONE

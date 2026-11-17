@@ -1,0 +1,11 @@
+i386 dxgi dxgi: crash (- tests, - failures, 26s)
+i386 d3d11 d3d11: fail (3917 tests, 15 failures, 105s)
+i386 d3d12 d3d12: ok (671 tests, 0 failures, 6s)
+i386 d3d10core d3d10core: ok (0 tests, 0 failures, 54s)
+i386 d3d9 d3d9ex: fail (2957 tests, 2 failures, 40s)
+i386 d3d9 device: fail (160737 tests, 19 failures, 60s)
+i386 d3d9 stateblock: ok (14738 tests, 0 failures, 1s)
+i386 d3d9 visual: fail (211908 tests, 18 failures, 39s)
+i386 opengl32 opengl: crash (- tests, - failures, 2s)
+host faults:
+DIAG11 DONE

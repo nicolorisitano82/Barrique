@@ -1,0 +1,5 @@
+unit	status	executed	failures	todo	skipped	seconds
+d3d9ex	fail	2951	24	107	3	42
+device	crash	-	-	-	-	53
+stateblock	ok	14738	0	0	0	3
+visual	timeout	-	-	-	-	180

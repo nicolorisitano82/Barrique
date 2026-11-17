@@ -1,0 +1,3 @@
+gears: 4320 vertices (2160, 1080, 1080), 640x480, 5.0 s per API, 32-bit build
+d3d11  FAIL CreateVertexShader: 0x80070057  NVIDIA GeForce 6800, level 9_3
+RESULT gears FAILED 0/1
