@@ -66,3 +66,21 @@ RESULT case 4: ok
   hv_vm_destroy
   releasing Metal objects
 RESULT case 5: ok
+=== gpumap case 6
+  target 0x1005f0000, first qword 0x5a5a5a5a5a5a5a5a
+  hv_vm_create
+  hv_vm_map code page
+  hv_vm_map target page  <-- point of no return
+  mapped
+  guest read + write
+  exit reason 1 syndrome 0x5a000000, guest read 0x5a5a5a5a5a5a5a5a
+  host CPU sees marker: yes
+  GPU sees marker: yes
+  releasing the Metal buffer while it is mapped  <-- untested
+  released; allocating 256 MB of new Metal buffers
+  guest touches the stale mapping again
+  exit reason 1 syndrome 0x5a000000, guest read 0x4241525249515545
+  hv_vm_unmap target
+  hv_vm_destroy
+  releasing Metal objects
+RESULT case 6: ok

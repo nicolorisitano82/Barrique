@@ -716,10 +716,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..4a9c9ef
+index 0000000..c833b63
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,927 @@
+@@ -0,0 +1,977 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -944,12 +944,13 @@ index 0000000..4a9c9ef
 + * step 4 mapped exactly such pages into a VM without trouble
 + * (research/hvproto/gpumap.m), so it is accepted.
 + */
-+static BOOL page_type_ok( const vm_region_extended_info_data_t *info, const vm_page_info_basic_data_t *page_info )
++static BOOL page_type_ok( const vm_region_extended_info_data_t *info, const vm_page_info_basic_data_t *page_info,
++                          BOOL allow_metal )
 +{
 +    if (info->external_pager || (info->protection & VM_PROT_EXECUTE) || !(info->protection & VM_PROT_READ))
 +        return FALSE;
-+    if (info->user_tag == VM_MEMORY_IOACCELERATOR || info->user_tag == VM_MEMORY_IOSURFACE)
-+        return FALSE;
++    if (info->user_tag == VM_MEMORY_IOSURFACE) return FALSE;
++    if (info->user_tag == VM_MEMORY_IOACCELERATOR && !allow_metal) return FALSE;
 +    if ((page_info->disposition & VM_PAGE_QUERY_PAGE_PRESENT) &&
 +        (page_info->disposition & (VM_PAGE_QUERY_PAGE_EXTERNAL | VM_PAGE_QUERY_PAGE_CS_VALIDATED |
 +                                   VM_PAGE_QUERY_PAGE_CS_TAINTED | VM_PAGE_QUERY_PAGE_CS_NX)))
@@ -1006,7 +1007,7 @@ index 0000000..4a9c9ef
 + * "[SPTM] VIOLATION_ILLEGAL_MAPPING_TYPE", so anything else is refused.
 + * Copy-on-write anonymous pages are first made private.
 + */
-+static BOOL host_page_is_safe( uint64_t page, vm_prot_t *prot )
++static BOOL host_page_is_safe( uint64_t page, vm_prot_t *prot, BOOL allow_metal )
 +{
 +    vm_region_extended_info_data_t info;
 +    vm_page_info_basic_data_t page_info;
@@ -1019,7 +1020,7 @@ index 0000000..4a9c9ef
 +        WARN( "refusing %llx: not mapped on the host\n", (unsigned long long)page );
 +        return FALSE;
 +    }
-+    if (!page_type_ok( &info, &page_info )) goto refuse;
++    if (!page_type_ok( &info, &page_info, allow_metal )) goto refuse;
 +
 +    if (!page_is_usable( &info, &page_info ) && info.share_mode == SM_COW)
 +    {
@@ -1028,12 +1029,12 @@ index 0000000..4a9c9ef
 +            mprotect( (void *)page, HOST_PAGE, PROT_READ | PROT_WRITE )) goto refuse;
 +        __atomic_fetch_or( (volatile uint64_t *)page, 0, __ATOMIC_SEQ_CST );
 +        if (!(info.protection & VM_PROT_WRITE)) mprotect( (void *)page, HOST_PAGE, PROT_READ );
-+        if (!query_page( page, &info, &page_info, &addr, &size ) || !page_type_ok( &info, &page_info )) goto refuse;
++        if (!query_page( page, &info, &page_info, &addr, &size ) || !page_type_ok( &info, &page_info, allow_metal )) goto refuse;
 +    }
 +    if (!page_is_usable( &info, &page_info ) && info.share_mode == SM_COW)
 +    {
 +        if (!replace_with_private_copy( page, info.protection )) goto refuse;
-+        if (!query_page( page, &info, &page_info, &addr, &size ) || !page_type_ok( &info, &page_info ) ||
++        if (!query_page( page, &info, &page_info, &addr, &size ) || !page_type_ok( &info, &page_info, allow_metal ) ||
 +            !page_is_usable( &info, &page_info ))
 +            goto refuse;
 +    }
@@ -1051,20 +1052,68 @@ index 0000000..4a9c9ef
 +    return FALSE;
 +}
 +
-+static BOOL map_stage2( uint64_t ipa )
++static BOOL map_stage2_ex( uint64_t ipa, BOOL allow_metal )
 +{
 +    uint64_t page = ipa & ~(HOST_PAGE - 1), bit = page / HOST_PAGE;
 +    vm_prot_t prot;
 +
 +    if (ipa >= IPA_LIMIT) return FALSE;
 +    if (stage2_bitmap[bit / 64] & (1ULL << (bit % 64))) return TRUE;
-+    if (!host_page_is_safe( page, &prot )) return FALSE;
++    if (!host_page_is_safe( page, &prot, allow_metal )) return FALSE;
 +    /* never give the guest more access than the host mapping has */
 +    if (hv_vm_map( (void *)page, page, HOST_PAGE,
 +                   HV_MEMORY_READ | HV_MEMORY_EXEC | ((prot & VM_PROT_WRITE) ? HV_MEMORY_WRITE : 0) ))
 +        return FALSE;
 +    stage2_bitmap[bit / 64] |= 1ULL << (bit % 64);
 +    return TRUE;
++}
++
++static BOOL map_stage2( uint64_t ipa )
++{
++    return map_stage2_ex( ipa, FALSE );
++}
++
++/* Barrique, experimental (BARRIQUE_METAL_MEMORY=1): a window on Metal's own memory.
++ * DXMT's winemetal.so hands the Windows side the contents pointer of buffers Metal
++ * allocated (newBufferWithLength); that memory is no Windows view, so the guest
++ * faulted on it. A fault above 4GB with no Windows view on a host page Metal owns
++ * (VM_MEMORY_IOACCELERATOR) is mapped one to one, read/write but never executable.
++ * Phase 5 step 4 (research/hvproto/gpumap.m, case 4) mapped such memory into a VM
++ * without trouble. */
++static BOOL metal_memory_window(void)
++{
++    static int enabled = -1;
++    if (enabled == -1)
++    {
++        const char *env = getenv( "BARRIQUE_METAL_MEMORY" );
++        enabled = env && !strcmp( env, "1" );
++    }
++    return enabled;
++}
++
++static BOOL map_metal_page( uint64_t va, BOOL write )
++{
++    vm_region_extended_info_data_t info;
++    vm_page_info_basic_data_t page_info;
++    mach_vm_address_t addr;
++    mach_vm_size_t size;
++    uint64_t *pte, page = va & ~(GUEST_PAGE - 1);
++    BOOL ret = FALSE;
++
++    if (!query_page( page & ~(HOST_PAGE - 1), &info, &page_info, &addr, &size )) return FALSE;
++    if (info.user_tag != VM_MEMORY_IOACCELERATOR || !(info.protection & VM_PROT_READ)) return FALSE;
++    if (write && !(info.protection & VM_PROT_WRITE)) return FALSE;
++
++    pthread_mutex_lock( &hvf_mutex );
++    if (map_stage2_ex( page, TRUE ) && (pte = pte_for( page, TRUE )))
++    {
++        *pte = page | prot_to_pte( PROT_READ | ((info.protection & VM_PROT_WRITE) ? PROT_WRITE : 0) );
++        tlb_generation++;
++        ret = TRUE;
++    }
++    pthread_mutex_unlock( &hvf_mutex );
++    if (ret) TRACE( "mapped Metal page %llx\n", (unsigned long long)page );
++    return ret;
 +}
 +
 +static void clear_ptes( uint64_t *table, int level, uint64_t base, uint64_t start, uint64_t end )
@@ -1145,6 +1194,7 @@ index 0000000..4a9c9ef
 +    if (edge) prots[idx] = virtual_hvf_get_prot( hvf_low_ptr( va ));
 +    else virtual_hvf_get_prots( hvf_low_ptr( block ), FAULT_AROUND / GUEST_PAGE, prots );
 +    prot = prots[idx];
++    if (prot < 0 && va >= 0x100000000ULL && !exec && metal_memory_window()) return map_metal_page( va, write );
 +    if (prot < 0 || !(prot & PROT_READ)) return FALSE;
 +    if (write && !(prot & PROT_WRITE)) return FALSE;
 +    if (exec && !(prot & PROT_EXEC)) return FALSE;
@@ -5934,6 +5984,159 @@ index dc22da0..f096cf3 100644
      return (void *)(UINT_PTR)param;
 +#endif
  }
+diff --git a/dlls/winemac.drv/window.c b/dlls/winemac.drv/window.c
+index e025823..f4a893e 100644
+--- a/dlls/winemac.drv/window.c
++++ b/dlls/winemac.drv/window.c
+@@ -2203,3 +2203,148 @@ void init_win_context(void)
+     pthread_mutex_init(&win_data_mutex, &attr);
+     pthread_mutexattr_destroy(&attr);
+ }
++
++
++/***********************************************************************
++ *              macdrv_functions
++ *
++ * Barrique: the driver table DXMT's winemetal.so looks up with dlsym (the
++ * layout CrossOver's winemac.drv exports), so DXMT's D3D11 can draw into a
++ * window. DXMT reads struct macdrv_win_data with the Wine 8 layout (hwnd,
++ * cocoa_window, cocoa_view, client_cocoa_view); Wine 11 has neither of the last
++ * two, so get_win_data hands out a compatible copy whose client view is the view
++ * of a client surface, the same kind Vulkan and OpenGL use, which win32u keeps
++ * over the window's client area. The surface lives until DXMT releases the
++ * Metal view it created in it.
++ */
++struct dxmt_win_data
++{
++    HWND                          hwnd;
++    WineWindow                   *cocoa_window;
++    WineContentView              *cocoa_view;
++    WineContentView              *client_cocoa_view;
++    /* private */
++    struct macdrv_win_data       *data;
++    struct client_surface        *surface;
++};
++
++struct dxmt_metal_view
++{
++    struct list            entry;
++    WineMetalView         *view;
++    struct client_surface *surface;
++};
++
++static struct list dxmt_metal_views = LIST_INIT(dxmt_metal_views);
++static pthread_mutex_t dxmt_lock = PTHREAD_MUTEX_INITIALIZER;
++static __thread struct client_surface *dxmt_pending_surface;
++
++static struct dxmt_win_data *dxmt_get_win_data(HWND hwnd)
++{
++    struct macdrv_client_surface *impl;
++    struct client_surface *surface;
++    struct dxmt_win_data *ret;
++
++    if (!(surface = macdrv_CreateClientSurface(hwnd, 0, FALSE))) return NULL;
++    impl = impl_from_client_surface(surface);
++    if (!(ret = calloc(1, sizeof(*ret))) || !(ret->data = get_win_data(hwnd)))
++    {
++        free(ret);
++        client_surface_release(surface);
++        return NULL;
++    }
++    ret->hwnd = hwnd;
++    ret->cocoa_window = ret->data->cocoa_window;
++    ret->cocoa_view = impl->cocoa_view;
++    ret->client_cocoa_view = impl->cocoa_view;
++    ret->surface = surface;
++    dxmt_pending_surface = surface;
++    TRACE("hwnd %p -> client view %p\n", hwnd, impl->cocoa_view);
++    return ret;
++}
++
++static void dxmt_release_win_data(struct dxmt_win_data *data)
++{
++    if (!data) return;
++    release_win_data(data->data);
++    /* no Metal view was created in it: nobody needs the surface */
++    if (dxmt_pending_surface == data->surface)
++    {
++        dxmt_pending_surface = NULL;
++        client_surface_release(data->surface);
++    }
++    free(data);
++}
++
++static WineMetalView *dxmt_view_create_metal_view(WineContentView *view, MTLDevice_id device)
++{
++    struct dxmt_metal_view *entry;
++    WineMetalView *metal_view;
++
++    if (!(metal_view = macdrv_view_create_metal_view(view, device))) return NULL;
++    if (dxmt_pending_surface && (entry = calloc(1, sizeof(*entry))))
++    {
++        entry->view = metal_view;
++        entry->surface = dxmt_pending_surface;
++        dxmt_pending_surface = NULL;
++        pthread_mutex_lock(&dxmt_lock);
++        list_add_tail(&dxmt_metal_views, &entry->entry);
++        pthread_mutex_unlock(&dxmt_lock);
++    }
++    return metal_view;
++}
++
++static void dxmt_view_release_metal_view(WineMetalView *view)
++{
++    struct dxmt_metal_view *entry, *found = NULL;
++
++    pthread_mutex_lock(&dxmt_lock);
++    LIST_FOR_EACH_ENTRY(entry, &dxmt_metal_views, struct dxmt_metal_view, entry)
++    {
++        if (entry->view != view) continue;
++        list_remove(&entry->entry);
++        found = entry;
++        break;
++    }
++    pthread_mutex_unlock(&dxmt_lock);
++
++    macdrv_view_release_metal_view(view);
++    if (found)
++    {
++        client_surface_release(found->surface);
++        free(found);
++    }
++}
++
++static WineWindow *dxmt_get_cocoa_window(HWND hwnd, BOOL require_on_screen)
++{
++    return macdrv_get_cocoa_window(hwnd, require_on_screen);
++}
++
++struct macdrv_functions_t
++{
++    void (*macdrv_init_display_devices)(BOOL);
++    struct dxmt_win_data *(*get_win_data)(HWND hwnd);
++    void (*release_win_data)(struct dxmt_win_data *data);
++    WineWindow *(*macdrv_get_cocoa_window)(HWND hwnd, BOOL require_on_screen);
++    MTLDevice_id (*macdrv_create_metal_device)(void);
++    void (*macdrv_release_metal_device)(MTLDevice_id d);
++    WineMetalView *(*macdrv_view_create_metal_view)(WineContentView *v, MTLDevice_id d);
++    CAMetalLayer *(*macdrv_view_get_metal_layer)(WineMetalView *v);
++    void (*macdrv_view_release_metal_view)(WineMetalView *v);
++    void (*on_main_thread)(void *block);
++};
++
++__attribute__((visibility("default"))) struct macdrv_functions_t macdrv_functions =
++{
++    NULL,
++    dxmt_get_win_data,
++    dxmt_release_win_data,
++    dxmt_get_cocoa_window,
++    macdrv_create_metal_device,
++    macdrv_release_metal_device,
++    dxmt_view_create_metal_view,
++    macdrv_view_get_metal_layer,
++    dxmt_view_release_metal_view,
++    NULL,
++};
 diff --git a/dlls/winevulkan/make_vulkan b/dlls/winevulkan/make_vulkan
 index 71a921a..fefc998 100755
 --- a/dlls/winevulkan/make_vulkan

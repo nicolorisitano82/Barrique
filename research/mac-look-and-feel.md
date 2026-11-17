@@ -5,7 +5,8 @@ Studio di fattibilità, 17 novembre 2026. Basato su Wine 11.22 in `~/Work/wine/s
 ## Sintesi
 
 - **La cornice della finestra è già nativa.** winemac.drv toglie la barra del titolo e il bordo disegnati da Windows e li sostituisce con quelli di una `NSWindow` vera (semafori, ombra, ridimensionamento, schermo intero, Stage Manager gestito). Mancano solo rifiniture: titolo e barra degli strumenti unificati, schede (disattivate apposta), e le app con barra del titolo personalizzata, che restano senza semafori.
-- **I controlli sono la parte più "Windows".** Wine usa il tema `aero.msstyles` (pulsanti blu stile Windows 7). Un tema nostro che imiti Aqua è fattibile con gli stessi strumenti con cui Wine costruisce `aero.msstyles` (file `.rc` + immagini disegnate da noi), senza copiare risorse Apple. Il tema scuro in Wine oggi è solo un valore di registro: non esiste un tema scuro da disegnare.
+- **Liquid Glass (macOS 26+) sulla cornice arriva gratis.** Wine in Barrique è compilato con l'SDK macOS 27 (`otool -l build-arm64/loader/wine` → `sdk 27.0`), e AppKit dà il nuovo aspetto alle app compilate con SDK 26 o successivo: barra del titolo, semafori e angoli della `NSWindow` dovrebbero essere già Liquid Glass. Da confermare a occhio.
+- **I controlli sono la parte più "Windows".** Wine usa il tema `aero.msstyles` (pulsanti blu stile Windows 7). Un tema nostro con forme e colori dei controlli di macOS 26/27 (pulsanti a capsula, angoli grandi) è fattibile con gli stessi strumenti con cui Wine costruisce `aero.msstyles` (file `.rc` + immagini disegnate da noi), senza copiare risorse Apple. **Il vetro vero (trasparenza, sfocatura, rifrazione) non si può fare con un msstyles**: le immagini sono statiche. Si può avere solo con AppKit lato host, dietro le finestre che lo chiedono (vedi §2, "Liquid Glass"). Il tema scuro in Wine oggi è solo un valore di registro: non esiste un tema scuro da disegnare.
 - **Colori e aspetto chiaro/scuro si possono sincronizzare con poco**: leggere `NSApp.effectiveAppearance` e `NSColor.controlAccentColor` lato host, scrivere `AppsUseLightTheme` e i colori di sistema nel registro del prefisso, mandare `WM_SETTINGCHANGE`.
 - **Font**: SF Pro non si può distribuire, ma Wine su macOS vede già i font del sistema via CoreText. Si può sostituire "Segoe UI" con un font di sistema del Mac dell'utente al momento dell'avvio, senza metterlo nella `.app`. SF ha un nome nascosto (`.SF NS`) e va verificato se CoreText lo espone.
 - **Integrazione col sistema**: appunti, trascinamento file, cursori, scorrimento preciso, icona del Dock e icone nella barra dei menu ci sono già. Mancano: menu dell'app nella barra dei menu macOS (Wine mette solo un menu fisso "Wine/Finestra"), finestre Apri/Salva native, notifiche native, badge e barra di avanzamento nel Dock.
@@ -41,7 +42,8 @@ Tutto ciò che deve sapere "com'è configurato il Mac" (aspetto, colore d'accent
 2. **Titolo e barra strumenti unificati** (`NSWindowStyleMaskFullSizeContentView`, `titlebarAppearsTransparent`). Non usati. Si potrebbero attivare per app che hanno una barra strumenti in alto, ma Wine non sa dov'è la barra strumenti dell'app: il contenuto finirebbe sotto i semafori. Utile solo con regole per singola app; non come default.
 3. **App con barra del titolo personalizzata** (Electron, Chrome, Office, Steam, molte app moderne). Gestiscono `WM_NCCALCSIZE` e disegnano da sé titolo e pulsanti. In quel caso l'area client copre tutta la finestra e `get_visible_rect` ripiega sull'intera finestra (`dlls/win32u/window.c:2166-2169`): `NSWindow` senza bordo, **niente semafori**, pulsanti Windows in alto a destra. Rimedio possibile: per queste finestre mostrare comunque i semafori sopra il contenuto (`NSWindowStyleMaskTitled | FullSizeContentView` con barra trasparente) e tradurre il clic sulle zone che l'app dichiara `HTCAPTION`/`HTCLOSE` via `WM_NCHITTEST`. È lavoro delicato: l'app continua a disegnare i suoi pulsanti, quindi si avrebbero due set di pulsanti. Da valutare app per app.
 4. **Colore/scuro della barra del titolo chiesto dall'app.** `DwmSetWindowAttribute` è uno stub (`dlls/dwmapi/dwmapi_main.c:101-107`): un'app che chiede `DWMWA_USE_IMMERSIVE_DARK_MODE` non ottiene nulla. Con la cornice macOS il titolo segue già l'aspetto del Mac, quindi il danno è piccolo; ma si potrebbe usare la richiesta per forzare `NSAppearance` scura su quella finestra.
-5. **Schede di finestra**: lasciarle spente. Le app Windows non sanno di condividere una finestra e i loro `SetWindowPos` litigherebbero con AppKit.
+5. **Liquid Glass sulla cornice.** Da macOS 26 AppKit applica Liquid Glass alle app compilate con SDK 26 o successivo; quelle compilate con SDK vecchi restano con l'aspetto precedente ([Apple Developer Forums](https://developer.apple.com/forums/thread/788573), [CPython #139404](https://github.com/python/cpython/issues/139404)). Il nostro `loader/wine` e `winemac.so` hanno `minos 27.0, sdk 27.0` (`otool -l`), quindi la cornice dovrebbe già essere quella nuova. Due cose da guardare con una prova: (a) gli angoli della finestra in macOS 26+ sono più arrotondati e possono tagliare i pixel negli angoli in basso del contenuto Windows, che è disegnato squadrato; (b) senza `NSToolbar` la barra del titolo resta una striscia semplice: il vetro "che galleggia sul contenuto" si vede solo con toolbar e sidebar native, che le app Windows non hanno. Non attivare `UIDesignRequiresCompatibility` (spegnerebbe Liquid Glass) salvo bug gravi di AppKit con le nostre finestre.
+6. **Schede di finestra**: lasciarle spente. Le app Windows non sanno di condividere una finestra e i loro `SetWindowPos` litigherebbero con AppKit.
 
 ### Cosa fanno gli altri
 
@@ -57,12 +59,23 @@ CrossOver usa lo stesso winemac (CodeWeavers ne è l'autore) e quindi la stessa 
 - `aero.msstyles` è una DLL di sole risorse costruita da `dlls/aero.msstyles/aero.rc` (≈4600 righe): un file INI incorporato (`BLUE_INI`, `aero.rc:84-85`) che per ogni classe/parte/stato indica immagine, margini, colori e font, più ~480 immagini BMP generate da sorgenti SVG presenti nel tree (`dlls/aero.msstyles/blue_*.svg`). Un solo schema di colore (`COLORNAMES` = "Blue", `aero.rc:55-57`).
 - comctl32 v6 e user32 chiedono a uxtheme di disegnare pulsanti, caselle, combo, schede, barre di scorrimento, progressi, ecc. Le app che usano controlli standard cambiano aspetto cambiando file msstyles, senza toccare codice.
 
-### Fattibilità di un tema "Barrique Aqua"
+### Fattibilità di un tema in stile macOS 26/27 ("Barrique")
+
+Il riferimento è l'aspetto attuale di macOS (Liquid Glass, introdotto con macOS 26 Tahoe), non il vecchio Aqua. Nota: "Aqua" resta il nome tecnico dell'aspetto chiaro in AppKit (`NSAppearanceNameAqua` / `NSAppearanceNameDarkAqua`), e in quel senso compare ancora nelle API usate in questo documento.
 
 - **Tecnicamente semplice da avviare**: copiare la struttura di `dlls/aero.msstyles` in un nuovo modulo (es. `barrique.msstyles`) e ridisegnare gli SVG. La toolchain c'è già (svg → bmp nel build di Wine). Si può anche costruirlo fuori dal tree Wine, nel repo Barrique, come DLL di risorse e installarlo in `C:\windows\resources\themes\barrique\`.
-- **Cosa rende "Mac"**: pulsanti arrotondati con raggio ~6 px, pulsante predefinito pieno col colore d'accento, caselle e radio col colore d'accento, combo con freccia doppia, barre di scorrimento sottili a scomparsa (solo l'aspetto: il comportamento "a scomparsa" non c'è in uxtheme), schede in stile "segmented control", progressi sottili.
+- **Cosa rende "Mac" oggi**: pulsanti a capsula o con angoli molto arrotondati, controlli un po' più alti, pulsante predefinito pieno col colore d'accento, caselle e radio col colore d'accento, combo con freccia doppia, barre di scorrimento sottili (solo l'aspetto: il comportamento "a scomparsa" non c'è in uxtheme), schede in stile "segmented control" a capsula, cursori (slider) con manopola a capsula, progressi sottili. Le misure esatte vanno prese guardando macOS, non copiando file Apple.
+- **Cosa non si può fare con un msstyles**: il materiale Liquid Glass (trasparenza che sfoca e rifrange ciò che sta dietro, riflessi che cambiano). uxtheme sa solo disegnare bitmap e riempimenti, con al massimo la trasparenza alfa sopra lo sfondo della stessa finestra. Il tema imita quindi forme e colori, "piatto", senza vetro. È la scelta giusta per i controlli dentro dialoghi Windows: anche in macOS 26 il vetro è riservato a toolbar, sidebar e controlli che galleggiano sul contenuto, non ai pulsanti dentro un modulo.
 - **Limiti**: il tema cambia l'aspetto ma non le misure dei dialoghi. I dialoghi Windows sono disegnati in "dialog units" su Segoe UI/MS Shell Dlg: pulsanti alti 14 DLU, spaziature Windows. Un pulsante "macOS" dentro un layout Windows resta un layout Windows. Lo scopo realistico è "coerente e pulito accanto alle app Mac", non "indistinguibile".
 - **Varianti**: servono almeno due schemi di colore nello stesso file (`Light`, `Dark`) e possibilmente la DPI alta: le immagini vanno fornite per 192 DPI (Barrique usa 192 DPI di default, `Barrique/scripts/prefix-defaults.reg`), come fa già `aero` con le serie `_13px … _52px`.
+
+### Liquid Glass vero: materiali Windows 11 → materiali AppKit
+
+C'è un ponte naturale. Le app Windows 11 chiedono uno sfondo traslucido per la finestra con `DwmSetWindowAttribute(DWMWA_SYSTEMBACKDROP_TYPE)` (Mica, Acrylic) o con `DwmExtendFrameIntoClientArea`, e lasciano trasparenti (alfa 0) i pixel dove vogliono vedere il materiale. In Wine oggi `DwmSetWindowAttribute` è uno stub (`dlls/dwmapi/dwmapi_main.c:101-107`) e quei pixel diventano neri o opachi.
+
+Proposta: inoltrare la richiesta a winemac e mettere dietro al contenuto della finestra una view di materiale AppKit: `NSGlassEffectView` (macOS 26+, [documentazione AppKit](https://developer.apple.com/documentation/updates/appkit), [`NSGlassEffectContainerView`](https://developer.apple.com/documentation/appkit/nsglasseffectcontainerview)) o, più prudente, `NSVisualEffectView` con materiale `.windowBackground`/`.sidebar`. La finestra deve essere non opaca e con contenuto a alfa per pixel, cosa che winemac già fa per altri casi (`setBackgroundColor:[NSColor clearColor]`, `dlls/winemac.drv/cocoa_window.m:886`, `:1722`, `:1907`). Così un'app Windows 11 con Mica avrebbe dietro il vetro di macOS, e per le app vecchie non cambia nulla.
+
+Limiti: funziona solo per le app che chiedono un materiale (poche, e quasi tutte WinUI/WPF moderne); va verificato che la superficie di Barrique (che copia i pixel dalla VM) mantenga l'alfa; costo GPU del vetro su finestre grandi. Lavoro medio-grande, da fare dopo il tema.
 
 ### Licenze
 
@@ -173,7 +186,7 @@ I cursori standard di Windows sono già mappati sui cursori `NSCursor` nativi (f
 winemac legge già le opzioni sia globali sia per eseguibile (`HKCU\Software\Wine\Mac Driver` e `HKCU\Software\Wine\AppDefaults\<app.exe>\Mac Driver`, funzione `get_config_key`, `dlls/winemac.drv/macdrv_main.c:234`); `Decorated` vale anche per app (`dlls/win32u/sysparams.c:6089`). Il tema uxtheme invece è per utente (quindi per prefisso). Proposta per Barrique:
 
 - **Globali, sempre**: sincronizzazione chiaro/scuro e accento, cursori, appunti, badge Dock, notifiche.
-- **Globale ma disattivabile per app**: tema msstyles "Aqua" (un'app che lo rende male → `SetWindowTheme`/disattivazione; in Wine il modo più semplice è un prefisso o una chiave per app che il lato Windows legge prima di caricare il tema — oggi non esiste, va aggiunta in uxtheme), mappatura Cmd ibrida, dialoghi nativi.
+- **Globale ma disattivabile per app**: tema msstyles "Barrique" in stile macOS 26/27 (un'app che lo rende male → `SetWindowTheme`/disattivazione; in Wine il modo più semplice è un prefisso o una chiave per app che il lato Windows legge prima di caricare il tema — oggi non esiste, va aggiunta in uxtheme), mappatura Cmd ibrida, dialoghi nativi.
 - **Solo su richiesta per app**: menu globali, barra del titolo unificata, sostituzione font Mac.
 
 ### Cosa si rompe
@@ -205,6 +218,7 @@ Stime per una persona che conosce già Barrique; incerte, servono a ordinare non
 | R3 | `LeftCommandIsCtrl=y` come opzione proposta (non default) finché non c'è la modalità ibrida | `Mac Driver` | Medio: si perde Cmd-Q |
 | R4 | Font menu/titoli → Helvetica Neue o Inter via `Replacements` solo per `NONCLIENTMETRICS`, come prova | registro | Basso-medio (testi tagliati) |
 | R5 | Verificare che `UsePreciseScrolling`, `Decorated`, `RetinaMode` siano come vogliamo nel prefisso della `.app` | `prefix-defaults.reg` | Nullo |
+| R6 | Confermare con una prova che la cornice è Liquid Glass (build con SDK 27) e controllare gli angoli arrotondati sul contenuto | prova manuale | Nullo |
 
 ### Lavori medi (1–4 settimane ciascuno)
 
@@ -225,6 +239,7 @@ Stime per una persona che conosce già Barrique; incerte, servono a ordinare non
 | G2 | Menu `HMENU` nella barra dei menu macOS, per app su richiesta | 6–10 settimane | Alto (owner-draw, aggiornamenti sincroni, latenza VM) |
 | G3 | Semafori per finestre con barra del titolo personalizzata (Electron/Chrome/Office) | 3–5 settimane | Alto (doppi pulsanti, hit-test) |
 | G4 | Trascinamento da app Windows verso Finder | 2–3 settimane | Medio |
+| G5 | Materiali Windows 11 (Mica/Acrylic via `DwmSetWindowAttribute`) → `NSGlassEffectView`/`NSVisualEffectView` dietro la finestra | 3–5 settimane | Medio-alto (alfa nella superficie dalla VM, poche app lo usano) |
 
 ### Ordine consigliato
 
@@ -248,5 +263,6 @@ Esterne:
 - Game Porting Toolkit: https://developer.apple.com/games/game-porting-toolkit/
 - Licenza font Apple / SF Pro: https://developer.apple.com/fonts/ , https://developer.apple.com/forums/thread/727961 , https://en.wikipedia.org/wiki/San_Francisco_(sans-serif_typeface)
 - Apple Design Resources: https://developer.apple.com/design/resources/
+- Liquid Glass e SDK: https://developer.apple.com/forums/thread/788573 , https://github.com/python/cpython/issues/139404 , https://developer.apple.com/documentation/updates/appkit , https://developer.apple.com/documentation/appkit/nsglasseffectcontainerview
 
 Non verificato in questo studio (da controllare prima di lavorarci): se CoreText espone `.SF NS` a Wine; se winemac gestisce `FlashWindowEx` col Dock; cosa fanno esattamente CrossOver 26 e Porting Kit sull'aspetto dei controlli (nessuna documentazione trovata).

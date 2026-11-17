@@ -1,0 +1,855 @@
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\wineboot.exe" at 000000D426910000: builtin
+002c:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ws2_32.dll" at 000000BF93C30000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\dnsapi.dll" at 000000BF93AD0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\winemenubuilder.exe" at 000000D5E0B00000: builtin
+0038:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\services.exe" at 000000D6E6C40000: builtin
+0044:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\win32u.dll" at 000000BF918B0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\gdi32.dll" at 000000BF91A10000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\user32.dll" at 000000BF91EA0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\combase.dll" at 000000BF91590000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\coml2.dll" at 000000BF91450000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ole32.dll" at 000000BF927C0000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\oleaut32.dll" at 000000BF90E80000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\propsys.dll" at 000000BF90CE0000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\userenv.dll" at 000000BF909A0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\shcore.dll" at 000000BF90880000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\shlwapi.dll" at 000000BF90A90000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\windowscodecs.dll" at 000000BF92E00000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cfgmgr32.dll" at 000000BF8F2F0000: builtin
+0044:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\setupapi.dll" at 000000BF904F0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\shell32.dll" at 000000BF8F470000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\winedevice.exe" at 000000D25E360000: builtin
+0054:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ntoskrnl.exe" at 000000BF8F030000: builtin
+0054:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+0064:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\drivers\\mountmgr.sys" at 000000BF8EEF0000: builtin
+0064:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cfgmgr32.dll" at 000000BF8F2F0000: builtin
+0064:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\setupapi.dll" at 000000BF904F0000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\plugplay.exe" at 000000D6515A0000: builtin
+007c:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\win32u.dll" at 000000BF918B0000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\gdi32.dll" at 000000BF91A10000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\user32.dll" at 000000BF91EA0000: builtin
+0038:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\imm32.dll" at 000000BF8ED70000: builtin
+007c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\imm32.dll" at 000000BF93950000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\svchost.exe" at 000000D752390000: builtin
+0098:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\wevtsvc.dll" at 000000BF93870000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+0098:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+0064:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\drivers\\nsiproxy.sys" at 000000BF93790000: builtin
+0064:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\dnsapi.dll" at 000000BF93AD0000: builtin
+0064:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\nsi.dll" at 000000BF933E0000: builtin
+0064:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ws2_32.dll" at 000000BF93C30000: builtin
+0064:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\iphlpapi.dll" at 000000BF934D0000: builtin
+0064:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\drivers\\ndis.sys" at 000000BF936A0000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\winedevice.exe" at 000000D25E360000: builtin
+00b4:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ntoskrnl.exe" at 000000BF8F030000: builtin
+00b4:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+00c0:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\drivers\\hidparse.sys" at 000000BF931B0000: builtin
+00c0:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\drivers\\winebus.sys" at 000000BF932D0000: builtin
+00c0:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cfgmgr32.dll" at 000000BF8F2F0000: builtin
+00c0:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\setupapi.dll" at 000000BF904F0000: builtin
+00c8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\win32u.dll" at 000000BF918B0000: builtin
+00c8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\gdi32.dll" at 000000BF91A10000: builtin
+00c8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\user32.dll" at 000000BF91EA0000: builtin
+00c8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\drivers\\hidclass.sys" at 000000BF92FA0000: builtin
+00c8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\drivers\\winehid.sys" at 000000BF930C0000: builtin
+00c8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\imm32.dll" at 000000BF93950000: builtin
+00c0:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\drivers\\wineusb.sys" at 000000BF92EB0000: builtin
+00c0:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\drivers\\winebth.sys" at 000000BF92D60000: builtin
+00c0:err:ntoskrnl:ZwLoadDriver failed to create driver L"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\winebth": c00000e5
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\shcore.dll" at 000000BF929F0000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\win32u.dll" at 000000BF918B0000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\gdi32.dll" at 000000BF91A10000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\user32.dll" at 000000BF91EA0000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\shlwapi.dll" at 000000BF92B10000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\shell32.dll" at 000000BF8F470000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\imm32.dll" at 000000BF93950000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\combase.dll" at 000000BF90F50000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\coml2.dll" at 000000BF928B0000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ole32.dll" at 000000BF91270000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\mpr.dll" at 000000BF90A90000: builtin
+002c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\wininet.dll" at 000000BF90BD0000: builtin
+0024:trace:loaddll:build_module Loaded L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\aarch64\\app\\gears-aarch64.exe" at 000000D25D130000: native
+0024:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\win32u.dll" at 000000BF918B0000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\gdi32.dll" at 000000BF91A10000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\user32.dll" at 000000BF91EA0000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\OPENGL32.dll" at 000000700C3C0000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\wined3d.dll" at 000000BF8BEF0000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\d3d9.dll" at 000000BF92A00000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\winemetal.dll" at 000000BF928D0000: builtin
+0024:trace:loaddll:build_module Loaded L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\aarch64\\app\\DXGI.DLL" at 000000BF928F0000: native
+0024:trace:loaddll:build_module Loaded L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\aarch64\\app\\d3d11.dll" at 000000BF91590000: native
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\d3d12.dll" at 000000BF91400000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\imm32.dll" at 000000BF93950000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\explorer.exe" at 000000D07A8A0000: builtin
+0100:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\win32u.dll" at 000000BF918B0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\gdi32.dll" at 000000BF91A10000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\user32.dll" at 000000BF91EA0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\imm32.dll" at 000000BF93950000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\winemac.drv" at 000000BF927E0000: builtin
+[mvk-info] MoltenVK version 1.4.2, supporting Vulkan version 1.4.357.
+	The following 154 Vulkan extensions are supported:
+	VK_KHR_16bit_storage v1
+	VK_KHR_8bit_storage v1
+	VK_KHR_bind_memory2 v1
+	VK_KHR_buffer_device_address v1
+	VK_KHR_calibrated_timestamps v1
+	VK_KHR_copy_commands2 v1
+	VK_KHR_create_renderpass2 v1
+	VK_KHR_dedicated_allocation v3
+	VK_KHR_deferred_host_operations v4
+	VK_KHR_depth_stencil_resolve v1
+	VK_KHR_descriptor_update_template v1
+	VK_KHR_device_group v4
+	VK_KHR_device_group_creation v1
+	VK_KHR_driver_properties v1
+	VK_KHR_dynamic_rendering v1
+	VK_KHR_dynamic_rendering_local_read v1
+	VK_KHR_external_fence v1
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_format_feature_flags2 v2
+	VK_KHR_fragment_shader_barycentric v1
+	VK_KHR_get_memory_requirements2 v1
+	VK_KHR_get_physical_device_properties2 v2
+	VK_KHR_get_surface_capabilities2 v1
+	VK_KHR_global_priority v1
+	VK_KHR_image_format_list v1
+	VK_KHR_imageless_framebuffer v1
+	VK_KHR_incremental_present v2
+	VK_KHR_index_type_uint8 v1
+	VK_KHR_line_rasterization v1
+	VK_KHR_load_store_op_none v1
+	VK_KHR_maintenance1 v2
+	VK_KHR_maintenance2 v1
+	VK_KHR_maintenance3 v1
+	VK_KHR_maintenance4 v2
+	VK_KHR_maintenance5 v1
+	VK_KHR_maintenance6 v1
+	VK_KHR_maintenance7 v1
+	VK_KHR_maintenance8 v1
+	VK_KHR_maintenance9 v1
+	VK_KHR_map_memory2 v1
+	VK_KHR_multiview v1
+	VK_KHR_portability_subset v1
+	VK_KHR_present_id v1
+	VK_KHR_present_id2 v1
+	VK_KHR_present_wait v1
+	VK_KHR_present_wait2 v1
+	VK_KHR_push_descriptor v2
+	VK_KHR_relaxed_block_layout v1
+	VK_KHR_robustness2 v1
+	VK_KHR_sampler_mirror_clamp_to_edge v3
+	VK_KHR_sampler_ycbcr_conversion v14
+	VK_KHR_separate_depth_stencil_layouts v1
+	VK_KHR_shader_draw_parameters v1
+	VK_KHR_shader_expect_assume v1
+	VK_KHR_shader_float_controls v4
+	VK_KHR_shader_float_controls2 v1
+	VK_KHR_shader_float16_int8 v1
+	VK_KHR_shader_fma v1
+	VK_KHR_shader_integer_dot_product v1
+	VK_KHR_shader_maximal_reconvergence v1
+	VK_KHR_shader_non_semantic_info v1
+	VK_KHR_shader_quad_control v1
+	VK_KHR_shader_relaxed_extended_instruction v1
+	VK_KHR_shader_subgroup_extended_types v1
+	VK_KHR_shader_subgroup_rotate v2
+	VK_KHR_shader_subgroup_uniform_control_flow v1
+	VK_KHR_shader_terminate_invocation v1
+	VK_KHR_spirv_1_4 v1
+	VK_KHR_storage_buffer_storage_class v1
+	VK_KHR_surface v25
+	VK_KHR_surface_maintenance1 v1
+	VK_KHR_surface_protected_capabilities v1
+	VK_KHR_swapchain v70
+	VK_KHR_swapchain_maintenance1 v1
+	VK_KHR_swapchain_mutable_format v1
+	VK_KHR_synchronization2 v1
+	VK_KHR_timeline_semaphore v2
+	VK_KHR_uniform_buffer_standard_layout v1
+	VK_KHR_variable_pointers v1
+	VK_KHR_vertex_attribute_divisor v1
+	VK_KHR_vulkan_memory_model v3
+	VK_KHR_zero_initialize_workgroup_memory v1
+	VK_EXT_4444_formats v1
+	VK_EXT_buffer_device_address v2
+	VK_EXT_calibrated_timestamps v2
+	VK_EXT_debug_marker v4
+	VK_EXT_debug_report v10
+	VK_EXT_debug_utils v2
+	VK_EXT_depth_clip_control v1
+	VK_EXT_descriptor_indexing v2
+	VK_EXT_extended_dynamic_state v1
+	VK_EXT_extended_dynamic_state2 v1
+	VK_EXT_extended_dynamic_state3 v2
+	VK_EXT_external_memory_host v1
+	VK_EXT_external_memory_metal v1
+	VK_EXT_fragment_shader_interlock v1
+	VK_EXT_global_priority v2
+	VK_EXT_global_priority_query v1
+	VK_EXT_hdr_metadata v3
+	VK_EXT_headless_surface v1
+	VK_EXT_host_image_copy v1
+	VK_EXT_host_query_reset v1
+	VK_EXT_image_2d_view_of_3d v1
+	VK_EXT_image_robustness v1
+	VK_EXT_index_type_uint8 v1
+	VK_EXT_inline_uniform_block v1
+	VK_EXT_layer_settings v2
+	VK_EXT_legacy_dithering v2
+	VK_EXT_line_rasterization v1
+	VK_EXT_load_store_op_none v1
+	VK_EXT_memory_budget v1
+	VK_EXT_metal_objects v2
+	VK_EXT_metal_surface v1
+	VK_EXT_non_seamless_cube_map v1
+	VK_EXT_pipeline_creation_cache_control v3
+	VK_EXT_pipeline_creation_feedback v1
+	VK_EXT_pipeline_robustness v1
+	VK_EXT_post_depth_coverage v1
+	VK_EXT_primitive_topology_list_restart v1
+	VK_EXT_private_data v1
+	VK_EXT_provoking_vertex v1
+	VK_EXT_robustness2 v1
+	VK_EXT_sample_locations v1
+	VK_EXT_sampler_filter_minmax v2
+	VK_EXT_scalar_block_layout v1
+	VK_EXT_separate_stencil_usage v1
+	VK_EXT_shader_atomic_float v1
+	VK_EXT_shader_demote_to_helper_invocation v1
+	VK_EXT_shader_stencil_export v1
+	VK_EXT_shader_subgroup_ballot v1
+	VK_EXT_shader_subgroup_vote v1
+	VK_EXT_shader_viewport_index_layer v1
+	VK_EXT_subgroup_size_control v2
+	VK_EXT_surface_maintenance1 v1
+	VK_EXT_swapchain_colorspace v5
+	VK_EXT_swapchain_maintenance1 v1
+	VK_EXT_texel_buffer_alignment v1
+	VK_EXT_texture_compression_astc_hdr v1
+	VK_EXT_tooling_info v1
+	VK_EXT_vertex_attribute_divisor v3
+	VK_AMD_gpu_shader_half_float v2
+	VK_AMD_negative_viewport_height v1
+	VK_AMD_shader_image_load_store_lod v1
+	VK_AMD_shader_trinary_minmax v1
+	VK_GOOGLE_display_timing v1
+	VK_IMG_format_pvrtc v1
+	VK_INTEL_shader_integer_functions2 v1
+	VK_MVK_macos_surface v3
+	VK_MVK_moltenvk v37
+	VK_NV_fragment_shader_barycentric v1
+[mvk-info] GPU device:
+	model: Apple M3 Max
+	type: Integrated
+	vendorID: 0x106b
+	deviceID: 0x1b030209
+	pipelineCacheUUID: 000028A2-1B03-0209-0000-000100000000
+	GPU memory available: 28753 MB
+	GPU memory used: 0 MB
+	Metal Shading Language 4.0
+	supports the following GPU Features:
+		GPU Family Metal 4
+		GPU Family Apple 9
+		GPU Family Mac 1
+		GPU Family Mac 2
+		Read-Write Texture Tier 2
+[mvk-info] Created VkInstance for Vulkan version 1.0.357, as requested by app, with the following 4 Vulkan extensions enabled:
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_get_physical_device_properties2 v2
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\uxtheme.dll" at 000000BF91220000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\shcore.dll" at 000000BF90EB0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\shlwapi.dll" at 000000BF90FD0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\shell32.dll" at 000000BF8F470000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\combase.dll" at 000000BF90B90000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\coml2.dll" at 000000BF8B770000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ole32.dll" at 000000BF8B8B0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\oleaut32.dll" at 000000BF8AFA0000: builtin
+0100:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\actxprxy.dll" at 000000BF8B570000: builtin
+0100:warn:seh:dispatch_exception RPC_S_SERVER_UNAVAILABLE exception (code=6ba) raised
+011c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcss.exe" at 000000D7988B0000: builtin
+011c:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+011c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+011c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+011c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+011c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+011c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+011c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+011c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+011c:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+0024:trace:loaddll:build_module Loaded L"c:\\windows\\system32\\winemac.drv" at 000000BF927E0000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\uxtheme.dll" at 000000BF91220000: builtin
+gears: 4320 vertices (2160, 1080, 1080), 640x480, 3.0 s per API, 64-bit build
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\cryptbase.dll" at 000000BF93DF0000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\rpcrt4.dll" at 000000BF94F80000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\combase.dll" at 000000BF90B90000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\coml2.dll" at 000000BF8B770000: builtin
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ole32.dll" at 000000BF8B8B0000: builtin
+[mvk-info] MoltenVK version 1.4.2, supporting Vulkan version 1.4.357.
+	The following 154 Vulkan extensions are supported:
+	VK_KHR_16bit_storage v1
+	VK_KHR_8bit_storage v1
+	VK_KHR_bind_memory2 v1
+	VK_KHR_buffer_device_address v1
+	VK_KHR_calibrated_timestamps v1
+	VK_KHR_copy_commands2 v1
+	VK_KHR_create_renderpass2 v1
+	VK_KHR_dedicated_allocation v3
+	VK_KHR_deferred_host_operations v4
+	VK_KHR_depth_stencil_resolve v1
+	VK_KHR_descriptor_update_template v1
+	VK_KHR_device_group v4
+	VK_KHR_device_group_creation v1
+	VK_KHR_driver_properties v1
+	VK_KHR_dynamic_rendering v1
+	VK_KHR_dynamic_rendering_local_read v1
+	VK_KHR_external_fence v1
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_format_feature_flags2 v2
+	VK_KHR_fragment_shader_barycentric v1
+	VK_KHR_get_memory_requirements2 v1
+	VK_KHR_get_physical_device_properties2 v2
+	VK_KHR_get_surface_capabilities2 v1
+	VK_KHR_global_priority v1
+	VK_KHR_image_format_list v1
+	VK_KHR_imageless_framebuffer v1
+	VK_KHR_incremental_present v2
+	VK_KHR_index_type_uint8 v1
+	VK_KHR_line_rasterization v1
+	VK_KHR_load_store_op_none v1
+	VK_KHR_maintenance1 v2
+	VK_KHR_maintenance2 v1
+	VK_KHR_maintenance3 v1
+	VK_KHR_maintenance4 v2
+	VK_KHR_maintenance5 v1
+	VK_KHR_maintenance6 v1
+	VK_KHR_maintenance7 v1
+	VK_KHR_maintenance8 v1
+	VK_KHR_maintenance9 v1
+	VK_KHR_map_memory2 v1
+	VK_KHR_multiview v1
+	VK_KHR_portability_subset v1
+	VK_KHR_present_id v1
+	VK_KHR_present_id2 v1
+	VK_KHR_present_wait v1
+	VK_KHR_present_wait2 v1
+	VK_KHR_push_descriptor v2
+	VK_KHR_relaxed_block_layout v1
+	VK_KHR_robustness2 v1
+	VK_KHR_sampler_mirror_clamp_to_edge v3
+	VK_KHR_sampler_ycbcr_conversion v14
+	VK_KHR_separate_depth_stencil_layouts v1
+	VK_KHR_shader_draw_parameters v1
+	VK_KHR_shader_expect_assume v1
+	VK_KHR_shader_float_controls v4
+	VK_KHR_shader_float_controls2 v1
+	VK_KHR_shader_float16_int8 v1
+	VK_KHR_shader_fma v1
+	VK_KHR_shader_integer_dot_product v1
+	VK_KHR_shader_maximal_reconvergence v1
+	VK_KHR_shader_non_semantic_info v1
+	VK_KHR_shader_quad_control v1
+	VK_KHR_shader_relaxed_extended_instruction v1
+	VK_KHR_shader_subgroup_extended_types v1
+	VK_KHR_shader_subgroup_rotate v2
+	VK_KHR_shader_subgroup_uniform_control_flow v1
+	VK_KHR_shader_terminate_invocation v1
+	VK_KHR_spirv_1_4 v1
+	VK_KHR_storage_buffer_storage_class v1
+	VK_KHR_surface v25
+	VK_KHR_surface_maintenance1 v1
+	VK_KHR_surface_protected_capabilities v1
+	VK_KHR_swapchain v70
+	VK_KHR_swapchain_maintenance1 v1
+	VK_KHR_swapchain_mutable_format v1
+	VK_KHR_synchronization2 v1
+	VK_KHR_timeline_semaphore v2
+	VK_KHR_uniform_buffer_standard_layout v1
+	VK_KHR_variable_pointers v1
+	VK_KHR_vertex_attribute_divisor v1
+	VK_KHR_vulkan_memory_model v3
+	VK_KHR_zero_initialize_workgroup_memory v1
+	VK_EXT_4444_formats v1
+	VK_EXT_buffer_device_address v2
+	VK_EXT_calibrated_timestamps v2
+	VK_EXT_debug_marker v4
+	VK_EXT_debug_report v10
+	VK_EXT_debug_utils v2
+	VK_EXT_depth_clip_control v1
+	VK_EXT_descriptor_indexing v2
+	VK_EXT_extended_dynamic_state v1
+	VK_EXT_extended_dynamic_state2 v1
+	VK_EXT_extended_dynamic_state3 v2
+	VK_EXT_external_memory_host v1
+	VK_EXT_external_memory_metal v1
+	VK_EXT_fragment_shader_interlock v1
+	VK_EXT_global_priority v2
+	VK_EXT_global_priority_query v1
+	VK_EXT_hdr_metadata v3
+	VK_EXT_headless_surface v1
+	VK_EXT_host_image_copy v1
+	VK_EXT_host_query_reset v1
+	VK_EXT_image_2d_view_of_3d v1
+	VK_EXT_image_robustness v1
+	VK_EXT_index_type_uint8 v1
+	VK_EXT_inline_uniform_block v1
+	VK_EXT_layer_settings v2
+	VK_EXT_legacy_dithering v2
+	VK_EXT_line_rasterization v1
+	VK_EXT_load_store_op_none v1
+	VK_EXT_memory_budget v1
+	VK_EXT_metal_objects v2
+	VK_EXT_metal_surface v1
+	VK_EXT_non_seamless_cube_map v1
+	VK_EXT_pipeline_creation_cache_control v3
+	VK_EXT_pipeline_creation_feedback v1
+	VK_EXT_pipeline_robustness v1
+	VK_EXT_post_depth_coverage v1
+	VK_EXT_primitive_topology_list_restart v1
+	VK_EXT_private_data v1
+	VK_EXT_provoking_vertex v1
+	VK_EXT_robustness2 v1
+	VK_EXT_sample_locations v1
+	VK_EXT_sampler_filter_minmax v2
+	VK_EXT_scalar_block_layout v1
+	VK_EXT_separate_stencil_usage v1
+	VK_EXT_shader_atomic_float v1
+	VK_EXT_shader_demote_to_helper_invocation v1
+	VK_EXT_shader_stencil_export v1
+	VK_EXT_shader_subgroup_ballot v1
+	VK_EXT_shader_subgroup_vote v1
+	VK_EXT_shader_viewport_index_layer v1
+	VK_EXT_subgroup_size_control v2
+	VK_EXT_surface_maintenance1 v1
+	VK_EXT_swapchain_colorspace v5
+	VK_EXT_swapchain_maintenance1 v1
+	VK_EXT_texel_buffer_alignment v1
+	VK_EXT_texture_compression_astc_hdr v1
+	VK_EXT_tooling_info v1
+	VK_EXT_vertex_attribute_divisor v3
+	VK_AMD_gpu_shader_half_float v2
+	VK_AMD_negative_viewport_height v1
+	VK_AMD_shader_image_load_store_lod v1
+	VK_AMD_shader_trinary_minmax v1
+	VK_GOOGLE_display_timing v1
+	VK_IMG_format_pvrtc v1
+	VK_INTEL_shader_integer_functions2 v1
+	VK_MVK_macos_surface v3
+	VK_MVK_moltenvk v37
+	VK_NV_fragment_shader_barycentric v1
+[mvk-info] GPU device:
+	model: Apple M3 Max
+	type: Integrated
+	vendorID: 0x106b
+	deviceID: 0x1b030209
+	pipelineCacheUUID: 000028A2-1B03-0209-0000-000100000000
+	GPU memory available: 28753 MB
+	GPU memory used: 0 MB
+	Metal Shading Language 4.0
+	supports the following GPU Features:
+		GPU Family Metal 4
+		GPU Family Apple 9
+		GPU Family Mac 1
+		GPU Family Mac 2
+		Read-Write Texture Tier 2
+[mvk-info] Created VkInstance for Vulkan version 1.0.357, as requested by app, with the following 4 Vulkan extensions enabled:
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_get_physical_device_properties2 v2
+info:  Maximum supported feature level: D3D_FEATURE_LEVEL_11_1
+info:  Using feature level D3D_FEATURE_LEVEL_11_1
+0024:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\d3dcompiler_47.dll" at 000000BF8ADD0000: builtin
+0024:warn:seh:dispatch_exception EXCEPTION_ACCESS_VIOLATION exception (code=c0000005) raised
+wine: Unhandled page fault on read access to 0000007098490001 at address 000000D25D1344E4 (thread 0024), starting debugger...
+WineDbg attached to pid 0020
+[mvk-info] MoltenVK version 1.4.2, supporting Vulkan version 1.4.357.
+	The following 154 Vulkan extensions are supported:
+	VK_KHR_16bit_storage v1
+	VK_KHR_8bit_storage v1
+	VK_KHR_bind_memory2 v1
+	VK_KHR_buffer_device_address v1
+	VK_KHR_calibrated_timestamps v1
+	VK_KHR_copy_commands2 v1
+	VK_KHR_create_renderpass2 v1
+	VK_KHR_dedicated_allocation v3
+	VK_KHR_deferred_host_operations v4
+	VK_KHR_depth_stencil_resolve v1
+	VK_KHR_descriptor_update_template v1
+	VK_KHR_device_group v4
+	VK_KHR_device_group_creation v1
+	VK_KHR_driver_properties v1
+	VK_KHR_dynamic_rendering v1
+	VK_KHR_dynamic_rendering_local_read v1
+	VK_KHR_external_fence v1
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_format_feature_flags2 v2
+	VK_KHR_fragment_shader_barycentric v1
+	VK_KHR_get_memory_requirements2 v1
+	VK_KHR_get_physical_device_properties2 v2
+	VK_KHR_get_surface_capabilities2 v1
+	VK_KHR_global_priority v1
+	VK_KHR_image_format_list v1
+	VK_KHR_imageless_framebuffer v1
+	VK_KHR_incremental_present v2
+	VK_KHR_index_type_uint8 v1
+	VK_KHR_line_rasterization v1
+	VK_KHR_load_store_op_none v1
+	VK_KHR_maintenance1 v2
+	VK_KHR_maintenance2 v1
+	VK_KHR_maintenance3 v1
+	VK_KHR_maintenance4 v2
+	VK_KHR_maintenance5 v1
+	VK_KHR_maintenance6 v1
+	VK_KHR_maintenance7 v1
+	VK_KHR_maintenance8 v1
+	VK_KHR_maintenance9 v1
+	VK_KHR_map_memory2 v1
+	VK_KHR_multiview v1
+	VK_KHR_portability_subset v1
+	VK_KHR_present_id v1
+	VK_KHR_present_id2 v1
+	VK_KHR_present_wait v1
+	VK_KHR_present_wait2 v1
+	VK_KHR_push_descriptor v2
+	VK_KHR_relaxed_block_layout v1
+	VK_KHR_robustness2 v1
+	VK_KHR_sampler_mirror_clamp_to_edge v3
+	VK_KHR_sampler_ycbcr_conversion v14
+	VK_KHR_separate_depth_stencil_layouts v1
+	VK_KHR_shader_draw_parameters v1
+	VK_KHR_shader_expect_assume v1
+	VK_KHR_shader_float_controls v4
+	VK_KHR_shader_float_controls2 v1
+	VK_KHR_shader_float16_int8 v1
+	VK_KHR_shader_fma v1
+	VK_KHR_shader_integer_dot_product v1
+	VK_KHR_shader_maximal_reconvergence v1
+	VK_KHR_shader_non_semantic_info v1
+	VK_KHR_shader_quad_control v1
+	VK_KHR_shader_relaxed_extended_instruction v1
+	VK_KHR_shader_subgroup_extended_types v1
+	VK_KHR_shader_subgroup_rotate v2
+	VK_KHR_shader_subgroup_uniform_control_flow v1
+	VK_KHR_shader_terminate_invocation v1
+	VK_KHR_spirv_1_4 v1
+	VK_KHR_storage_buffer_storage_class v1
+	VK_KHR_surface v25
+	VK_KHR_surface_maintenance1 v1
+	VK_KHR_surface_protected_capabilities v1
+	VK_KHR_swapchain v70
+	VK_KHR_swapchain_maintenance1 v1
+	VK_KHR_swapchain_mutable_format v1
+	VK_KHR_synchronization2 v1
+	VK_KHR_timeline_semaphore v2
+	VK_KHR_uniform_buffer_standard_layout v1
+	VK_KHR_variable_pointers v1
+	VK_KHR_vertex_attribute_divisor v1
+	VK_KHR_vulkan_memory_model v3
+	VK_KHR_zero_initialize_workgroup_memory v1
+	VK_EXT_4444_formats v1
+	VK_EXT_buffer_device_address v2
+	VK_EXT_calibrated_timestamps v2
+	VK_EXT_debug_marker v4
+	VK_EXT_debug_report v10
+	VK_EXT_debug_utils v2
+	VK_EXT_depth_clip_control v1
+	VK_EXT_descriptor_indexing v2
+	VK_EXT_extended_dynamic_state v1
+	VK_EXT_extended_dynamic_state2 v1
+	VK_EXT_extended_dynamic_state3 v2
+	VK_EXT_external_memory_host v1
+	VK_EXT_external_memory_metal v1
+	VK_EXT_fragment_shader_interlock v1
+	VK_EXT_global_priority v2
+	VK_EXT_global_priority_query v1
+	VK_EXT_hdr_metadata v3
+	VK_EXT_headless_surface v1
+	VK_EXT_host_image_copy v1
+	VK_EXT_host_query_reset v1
+	VK_EXT_image_2d_view_of_3d v1
+	VK_EXT_image_robustness v1
+	VK_EXT_index_type_uint8 v1
+	VK_EXT_inline_uniform_block v1
+	VK_EXT_layer_settings v2
+	VK_EXT_legacy_dithering v2
+	VK_EXT_line_rasterization v1
+	VK_EXT_load_store_op_none v1
+	VK_EXT_memory_budget v1
+	VK_EXT_metal_objects v2
+	VK_EXT_metal_surface v1
+	VK_EXT_non_seamless_cube_map v1
+	VK_EXT_pipeline_creation_cache_control v3
+	VK_EXT_pipeline_creation_feedback v1
+	VK_EXT_pipeline_robustness v1
+	VK_EXT_post_depth_coverage v1
+	VK_EXT_primitive_topology_list_restart v1
+	VK_EXT_private_data v1
+	VK_EXT_provoking_vertex v1
+	VK_EXT_robustness2 v1
+	VK_EXT_sample_locations v1
+	VK_EXT_sampler_filter_minmax v2
+	VK_EXT_scalar_block_layout v1
+	VK_EXT_separate_stencil_usage v1
+	VK_EXT_shader_atomic_float v1
+	VK_EXT_shader_demote_to_helper_invocation v1
+	VK_EXT_shader_stencil_export v1
+	VK_EXT_shader_subgroup_ballot v1
+	VK_EXT_shader_subgroup_vote v1
+	VK_EXT_shader_viewport_index_layer v1
+	VK_EXT_subgroup_size_control v2
+	VK_EXT_surface_maintenance1 v1
+	VK_EXT_swapchain_colorspace v5
+	VK_EXT_swapchain_maintenance1 v1
+	VK_EXT_texel_buffer_alignment v1
+	VK_EXT_texture_compression_astc_hdr v1
+	VK_EXT_tooling_info v1
+	VK_EXT_vertex_attribute_divisor v3
+	VK_AMD_gpu_shader_half_float v2
+	VK_AMD_negative_viewport_height v1
+	VK_AMD_shader_image_load_store_lod v1
+	VK_AMD_shader_trinary_minmax v1
+	VK_GOOGLE_display_timing v1
+	VK_IMG_format_pvrtc v1
+	VK_INTEL_shader_integer_functions2 v1
+	VK_MVK_macos_surface v3
+	VK_MVK_moltenvk v37
+	VK_NV_fragment_shader_barycentric v1
+[mvk-info] GPU device:
+	model: Apple M3 Max
+	type: Integrated
+	vendorID: 0x106b
+	deviceID: 0x1b030209
+	pipelineCacheUUID: 000028A2-1B03-0209-0000-000100000000
+	GPU memory available: 28753 MB
+	GPU memory used: 0 MB
+	Metal Shading Language 4.0
+	supports the following GPU Features:
+		GPU Family Metal 4
+		GPU Family Apple 9
+		GPU Family Mac 1
+		GPU Family Mac 2
+		Read-Write Texture Tier 2
+[mvk-info] Created VkInstance for Vulkan version 1.0.357, as requested by app, with the following 4 Vulkan extensions enabled:
+	VK_KHR_external_fence_capabilities v1
+	VK_KHR_external_memory_capabilities v1
+	VK_KHR_external_semaphore_capabilities v1
+	VK_KHR_get_physical_device_properties2 v2
+0160:warn:seh:hvf_loop guest interrupted for a signal (1), pc 0xbf96078524
+Unhandled exception: page fault on read access to 0x0000007098490001 in 64-bit code (0x0000d25d1344e4).
+Register dump:
+ARM64 EL0t Mode
+ Pc:000000d25d1344e4 Sp:000000700c13f4b0 Lr:000000d25d133148 Cpsr:60000000(-ZC-)
+ x0: 000000700c13fb60 x1: 0000007098490000 x2: 0000000000000a00 x3: 0000000000000000 x4: 0000000000000280
+ x5: 0000007098490002 x6: 0000000000000004 x7: 0000000000000004 x8: 000000000004b000 x9: 0000000000000280
+ x10:00000000000001e0 x11:0000000000000000 x12:0000000000000000 x13:0000000000000000 x14:0000000000000000
+ x15:0000000000000002 ip0:000000000000003c ip1:0000007098490000 x18:0000000000000000 x19:000000000001005c
+ x20:000000700c13fb60 x21:0000000000000001 x22:000000700d324450 x23:000000700c13f568 x24:000000700c13f640
+ x25:000000d25d13d000 x26:000000d25d13d000 x27:000000bf944f4268 x28:00000000000002e0 Fp:0000000000000000
+Stack dump:
+0x0000700c13f4b0:  000000000001005c 000000700c13fb60
+0x0000700c13f4c0:  000000700c13f520 000000700c13f510
+0x0000700c13f4d0:  000000700c13f50c 000000700c13f518
+0x0000700c13f4e0:  656c202c47464544 315f3131206c6576
+0x0000700c13f4f0:  0000000000000000 0000000000000000
+0x0000700c13f500:  0000000000000000 0000b10000000018
+0x0000700c13f510:  000000700d308048 000000700d3085e0
+0x0000700c13f520:  000000700d310b80 000000700d358660
+0x0000700c13f530:  000000700fd5d200 000000700d37fea0
+0x0000700c13f540:  000000700d2e03a0 000000700d308000
+0x0000700c13f550:  000000700fd4bf20 000000700fd69f80
+0x0000700c13f560:  000000700fd81e20 000000700d2a9230
+Backtrace:
+=>0 0x0000d25d1344e4 in gears-aarch64 (+0x44e4) (0000000000000000)
+  1 0x0000d25d133148 in gears-aarch64 (+0x3148) (0000000000000000)
+0x0000d25d1344e4 gears-aarch64+0x44e4: ldrb w7, [x17, #1]
+Modules:
+Module  Address                                 Debug info      Name (27 modules)
+PE-Wine       700c3c0000-      700ce40000       Deferred        opengl32
+PE-Wine       bf8add0000-      bf8afa0000       Deferred        d3dcompiler_47
+PE-Wine       bf8b770000-      bf8b8b0000       Deferred        coml2
+PE-Wine       bf8b8b0000-      bf8bef0000       Deferred        ole32
+PE-Wine       bf8bef0000-      bf8eef0000       Deferred        wined3d
+PE-Wine       bf90b90000-      bf90eb0000       Deferred        combase
+PE-Wine       bf91220000-      bf91400000       Deferred        uxtheme
+PE-Wine       bf91400000-      bf91590000       Deferred        d3d12
+PE            bf91590000-      bf918b0000       Deferred        d3d11
+PE-Wine       bf918b0000-      bf91a10000       Deferred        win32u
+PE-Wine       bf91a10000-      bf91ea0000       Deferred        gdi32
+PE-Wine       bf91ea0000-      bf927c0000       Deferred        user32
+PE-Wine       bf927e0000-      bf928d0000       Deferred        winemac
+PE-Wine       bf928d0000-      bf928e8000       Deferred        winemetal
+PE            bf928f0000-      bf929ff000       Deferred        dxgi
+PE-Wine       bf92a00000-      bf92d60000       Deferred        d3d9
+PE-Wine       bf93950000-      bf93ad0000       Deferred        imm32
+PE-Wine       bf93df0000-      bf93ee0000       Deferred        cryptbase
+PE-Wine       bf93ee0000-      bf944b0000       Deferred        msvcrt
+PE-Wine       bf944b0000-      bf94b90000       Deferred        ucrtbase
+PE-Wine       bf94b90000-      bf94d00000       Deferred        sechost
+PE-Wine       bf94d00000-      bf94f80000       Deferred        advapi32
+PE-Wine       bf94f80000-      bf95400000       Deferred        rpcrt4
+PE-Wine       bf95400000-      bf95cc0000       Deferred        kernelbase
+PE-Wine       bf95cc0000-      bf96010000       Deferred        kernel32
+PE-Wine       bf96010000-      bf966c0000       Deferred        ntdll
+PE            d25d130000-      d25d14f000       Dwarf-4         gears-aarch64
+Threads:
+0158:fixme:thread:get_thread_times not implemented on this platform
+process  tid      prio    name (all IDs are in hex)
+00000020 (D) Z:\Users\nicolo\Work\wine\deps-dxmt\test\aarch64\app\gears-aarch64.exe
+	00000024    0 <== 
+	00000140   15     
+	00000144   15     
+	00000148    0     
+	0000014c   15     
+	00000150   15     
+	00000160    0     
+00000040 services.exe
+	00000044    0     
+	0000004c    0     
+	0000005c    0     
+	00000060    0     
+	00000084    0     
+	000000a0    0     
+	000000bc    0     
+	000000d8    0     
+	000000e4    0     
+	000000ec    0     
+	00000114    0     
+	00000124    0     
+00000050 winedevice.exe
+	00000054    0     
+	00000064    0     
+	00000068    0     
+	0000006c    0     
+	00000070    0     
+	00000074    0     
+	000000ac    0     
+00000078 plugplay.exe
+	0000007c    0     
+	00000088    0     
+	0000008c    0     
+	00000090    0     
+	000000f0    0     
+	000000f4    0     
+00000094 svchost.exe
+	00000098    0     
+	000000a4    0     
+	000000a8    0     
+000000b0 winedevice.exe
+	000000b4    0     
+	000000c0    0     
+	000000c4    0     
+	000000c8    0     
+	000000d4    0     
+	000000dc    0     
+	000000e0    0     
+	000000e8    0     
+000000fc explorer.exe
+	00000100    0     
+	00000108    0     
+	0000010c    0     
+	00000110    0     
+00000118 rpcss.exe
+	0000011c    0     
+	00000128    0     
+	0000012c    0     
+	00000130    0     
+	00000134    0     
+	00000138    0     
+	0000013c    0     
+System information:
+    Wine build: wine-11.22
+    Platform: arm64 (guest: i386)
+    Version: Windows 10
+    Host system: Darwin
+    Host version: 27.3.0
+be_arm64_single_step: not done
+0024:warn:seh:dispatch_exception EXCEPTION_ACCESS_VIOLATION exception (code=c0000005) raised

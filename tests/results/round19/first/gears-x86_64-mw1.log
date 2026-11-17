@@ -1,0 +1,15 @@
+0110:trace:loaddll:build_module Loaded L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\gears-x86_64.exe" at 000000D5DEFA0000: native
+0110:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BFE9E70000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\libarm64ecfex.dll" at 000000BFE6930000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BFE9260000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BFE9B20000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BFE8310000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BFE89F0000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BFE7D40000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BFE8B60000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\win32u.dll" at 000000BFE5710000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\gdi32.dll" at 000000BFE5870000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\user32.dll" at 000000BFE5D00000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\OPENGL32.dll" at 000000700C910000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\wined3d.dll" at 000000BFDFBD0000: builtin
+0110:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\d3d9.dll" at 000000BFE4AD0000: builtin

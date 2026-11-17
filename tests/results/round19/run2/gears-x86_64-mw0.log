@@ -1,0 +1,25 @@
+0188:trace:loaddll:build_module Loaded L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\gears-x86_64.exe" at 000000D66C3D0000: native
+0188:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF96010000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\libarm64ecfex.dll" at 000000BF92950000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF95400000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF95CC0000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF944B0000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF94B90000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF93EE0000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF94D00000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\win32u.dll" at 000000BF918B0000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\gdi32.dll" at 000000BF91A10000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\user32.dll" at 000000BF91EA0000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\OPENGL32.dll" at 000000700C910000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\wined3d.dll" at 000000BF8BEF0000: builtin
+0188:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\d3d9.dll" at 000000BF91550000: builtin
+0188:err:module:import_dll Loading library winemetal.dll (which is needed by L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\DXGI.DLL") failed (error c000007b).
+0188:err:module:import_dll Library DXGI.DLL (which is needed by L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\d3d11.dll") not found
+0188:err:module:import_dll Loading library winemetal.dll (which is needed by L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\d3d11.dll") failed (error c000007b).
+0188:err:module:import_dll Library d3d11.dll (which is needed by L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\gears-x86_64.exe") not found
+0188:err:module:import_dll Loading library winemetal.dll (which is needed by L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\dxgi.dll") failed (error c000007b).
+0188:err:module:import_dll Library dxgi.dll (which is needed by L"C:\\windows\\system32\\d3d12.dll") not found
+0188:err:module:import_dll Library d3d12.dll (which is needed by L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\gears-x86_64.exe") not found
+0188:err:module:import_dll Loading library winemetal.dll (which is needed by L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\dxgi.dll") failed (error c000007b).
+0188:err:module:import_dll Library dxgi.dll (which is needed by L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\gears-x86_64.exe") not found
+0188:err:module:loader_init Importing dlls for L"Z:\\Users\\nicolo\\Work\\wine\\deps-dxmt\\test\\x86_64\\app\\gears-x86_64.exe" failed, status c0000135

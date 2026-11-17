@@ -14,6 +14,10 @@
  *     3  same, after the GPU wrote it (shared + wired)
  *     4  Metal's own shared MTLBuffer (tag VM_MEMORY_IOACCELERATOR)
  *     5  IOSurface (tag VM_MEMORY_IOSURFACE)
+ *     6  Metal's own MTLBuffer released by Metal while still mapped in the VM
+ *        (what a "window on Metal memory" in hvf.c would face when DXMT frees a
+ *        buffer), then 256 MB of new Metal buffers to reuse the pages, and the
+ *        guest touches the stale mapping again
  *
  * Guest: one vCPU at EL1 with the MMU off reads the target page, writes a
  * marker and returns with HVC. The host then checks the marker from the CPU
@@ -108,7 +112,7 @@ int main( int argc, char **argv )
     int vm = 0, target_mapped = 0, code_mapped = 0, have_vcpu = 0, ok = 0;
     uint64_t x1 = 0;
 
-    if (which < 1 || which > 5) { fprintf( stderr, "usage: gpumap <1-5>\n" ); return 2; }
+    if (which < 1 || which > 6) { fprintf( stderr, "usage: gpumap <1-6>\n" ); return 2; }
     logfd = open( "gpumap.log", O_WRONLY | O_CREAT | O_APPEND, 0644 );
     step( "=== gpumap case %d", which );
 
@@ -132,6 +136,7 @@ int main( int argc, char **argv )
             if (which == 3) gpu_fill( dev, buf, len );
             break;
         case 4:
+        case 6:
             buf = [dev newBufferWithLength:len options:MTLResourceStorageModeShared];
             target = [buf contents];
             memset( target, 0x5a, len );
@@ -148,7 +153,7 @@ int main( int argc, char **argv )
             break;
         }
         }
-        if (!target || ((uintptr_t)target & (HOST_PAGE - 1)) || (which >= 2 && which <= 4 && !buf))
+        if (!target || ((uintptr_t)target & (HOST_PAGE - 1)) || (which >= 2 && which != 5 && !buf))
         {
             step( "  setup failed (target %p, buffer %p)", target, (__bridge void *)buf );
             return 1;
@@ -184,6 +189,32 @@ int main( int argc, char **argv )
         ok = exit_info->reason == HV_EXIT_REASON_EXCEPTION && (exit_info->exception.syndrome >> 26) == 0x16;
         step( "  host CPU sees marker: %s", *(uint64_t *)target == MARKER ? "yes" : "NO" );
         if (buf) step( "  GPU sees marker: %s", gpu_reads_marker( dev, buf ) ? "yes" : "NO" );
+
+        if (which == 6)
+        {
+            NSMutableArray *others = [NSMutableArray array];
+            int k;
+
+            step( "  releasing the Metal buffer while it is mapped  <-- untested" );
+            @autoreleasepool { buf = nil; }
+            step( "  released; allocating 256 MB of new Metal buffers" );
+            for (k = 0; k < 64; k++)
+            {
+                id<MTLBuffer> b = [dev newBufferWithLength:4 << 20 options:MTLResourceStorageModeShared];
+                memset( [b contents], 0x77, 4 << 20 );
+                [others addObject:b];
+            }
+            step( "  guest touches the stale mapping again" );
+            CHECK( hv_vcpu_set_reg( vcpu, HV_REG_PC, CODE_IPA ) );
+            CHECK( hv_vcpu_set_reg( vcpu, HV_REG_CPSR, 0x3c5 ) );
+            CHECK( hv_vcpu_set_reg( vcpu, HV_REG_X0, TARGET_IPA ) );
+            CHECK( hv_vcpu_run( vcpu ) );
+            hv_vcpu_get_reg( vcpu, HV_REG_X1, &x1 );
+            step( "  exit reason %u syndrome %#llx, guest read %#llx", exit_info->reason,
+                  (unsigned long long)exit_info->exception.syndrome, (unsigned long long)x1 );
+            ok = ok && exit_info->reason == HV_EXIT_REASON_EXCEPTION && (exit_info->exception.syndrome >> 26) == 0x16;
+            others = nil;
+        }
 
     done:
         if (have_vcpu) hv_vcpu_destroy( vcpu );
