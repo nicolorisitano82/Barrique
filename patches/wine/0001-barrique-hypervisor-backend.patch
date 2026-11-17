@@ -1698,10 +1698,77 @@ index 0000000..c833b63
 +
 +#endif  /* __APPLE__ && __aarch64__ */
 diff --git a/dlls/ntdll/unix/loader.c b/dlls/ntdll/unix/loader.c
-index dde4b58..ea33ef9 100644
+index dde4b58..b8eb056 100644
 --- a/dlls/ntdll/unix/loader.c
 +++ b/dlls/ntdll/unix/loader.c
-@@ -1565,6 +1565,14 @@ static void load_ntdll_functions( HMODULE module )
+@@ -292,16 +292,43 @@ static WORD get_alt_machine( WORD machine )
+     }
+ }
+ 
++/* Barrique: BARRIQUE_D3D=dxmt picks DXMT (D3D10/11 on Metal) over wined3d. Its
++ * builtin DLLs (ARM64X) live in BARRIQUE_DXMT_DIR (default <dll dir>/dxmt), laid
++ * out like Wine's (aarch64-windows/, x86_64-windows/, aarch64-unix/winemetal.so),
++ * and are searched before Wine's own for the names below; the directory is also
++ * one of the DLL paths, for winemetal.dll and its unix library. */
++static char *dxmt_dir;
++
++static BOOL is_dxmt_dll( const char *name )
++{
++    static const char * const names[] = { "d3d11.dll", "dxgi.dll", "d3d10core.dll", "winemetal.dll" };
++    unsigned int i;
++
++    for (i = 0; i < ARRAY_SIZE(names); i++) if (!strcmp( name, names[i] )) return TRUE;
++    return FALSE;
++}
++
++static void set_dxmt_dir(void)
++{
++    const char *d3d = getenv( "BARRIQUE_D3D" ), *dir = getenv( "BARRIQUE_DXMT_DIR" );
++
++    if (!d3d || strcmp( d3d, "dxmt" )) return;
++    if (dir && *dir) dxmt_dir = strdup( dir );
++    else if (dll_dir) asprintf( &dxmt_dir, "%s/dxmt", dll_dir );
++}
++
+ static void set_dll_path(void)
+ {
+     char *p, *path = getenv( "WINEDLLPATH" );
+     int i, count = 0;
+ 
++    set_dxmt_dir();
+     if (path) for (p = path, count = 1; *p; p++) if (*p == ':') count++;
+ 
+-    dll_paths = malloc( (count + 2) * sizeof(*dll_paths) );
++    dll_paths = malloc( (count + 3) * sizeof(*dll_paths) );
+     count = 0;
+ 
++    if (dxmt_dir) dll_paths[count++] = dxmt_dir;
+     if (!build_dir) dll_paths[count++] = dll_dir;
+ 
+     if (path)
+@@ -1152,6 +1179,21 @@ static NTSTATUS find_builtin_dll( UNICODE_STRING *nt_name, ANSI_STRING *exp_name
+ 
+     TRACE( "looking for %s for file %s\n", debugstr_a(file + pos + 1), debugstr_us(nt_name) );
+ 
++    if (dxmt_dir && is_dxmt_dll( file + pos + 1 ))
++    {
++        ptr = prepend( file + pos, pe_dir, strlen(pe_dir) );
++        ptr = prepend( ptr, dxmt_dir, strlen(dxmt_dir) );
++        status = open_builtin_pe_file( ptr, &attr, module, size_ptr, image_info, limit_low, limit_high,
++                                       load_machine, prefer_native, offset );
++        ptr = prepend( file + pos, so_dir, strlen(so_dir) );
++        ptr = prepend( ptr, dxmt_dir, strlen(dxmt_dir) );
++        if (status != STATUS_DLL_NOT_FOUND)
++        {
++            TRACE( "using DXMT's %s\n", debugstr_a(file + pos + 1) );
++            goto done;
++        }
++    }
++
+     if (build_dir)
+     {
+         /* try as a dll */
+@@ -1565,6 +1607,14 @@ static void load_ntdll_functions( HMODULE module )
          *p__wine_unix_call_dispatcher_arm64ec = __wine_unix_call_dispatcher;
      }
      else *p__wine_unix_call_dispatcher = __wine_unix_call_dispatcher;

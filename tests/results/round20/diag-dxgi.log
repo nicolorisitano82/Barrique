@@ -1,0 +1,22 @@
+00f8:trace:loaddll:build_module Loaded L"Z:\\Users\\nicolo\\Work\\wine\\build-arm64ec\\dlls\\dxgi\\tests\\aarch64-windows\\dxgi_test.exe" at 000000D362070000: native
+00f8:trace:loaddll:build_ntdll_module Loaded L"C:\\windows\\system32\\ntdll.dll" at 000000BF302C0000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernelbase.dll" at 000000BF2F6B0000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\kernel32.dll" at 000000BF2FF70000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\ucrtbase.dll" at 000000BF2E760000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\winemetal.dll" at 000000BF2CAC0000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\sechost.dll" at 000000BF2EE40000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\msvcrt.dll" at 000000BF2E190000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\advapi32.dll" at 000000BF2EFB0000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\win32u.dll" at 000000BF2BB60000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\gdi32.dll" at 000000BF2BCC0000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\USER32.dll" at 000000BF2C150000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\DXGI.DLL" at 000000BF2CAF0000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\D3D11.DLL" at 000000BF2B4D0000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\d3d10core.dll" at 000000BF2CD30000: builtin
+00f8:trace:loaddll:build_module Loaded L"C:\\windows\\system32\\d3d10_1.dll" at 000000BF2CF00000: builtin
+00f8:warn:module:load_builtin_unixlib failed to load "$HOME/Work/wine/deps-dxmt/dxmt/aarch64-unix/winemetal.so": dlopen($HOME/Work/wine/deps-dxmt/dxmt/aarch64-unix/winemetal.so, 0x0002): Library not loaded: @rpath/winemac.so
+  Referenced from: <8E398910-CF8B-319B-BA3F-54D5098C1006> $HOME/Work/wine/deps-dxmt/dxmt/aarch64-unix/winemetal.so
+  Reason: tried: '$HOME/Work/wine/build-arm64ec/dlls/ntdll/winemac.so' (no such file), '$HOME/Work/wine/build-arm64ec/dlls/win32u/winemac.so' (no such file), '$HOME/Work/wine/deps-dxmt/dxmt/aarch64-unix/winemac.so' (no such file), '$HOME/Work/wine/deps-dxmt/dxmt/aarch64-unix/../../winemac.so' (no such file), '$HOME/Work/wine/deps-dxmt/dxmt/aarch64-unix/winemac.so' (no such file), '$HOME/Work/wine/deps-dxmt/dxmt/aarch64-unix/../../winemac.so' (no such file), '$HOME/Work/wine/build-arm64ec/dlls/ntdll/winemac.so' (no such file)
+00f8:warn:module:process_attach Initialization of L"winemetal.dll" failed
+00f8:err:module:loader_init "winemetal.dll" failed to initialize, aborting
+00f8:err:module:loader_init Initializing dlls for L"Z:\\Users\\nicolo\\Work\\wine\\build-arm64ec\\dlls\\dxgi\\tests\\aarch64-windows\\dxgi_test.exe" failed, status c0000142

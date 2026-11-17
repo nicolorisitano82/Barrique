@@ -9,8 +9,9 @@
 #
 #   build-dxmt.sh [source dir] [wine build dir] [llvm prefix] [output dir] [archs]
 #
-# Output: <output dir>/<arch>/ with the DLLs and winemetal.so, default
-# ~/Work/wine/deps-dxmt; archs default "aarch64 arm64ec".
+# Output: <output dir>/<arch>/ with the DLLs and winemetal.so, <output dir>/arm64x/
+# (one DLL set for ARM64 and x86-64 processes) and <output dir>/dxmt/, the directory
+# BARRIQUE_D3D=dxmt uses; default ~/Work/wine/deps-dxmt; archs "aarch64 arm64ec".
 set -e
 S=${1:-$HOME/Work/wine/deps-src/dxmt-0df8610}   # main @ 0df8610 (2026-11-10): v0.80 does not build with Xcode 27
 WINE_BUILD=${2:-$HOME/Work/wine/build-arm64ec}
@@ -91,7 +92,24 @@ print('cd ' + shlex.quote(build + '/arm64ec') + ' && ' + ' '.join(shlex.quote(x)
 PY
         zsh $B/link-${dll:t:r}.sh
     done
-    $WINE_BUILD/tools/winebuild/winebuild --builtin $OUT/arm64x/winemetal.dll
     cp $OUT/aarch64/winemetal.so $OUT/arm64x/
     ls -la $OUT/arm64x
+
+    # the directory BARRIQUE_D3D=dxmt loads from (ntdll, BARRIQUE_DXMT_DIR):
+    # all four marked builtin, so the prefix's own system32 placeholders lead here
+    D=$OUT/dxmt
+    rm -rf $D
+    mkdir -p $D/aarch64-windows $D/x86_64-windows $D/aarch64-unix
+    for dll in winemetal dxgi d3d11 d3d10core; do
+        cp $OUT/arm64x/$dll.dll $D/aarch64-windows/
+        $WINE_BUILD/tools/winebuild/winebuild --builtin $D/aarch64-windows/$dll.dll
+        cp $D/aarch64-windows/$dll.dll $D/x86_64-windows/
+    done
+    cp $OUT/aarch64/winemetal.so $D/aarch64-unix/
+    # winemetal.so links @rpath/winemac.so and ntdll.so with rpath @loader_path:
+    # in an install they sit in the same aarch64-unix directory; here, links to
+    # the build tree's (same files, so dyld does not load them twice)
+    ln -sf $WINE_BUILD/dlls/winemac.drv/winemac.so $D/aarch64-unix/winemac.so
+    ln -sf $WINE_BUILD/dlls/ntdll/ntdll.so $D/aarch64-unix/ntdll.so
+    find $D | sort
 fi

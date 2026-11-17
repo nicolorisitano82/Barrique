@@ -1,0 +1,13 @@
+gears aarch64 rc=0 barrique: winemetal.so loaded, 1 MTLCopyAllDevices import(s) hooked barrique: DXMT buffers of AGXG15CDevice use Windows memory d3d11  ok   fps    255.6  frames    767  first   175 ms  red 24.2% green 6.3% blue 4.7%  Apple M3 Max, level 11_1 
+gears x86_64 rc=0 barrique: winemetal.so loaded, 1 MTLCopyAllDevices import(s) hooked barrique: DXMT buffers of AGXG15CDevice use Windows memory d3d11  ok   fps    120.4  frames    362  first   137 ms  red 24.2% green 6.3% blue 4.7%  Apple M3 Max, level 11_1 
+gears i686 rc=1 d3d11  FAIL CreateVertexShader: 0x80070057  NVIDIA GeForce 6800, level 9_3 
+aarch64 d3d11 d3d11: crash (- tests, - failures, 1s)
+aarch64 dxgi dxgi: crash (- tests, - failures, 1s)
+aarch64 d3d10core d3d10core: crash (- tests, - failures, 1s)
+x86_64 d3d11 d3d11: crash (- tests, - failures, 1s)
+x86_64 dxgi dxgi: crash (- tests, - failures, 1s)
+x86_64 d3d10core d3d10core: crash (- tests, - failures, 1s)
+i386 d3d11 d3d11: fail (3917 tests, 15 failures, 103s)
+i386 dxgi dxgi: crash (- tests, - failures, 22s)
+i386 d3d10core d3d10core: ok (0 tests, 0 failures, 57s)
+ROUND20 DONE
