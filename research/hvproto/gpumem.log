@@ -1,0 +1,34 @@
+device: Apple M3 Max, unified memory 1
+
+A: anonymous memory imported with newBufferWithBytesNoCopy
+A0 anon, written (reference)                 ACCEPT pager 0 prot 3/7 share 2 tag 0 wired 0 ref 1 shadow 0 obj 0x7f8b972d | depth 0 disp 0xd
+A1 after newBufferWithBytesNoCopy            ACCEPT pager 0 prot 3/7 share 5 tag 0 wired 0 ref 2 shadow 0 obj 0x7f8b972d | depth 0 disp 0xd
+  A1: ext.share_mode 0x2 -> 0x5
+A2 after a GPU fill                          REFUSE pager 0 prot 3/7 share 5 tag 0 wired 0 ref 2 shadow 0 obj 0x7f8b972d | depth 0 disp 0x100d
+  A2: ext.share_mode 0x2 -> 0x5
+  A2: pi.disposition 0xd -> 0x100d
+  GPU write visible to the CPU: yes
+A3 CPU write after GPU use                   REFUSE pager 0 prot 3/7 share 5 tag 0 wired 0 ref 2 shadow 0 obj 0x7f8b972d | depth 0 disp 0x100d
+  A3: ext.share_mode 0x2 -> 0x5
+  A3: pi.disposition 0xd -> 0x100d
+A4 after the buffer is released              REFUSE pager 0 prot 3/7 share 5 tag 0 wired 0 ref 2 shadow 0 obj 0xff83e157 | depth 0 disp 0x100d
+  A4: ext.share_mode 0x2 -> 0x5
+  A4: pi.disposition 0xd -> 0x100d
+
+E: VirtualLock
+E1 anon private, mlock (expect ACCEPT)       ACCEPT pager 0 prot 3/7 share 2 tag 0 wired 1 ref 1 shadow 0 obj 0x951135b4 | depth 0 disp 0x100d
+
+B: Metal's own buffers
+B1 MTLBuffer shared, contents                REFUSE pager 0 prot 3/3 share 5 tag 100 wired 0 ref 2 shadow 0 obj 0x67665bf | depth 0 disp 0
+B2 MTLBuffer shared 64 MB, middle            REFUSE pager 0 prot 3/3 share 5 tag 100 wired 0 ref 2 shadow 0 obj 0xed582d01 | depth 0 disp 0xd
+
+C: IOSurface
+C1 IOSurface locked, base                    REFUSE pager 0 prot 3/3 share 5 tag 88 wired 0 ref 2 shadow 0 obj 0x67665bf | depth 0 disp 0xd
+C2 IOSurface locked, middle                  REFUSE pager 0 prot 3/3 share 5 tag 88 wired 0 ref 2 shadow 0 obj 0x67665bf | depth 0 disp 0
+
+D: copy cost, 64 MB
+  D1 memcpy anon -> shared MTLBuffer: 57425 MB/s (best of 5)
+  D2 GPU blit imported -> private: 82897 MB/s (best of 5)
+D3 source page after the copies              REFUSE pager 0 prot 3/7 share 5 tag 0 wired 0 ref 2 shadow 0 obj 0x503fa3ee | depth 0 disp 0x100d
+
+RESULT: done

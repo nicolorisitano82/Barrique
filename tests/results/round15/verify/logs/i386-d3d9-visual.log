@@ -1,0 +1,2 @@
+visual.c:29455: Tests skipped: could not create D3D9 object
+017c:visual: 0 tests executed (0 marked as todo, 0 as flaky, 0 failures), 1 skipped.

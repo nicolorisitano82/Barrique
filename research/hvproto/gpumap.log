@@ -1,0 +1,68 @@
+=== gpumap case 1
+  target 0x100bd8000, first qword 0x5a5a5a5a5a5a5a5a
+  hv_vm_create
+  hv_vm_map code page
+  hv_vm_map target page  <-- point of no return
+  mapped
+  guest read + write
+  exit reason 1 syndrome 0x5a000000, guest read 0x5a5a5a5a5a5a5a5a
+  host CPU sees marker: yes
+  hv_vm_unmap target
+  hv_vm_destroy
+  releasing Metal objects
+RESULT case 1: ok
+=== gpumap case 2
+  target 0x100c2c000, first qword 0x5a5a5a5a5a5a5a5a
+  hv_vm_create
+  hv_vm_map code page
+  hv_vm_map target page  <-- point of no return
+  mapped
+  guest read + write
+  exit reason 1 syndrome 0x5a000000, guest read 0x5a5a5a5a5a5a5a5a
+  host CPU sees marker: yes
+  GPU sees marker: yes
+  hv_vm_unmap target
+  hv_vm_destroy
+  releasing Metal objects
+RESULT case 2: ok
+=== gpumap case 3
+  target 0x1026c0000, first qword 0xa5a5a5a5a5a5a5a5
+  hv_vm_create
+  hv_vm_map code page
+  hv_vm_map target page  <-- point of no return
+  mapped
+  guest read + write
+  exit reason 1 syndrome 0x5a000000, guest read 0xa5a5a5a5a5a5a5a5
+  host CPU sees marker: yes
+  GPU sees marker: yes
+  hv_vm_unmap target
+  hv_vm_destroy
+  releasing Metal objects
+RESULT case 3: ok
+=== gpumap case 4
+  target 0x109674000, first qword 0x5a5a5a5a5a5a5a5a
+  hv_vm_create
+  hv_vm_map code page
+  hv_vm_map target page  <-- point of no return
+  mapped
+  guest read + write
+  exit reason 1 syndrome 0x5a000000, guest read 0x5a5a5a5a5a5a5a5a
+  host CPU sees marker: yes
+  GPU sees marker: yes
+  hv_vm_unmap target
+  hv_vm_destroy
+  releasing Metal objects
+RESULT case 4: ok
+=== gpumap case 5
+  target 0x105884000, first qword 0x5a5a5a5a5a5a5a5a
+  hv_vm_create
+  hv_vm_map code page
+  hv_vm_map target page  <-- point of no return
+  mapped
+  guest read + write
+  exit reason 1 syndrome 0x5a000000, guest read 0x5a5a5a5a5a5a5a5a
+  host CPU sees marker: yes
+  hv_vm_unmap target
+  hv_vm_destroy
+  releasing Metal objects
+RESULT case 5: ok

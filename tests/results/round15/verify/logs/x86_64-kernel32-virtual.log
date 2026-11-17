@@ -1,0 +1,320 @@
+virtual.c:4899: system page size 0x1000
+00f4:virtual: 4 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+0100:virtual: 3 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+010c:virtual: 3 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+0118:virtual: 3 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.
+virtual.c:4144: testing file mapping flags 08000000 
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x8 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x2, view 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x8, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x2, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x2, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x2, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x2, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x2, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x8 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x8, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x4, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x4, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x8 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x8, view 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x8, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x8, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x8, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x8, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x8, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x8, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x8 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x8, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x80 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x80 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x80, requested prot 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x80, requested prot 0x80 got 0x80
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x20 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20, requested prot 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20, requested prot 0x80 got 0x80
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x20 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20, requested prot 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20, requested prot 0x80 got 0x80
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x20 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20, requested prot 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20, requested prot 0x80 got 0x80
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x20, view 0x20 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20, requested prot 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x20, view 0x20, requested prot 0x80 got 0x80
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x8 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x40, view 0x8 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x8, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x40, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x40, view 0x4 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x4, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x40, view 0x2 got 0x8
+virtual.c:4423: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x2, requested prot 0x8 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x2 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x40, view 0x2 got 0x8
+virtual.c:4423: Line has been silenced after 42 occurrences
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x40, view 0x4 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x40, view 0x4 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x40, view 0x4 got 0x8
+virtual.c:4385: Test marked todo: VirtualProtect wrong prot, map 0x40, view 0x4 got 0x8
+virtual.c:4388: Test marked todo: wrong region size 0x2000 after write, map 0x40, view 0x4 got 0x8
+virtual.c:4385: Line has been silenced after 42 occurrences
+virtual.c:4388: Line has been silenced after 42 occurrences
+virtual.c:4464: Test marked todo: data = deadbeef
+virtual.c:4144: testing file mapping flags 08000000 readonly file
+virtual.c:4156: Test marked todo: 5: CreateFileMapping(0020) should fail
+virtual.c:4157: Test marked todo: expected ERROR_ACCESS_DENIED, got 0
+virtual.c:4156: Test marked todo: 7: CreateFileMapping(0080) should fail
+virtual.c:4157: Test marked todo: expected ERROR_ACCESS_DENIED, got 0
+virtual.c:4144: testing file mapping flags 01000000 
+virtual.c:4266: Test failed: 0: (0000) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 1: (0001) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 4: (0004) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 5: (0005) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 8: (0008) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 9: (0009) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 12: (000c) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 13: (000d) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 16: (0020) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 24: (0028) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 25: (0029) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 0: (0000) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 1: (0001) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 2: (0002) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 3: (0003) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 4: (0004) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 5: (0005) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 6: (0006) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 7: (0007) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 8: (0008) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 9: (0009) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 10: (000a) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 11: (000b) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 12: (000c) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 13: (000d) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 14: (000e) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 15: (000f) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 16: (0020) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 24: (0028) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 25: (0029) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 0: (0000) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 1: (0001) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 4: (0004) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 5: (0005) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 8: (0008) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 9: (0009) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 12: (000c) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 13: (000d) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 16: (0020) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 24: (0028) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 25: (0029) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 0: (0000) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 1: (0001) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 4: (0004) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 5: (0005) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 8: (0008) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 9: (0009) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 12: (000c) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 13: (000d) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 16: (0020) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 17: (0021) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 20: (0024) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 21: (0025) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 24: (0028) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 25: (0029) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 28: (002c) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 29: (002d) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 0: (0000) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 1: (0001) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 2: (0002) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 3: (0003) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 4: (0004) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 5: (0005) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 6: (0006) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 7: (0007) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 8: (0008) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 9: (0009) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 10: (000a) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 11: (000b) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 12: (000c) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 13: (000d) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 14: (000e) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 15: (000f) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 16: (0020) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 17: (0021) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 18: (0022) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 19: (0023) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 20: (0024) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 21: (0025) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 22: (0026) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 23: (0027) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 24: (0028) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 25: (0029) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 26: (002a) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 27: (002b) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 28: (002c) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 29: (002d) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 30: (002e) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 31: (002f) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 0: (0000) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 1: (0001) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 4: (0004) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 5: (0005) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 8: (0008) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 9: (0009) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 12: (000c) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 13: (000d) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 16: (0020) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 17: (0021) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 20: (0024) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 21: (0025) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 24: (0028) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 25: (0029) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 28: (002c) got 0x10000 != expected 0x2000
+virtual.c:4266: Test failed: 29: (002d) got 0x10000 != expected 0x2000
+virtual.c:4144: testing anonymous mapping flags 08000000 
+virtual.c:3951: Test marked todo: 8: got 0x8 != expected 0x4
+virtual.c:3967: Test marked todo: 8: got 0x8 != expected 0x4
+virtual.c:3951: Test marked todo: 23: got 0x80 != expected 0x40
+virtual.c:3967: Test marked todo: 23: got 0x80 != expected 0x40
+virtual.c:158: Test failed: WriteProcessMemory succeeded
+virtual.c:159: Test failed: wrong error 3735928559
+virtual.c:161: Test failed: 32768 bytes written
+virtual.c:164: Test failed: ReadProcessMemory succeeded
+virtual.c:165: Test failed: wrong error 3735928559
+virtual.c:171: Test failed: 32768 bytes read
+virtual.c:176: Test failed: wrong status 0
+virtual.c:177: Test failed: 32768 bytes written
+virtual.c:180: Test failed: wrong status 0
+virtual.c:181: Test failed: 32768 bytes read
+virtual.c:227: Test failed: wrong status c0000022
+virtual.c:245: Test failed: wrong status c0000022
+virtual.c:261: Test failed: wrong status c0000022
+virtual.c:263: Test failed: 16384 bytes written
+virtual.c:275: Test failed: wrong status c0000022
+virtual.c:277: Test failed: 16384 bytes written
+virtual.c:1399: Test marked todo: NtQuerySection wrong err c0000049
+virtual.c:1529: Test marked todo: NtAreMappedFilesTheSame returned c00000d4
+virtual.c:1882: Test failed: wrong count 4
+virtual.c:1883: Test failed: wrong result 000000700E230000
+virtual.c:1889: Test failed: wrong count 4
+virtual.c:1890: Test failed: wrong result 000000700E230000
+virtual.c:1903: Test failed: wrong count 8
+virtual.c:1904: Test failed: wrong result 000000700E230000
+virtual.c:1905: Test failed: wrong result 000000700E231000
+virtual.c:1910: Test failed: wrong count 2
+virtual.c:1911: Test failed: wrong result 000000700E233000
+virtual.c:1919: Test failed: wrong count 5
+virtual.c:1920: Test failed: wrong result 000000700E233000
+virtual.c:1927: Test failed: wrong count 8
+virtual.c:1928: Test failed: wrong result 000000700E230000
+virtual.c:1929: Test failed: wrong result 000000700E231000
+virtual.c:1930: Test failed: wrong result 000000700E232000
+virtual.c:1936: Test failed: wrong result 000000700E230000
+virtual.c:1941: Test failed: wrong count 7
+virtual.c:1942: Test failed: wrong result 000000700E231000
+virtual.c:1943: Test failed: wrong result 000000700E232000
+virtual.c:1965: Test failed: wrong count 7
+virtual.c:1966: Test failed: wrong result 000000700E231000
+virtual.c:1967: Test failed: wrong result 000000700E232000
+virtual.c:2163: Test failed: wrong count 8
+virtual.c:2180: Test failed: wrong count 5
+virtual.c:2326: Test failed: wrong count 4
+virtual.c:2327: Test failed: wrong result 000000700E234000
+virtual.c:2360: Test failed: wrong count 4
+virtual.c:2361: Test failed: wrong result 000000700E230000
+virtual.c:2379: Test failed: wrong count 8
+virtual.c:2387: Test failed: wrong count 8
+virtual.c:2401: Test failed: wrong count 8
+virtual.c:2402: Test failed: wrong result 000000700E230000
+virtual.c:2410: Test marked todo: wrong count 8
+virtual.c:2411: Test failed: wrong result 000000700E230000
+virtual.c:2419: Test marked todo: wrong count 8
+virtual.c:2420: Test failed: wrong result 000000700E230000
+virtual.c:2429: Test marked todo: wrong count 8
+virtual.c:2430: Test failed: wrong result 000000700E230000
+virtual.c:2434: Test failed: wrong result 000000700E231000
+virtual.c:2437: Test failed: wrong result 000000700E232000
+virtual.c:2439: Test failed: wrong result 000000700E233000
+virtual.c:2462: Test failed: wrong count 2048
+virtual.c:2466: Test failed: wrong result 000000700E861000
+virtual.c:2473: Test failed: wrong count 2048
+virtual.c:2477: Test failed: wrong result 000000700E861000
+virtual.c:4639: Test failed: ReadProcessMemory succeeded
+virtual.c:4640: Test failed: copied = 8192
+virtual.c:4641: Test failed: GetLastError() = 87
+virtual.c:4649: Test marked todo: ReadProcessMemory succeeded
+virtual.c:4650: Test marked todo: copied = 8192

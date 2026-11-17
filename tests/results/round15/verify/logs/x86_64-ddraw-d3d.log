@@ -1,0 +1,9 @@
+d3d.c:817: Test marked todo: dvScaleX is 0.000000, expected 1.#INF00
+d3d.c:818: Test marked todo: dvScaleY is 0.000000, expected 1.#INF00
+d3d.c:898: Test marked todo: dvScaleX is 0.000000, expected 1.#INF00
+d3d.c:899: Test marked todo: dvScaleY is 0.000000, expected 1.#INF00
+d3d.c:915: Test marked todo: dvClipX is -1.#INF00, expected 0.000000.
+d3d.c:917: Test marked todo: dvClipY is 1.#INF00, expected 0.000000.
+d3d.c:919: Test marked todo: dvClipWidth is 1.#INF00, expected 0.000000.
+d3d.c:921: Test marked todo: dvClipHeight is 1.#INF00, expected 0.000000.
+0350:d3d: 2488 tests executed (8 marked as todo, 0 as flaky, 0 failures), 0 skipped.

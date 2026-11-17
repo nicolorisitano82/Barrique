@@ -20,11 +20,21 @@ pe/ntdll.dll pe/libntdll.a: pe/ntdll.c
 pe/hello.exe: pe/hello.c pe/libntdll.a
 	$(PECC) -o $@ $< -Lpe -lntdll -Wl,-e,mainCRTStartup -Wl,--dynamicbase
 
+# phase 5 step 4: page types of memory shared with Metal; no VM, no hv_vm_map
+gpumem: gpumem.m
+	$(CC) $(CFLAGS) -fobjc-arc -o $@ gpumem.m -framework Foundation -framework Metal -framework IOSurface
+
+# phase 5 step 4 point 3: maps Metal memory into a VM. CAN PANIC THE MAC:
+# one case per run, only with the user's OK (see gpumap.m)
+gpumap: gpumap.m entitlements.plist
+	$(CC) $(CFLAGS) -fobjc-arc -o $@ gpumap.m -framework Foundation -framework Metal -framework IOSurface -framework Hypervisor
+	codesign --force --sign - --entitlements entitlements.plist $@
+
 run: all
 	./hvproto
 	./hvproto pe/hello.exe
 
 clean:
-	rm -f hvproto pe/*.dll pe/*.exe pe/*.a
+	rm -f hvproto gpumem gpumap pe/*.dll pe/*.exe pe/*.a
 
 .PHONY: all run clean

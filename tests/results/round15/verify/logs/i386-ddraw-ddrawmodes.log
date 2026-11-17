@@ -1,0 +1,17 @@
+ddrawmodes.c:144: Calling DirectDrawEnumerateA with test_nullcontext_callbackA callback and NULL context.
+ddrawmodes.c:110: test_nullcontext_callbackA: 00000000 DirectDraw HAL display 00000000
+ddrawmodes.c:149: Calling DirectDrawEnumerateA with test_context_callbackA callback and non-NULL context.
+ddrawmodes.c:121: test_context_callbackA: 00000000 DirectDraw HAL display DEADBEEF
+ddrawmodes.c:245: Calling DirectDrawEnumerateExA with empty flags and NULL context.
+ddrawmodes.c:193: test_nullcontext_callbackExA: 00000000 DirectDraw HAL display 00000000 00000000
+ddrawmodes.c:250: Calling DirectDrawEnumerateExA with empty flags and non-NULL context.
+ddrawmodes.c:204: test_context_callbackExA: 00000000 DirectDraw HAL display DEADBEEF 00000000
+ddrawmodes.c:217: test_count_callbackExA: 00000000 DirectDraw HAL display 0025FDB0 00000000
+ddrawmodes.c:217: test_count_callbackExA: 00000000 DirectDraw HAL display 0025FDB0 00000000
+ddrawmodes.c:217: test_count_callbackExA: 0025F878 WineD3D DirectDraw Emulation \\.\DISPLAY1 0025FDB0 00000001
+ddrawmodes.c:217: test_count_callbackExA: 0025F878 WineD3D DirectDraw Emulation \\.\DISPLAY2 0025FDB0 00000002
+ddrawmodes.c:270: Calling DirectDrawEnumerateExA with all flags set and NULL context.
+ddrawmodes.c:193: test_nullcontext_callbackExA: 00000000 DirectDraw HAL display 00000000 00000000
+ddrawmodes.c:193: test_nullcontext_callbackExA: 0025F878 WineD3D DirectDraw Emulation \\.\DISPLAY1 00000000 00000001
+ddrawmodes.c:193: test_nullcontext_callbackExA: 0025F878 WineD3D DirectDraw Emulation \\.\DISPLAY2 00000000 00000002
+0020:ddrawmodes: 1543 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.

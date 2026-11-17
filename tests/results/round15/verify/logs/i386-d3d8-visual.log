@@ -1,0 +1,2 @@
+visual.c:12799: Tests skipped: Failed to create D3D8 object.
+0148:visual: 0 tests executed (0 marked as todo, 0 as flaky, 0 failures), 1 skipped.

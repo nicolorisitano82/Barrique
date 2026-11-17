@@ -1,0 +1,13 @@
+d3d9ex.c:494: GetDisplayModeEx returned Width = 1512, Height = 982, RefreshRate = 120, Format = 16, ScanLineOrdering = 1, rotation = 1.
+d3d9ex.c:427: Adapter luid: 00000000:000003f4.
+d3d9ex.c:569: Tests skipped: Graphics mode is not supported.
+d3d9ex.c:813: Test marked todo: Failed to create surface, hr 0x80004001.
+d3d9ex.c:830: Test marked todo: Got unexpected hr 0x80004001.
+d3d9ex.c:2026: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:2446: Tests skipped: This GPU supports SM3, skipping unsupported shader test.
+d3d9ex.c:2885: device_window 000000000012006E, focus_window 0000000000120068, dummy_window 00000000000F006A.
+d3d9ex.c:2938: Test marked todo: Got unexpected hr 0, i=0.
+d3d9ex.c:2940: Test marked todo: Got unexpected hr 0, i=0.
+d3d9ex.c:3009: Test failed: Received WM_WINDOWPOSCHANGED but did not expect it, i=0.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x47 for window 0000000000120068.

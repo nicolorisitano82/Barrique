@@ -1,0 +1,2 @@
+stateblock.c:1803: Tests skipped: Failed to create a D3D object, skipping tests.
+013c:stateblock: 0 tests executed (0 marked as todo, 0 as flaky, 0 failures), 1 skipped.

@@ -1,0 +1,218 @@
+d3d11.c:2135: Tests skipped: Failed to create HAL device.
+d3d11.c:2361: Tests skipped: Feature level 0xb100: Failed to create device.
+d3d11.c:2361: Tests skipped: Feature level 0xb000: Failed to create device.
+d3d11.c:2361: Tests skipped: Feature level 0xa100: Failed to create device.
+d3d11.c:2361: Tests skipped: Feature level 0xa000: Failed to create device.
+d3d11.c:2361: Tests skipped: Feature level 0x9300: Failed to create device.
+d3d11.c:2361: Tests skipped: Feature level 0x9200: Failed to create device.
+d3d11.c:2361: Tests skipped: Feature level 0x9100: Failed to create device.
+d3d11.c:2432: Tests skipped: Failed to create device.
+d3d11.c:2529: Tests skipped: Failed to create single-threaded device.
+d3d11.c:2584: Tests skipped: Failed to create device.
+d3d11.c:2870: Tests skipped: Failed to create ID3D11Device, skipping tests.
+d3d11.c:3084: Tests skipped: Failed to create device.
+d3d11.c:3260: Tests skipped: Failed to create ID3D11Device, skipping tests.
+d3d11.c:3409: Tests skipped: Failed to create ID3D11Device, skipping tests.
+d3d11.c:3532: Tests skipped: Failed to create ID3D11Device.
+d3d11.c:3824: Tests skipped: Failed to create ID3D11Device.
+d3d11.c:4036: Tests skipped: Failed to create device.
+d3d11.c:4153: Tests skipped: Failed to create device.
+d3d11.c:4356: Tests skipped: Failed to create device.
+d3d11.c:4704: Tests skipped: Failed to create device.
+d3d11.c:5174: Tests skipped: Feature level 0xb100: Failed to create device.
+d3d11.c:5174: Tests skipped: Feature level 0xb000: Failed to create device.
+d3d11.c:5174: Tests skipped: Feature level 0xa100: Failed to create device.
+d3d11.c:5174: Tests skipped: Feature level 0xa000: Failed to create device.
+d3d11.c:5174: Tests skipped: Feature level 0x9300: Failed to create device.
+d3d11.c:5174: Tests skipped: Feature level 0x9200: Failed to create device.
+d3d11.c:5174: Tests skipped: Feature level 0x9100: Failed to create device.
+d3d11.c:5410: Tests skipped: Failed to create device.
+d3d11.c:5653: Tests skipped: Failed to create device.
+d3d11.c:5788: Tests skipped: Failed to create device.
+d3d11.c:5897: Tests skipped: Failed to create device.
+d3d11.c:6058: Tests skipped: Failed to create device.
+d3d11.c:6165: Tests skipped: Failed to create device.
+d3d11.c:6345: Tests skipped: Failed to create device.
+d3d11.c:6445: Tests skipped: Failed to create device.
+d3d11.c:6686: Tests skipped: Failed to create device.
+d3d11.c:6861: Tests skipped: Failed to create device.
+d3d11.c:6896: Tests skipped: Failed to create device.
+d3d11.c:7074: Tests skipped: Feature level 0xb100: Failed to create device.
+d3d11.c:7074: Tests skipped: Feature level 0xb000: Failed to create device.
+d3d11.c:7074: Tests skipped: Feature level 0xa100: Failed to create device.
+d3d11.c:7074: Tests skipped: Feature level 0xa000: Failed to create device.
+d3d11.c:7074: Tests skipped: Feature level 0x9300: Failed to create device.
+d3d11.c:7074: Tests skipped: Feature level 0x9200: Failed to create device.
+d3d11.c:7074: Tests skipped: Feature level 0x9100: Failed to create device.
+d3d11.c:7413: Tests skipped: Failed to create device.
+d3d11.c:8731: Tests skipped: Failed to create device.
+d3d11.c:9169: Tests skipped: Failed to create device.
+d3d11.c:10128: Tests skipped: Failed to create device.
+d3d11.c:10560: Tests skipped: Failed to create device.
+d3d11.c:10825: Tests skipped: Failed to create device.
+d3d11.c:11185: Tests skipped: Failed to create device.
+d3d11.c:11429: Tests skipped: Failed to create device.
+d3d11.c:11650: Tests skipped: Failed to create device.
+d3d11.c:11935: Tests skipped: Failed to create device.
+d3d11.c:12100: Tests skipped: Failed to create device.
+d3d11.c:12402: Tests skipped: Failed to create device.
+d3d11.c:13595: Tests skipped: Failed to create device.
+d3d11.c:14008: Tests skipped: Failed to create device.
+d3d11.c:14157: Tests skipped: Failed to create device.
+d3d11.c:14269: Tests skipped: Failed to create device.
+d3d11.c:14466: Tests skipped: Failed to create device.
+d3d11.c:14868: Tests skipped: Failed to create device.
+d3d11.c:14707: Tests skipped: Failed to create device.
+d3d11.c:15125: Tests skipped: Failed to create device.
+d3d11.c:15250: Tests skipped: Failed to create device.
+d3d11.c:15417: Tests skipped: Failed to create device.
+d3d11.c:15683: Tests skipped: Feature level 0xb100: Failed to create device.
+d3d11.c:15683: Tests skipped: Feature level 0xb000: Failed to create device.
+d3d11.c:15683: Tests skipped: Feature level 0xa100: Failed to create device.
+d3d11.c:15683: Tests skipped: Feature level 0xa000: Failed to create device.
+d3d11.c:15683: Tests skipped: Feature level 0x9300: Failed to create device.
+d3d11.c:15683: Tests skipped: Feature level 0x9200: Failed to create device.
+d3d11.c:15683: Tests skipped: Feature level 0x9100: Failed to create device.
+d3d11.c:15891: Tests skipped: Failed to create device.
+d3d11.c:15994: Tests skipped: Feature level 0xb100: Failed to create device.
+d3d11.c:15994: Tests skipped: Feature level 0xb000: Failed to create device.
+d3d11.c:15994: Tests skipped: Feature level 0xa100: Failed to create device.
+d3d11.c:15994: Tests skipped: Feature level 0xa000: Failed to create device.
+d3d11.c:15994: Tests skipped: Feature level 0x9300: Failed to create device.
+d3d11.c:15994: Tests skipped: Feature level 0x9200: Failed to create device.
+d3d11.c:15994: Tests skipped: Feature level 0x9100: Failed to create device.
+d3d11.c:16071: Tests skipped: Failed to create device.
+d3d11.c:16211: Tests skipped: Failed to create device, skipping tests.
+d3d11.c:16377: Tests skipped: Failed to create device.
+d3d11.c:16427: Tests skipped: Failed to create device.
+d3d11.c:16587: Tests skipped: Failed to create device.
+d3d11.c:16649: Tests skipped: Failed to create device.
+d3d11.c:16844: Tests skipped: Failed to create device for feature level 0xb000.
+d3d11.c:17155: Tests skipped: Failed to create device.
+d3d11.c:17309: Tests skipped: Failed to create device.
+d3d11.c:17394: Tests skipped: Failed to create device.
+d3d11.c:17511: Tests skipped: Failed to create device.
+d3d11.c:17676: Tests skipped: Failed to create device.
+d3d11.c:17791: Tests skipped: Failed to create device.
+d3d11.c:17858: Tests skipped: Failed to create device.
+d3d11.c:18118: Tests skipped: Failed to create device.
+d3d11.c:18415: Tests skipped: Failed to create device.
+d3d11.c:18527: Tests skipped: Failed to create device.
+d3d11.c:18633: Tests skipped: Failed to create device.
+d3d11.c:18749: Tests skipped: Failed to create device.
+d3d11.c:18831: Tests skipped: Failed to create device.
+d3d11.c:19072: Tests skipped: Failed to create device.
+d3d11.c:19339: Tests skipped: Failed to create device.
+d3d11.c:19482: Tests skipped: Failed to create device.
+d3d11.c:19730: Tests skipped: Failed to create device.
+d3d11.c:19889: Tests skipped: Failed to create device.
+d3d11.c:19947: Tests skipped: Failed to create device.
+d3d11.c:20160: Tests skipped: Failed to create device.
+d3d11.c:20420: Tests skipped: Failed to create device.
+d3d11.c:20486: Tests skipped: Failed to create device.
+d3d11.c:20911: Tests skipped: Failed to create device.
+d3d11.c:21077: Tests skipped: Failed to create device.
+d3d11.c:21235: Tests skipped: Failed to create device.
+d3d11.c:21352: Tests skipped: Failed to create device.
+d3d11.c:21515: Tests skipped: Feature level 0xb100: Failed to create device.
+d3d11.c:21515: Tests skipped: Feature level 0xb000: Failed to create device.
+d3d11.c:21515: Tests skipped: Feature level 0xa100: Failed to create device.
+d3d11.c:21515: Tests skipped: Feature level 0xa000: Failed to create device.
+d3d11.c:21515: Tests skipped: Feature level 0x9300: Failed to create device.
+d3d11.c:21515: Tests skipped: Feature level 0x9200: Failed to create device.
+d3d11.c:21515: Tests skipped: Feature level 0x9100: Failed to create device.
+d3d11.c:21682: Tests skipped: Feature level 0x9300: Failed to create device.
+d3d11.c:21682: Tests skipped: Feature level 0x9200: Failed to create device.
+d3d11.c:21682: Tests skipped: Feature level 0x9100: Failed to create device.
+d3d11.c:21916: Tests skipped: Failed to create device.
+d3d11.c:22041: Tests skipped: Failed to create device.
+d3d11.c:22144: Tests skipped: Failed to create device.
+d3d11.c:22217: Tests skipped: Failed to create device.
+d3d11.c:22526: Tests skipped: Failed to create device.
+d3d11.c:22835: Tests skipped: Failed to create device for feature level 0xb000.
+d3d11.c:23063: Tests skipped: Failed to create device.
+d3d11.c:23249: Tests skipped: Failed to create device.
+d3d11.c:23474: Tests skipped: Failed to create device.
+d3d11.c:23629: Tests skipped: Failed to create device.
+d3d11.c:23761: Tests skipped: Failed to create device.
+d3d11.c:24075: Tests skipped: Failed to create device.
+d3d11.c:24408: Tests skipped: Failed to create device.
+d3d11.c:24579: Tests skipped: Failed to create device.
+d3d11.c:24720: Tests skipped: Failed to create device.
+d3d11.c:24933: Tests skipped: Failed to create device.
+d3d11.c:25151: Tests skipped: Feature level 0xb000: Failed to create device.
+d3d11.c:25151: Tests skipped: Feature level 0xa100: Failed to create device.
+d3d11.c:25151: Tests skipped: Feature level 0xa000: Failed to create device.
+d3d11.c:25447: Tests skipped: Failed to create device.
+d3d11.c:25672: Tests skipped: Failed to create device.
+d3d11.c:25832: Tests skipped: Failed to create device.
+d3d11.c:26074: Tests skipped: Failed to create device.
+d3d11.c:26365: Tests skipped: Failed to create device.
+d3d11.c:26705: Tests skipped: Failed to create device.
+d3d11.c:27175: Tests skipped: Failed to create device.
+d3d11.c:27460: Tests skipped: Failed to create device.
+d3d11.c:27608: Tests skipped: Failed to create device.
+d3d11.c:27888: Tests skipped: Failed to create device.
+d3d11.c:28082: Tests skipped: Failed to create device.
+d3d11.c:28302: Tests skipped: Failed to create device.
+d3d11.c:28572: Tests skipped: Failed to create device.
+d3d11.c:28768: Tests skipped: Failed to create device.
+d3d11.c:29081: Tests skipped: Failed to create device.
+d3d11.c:29167: Tests skipped: Feature level 0xb000: Failed to create device.
+d3d11.c:29167: Tests skipped: Feature level 0xa100: Failed to create device.
+d3d11.c:29167: Tests skipped: Feature level 0xa000: Failed to create device.
+d3d11.c:29246: Tests skipped: Failed to create device.
+d3d11.c:29413: Tests skipped: Failed to create device.
+d3d11.c:29542: Tests skipped: Failed to create device.
+d3d11.c:29752: Tests skipped: Feature level 0xb000: Failed to create device.
+d3d11.c:29752: Tests skipped: Feature level 0xa100: Failed to create device.
+d3d11.c:29752: Tests skipped: Feature level 0xa000: Failed to create device.
+d3d11.c:30324: Tests skipped: Failed to create device.
+d3d11.c:30586: Tests skipped: Failed to create device.
+d3d11.c:31059: Tests skipped: Failed to create device.
+d3d11.c:31268: Tests skipped: Failed to create device.
+d3d11.c:31398: Tests skipped: Failed to create device.
+d3d11.c:31700: Tests skipped: Failed to create device.
+d3d11.c:32072: Tests skipped: Failed to create device.
+d3d11.c:32233: Tests skipped: Failed to create device.
+d3d11.c:32293: Tests skipped: Failed to create device.
+d3d11.c:32363: Tests skipped: Failed to create device.
+d3d11.c:32446: Tests skipped: Failed to create device.
+d3d11.c:32547: Tests skipped: Failed to create device.
+d3d11.c:32624: Tests skipped: Failed to create device.
+d3d11.c:32773: Tests skipped: Failed to create device.
+d3d11.c:33119: Tests skipped: Failed to create device.
+d3d11.c:33275: Tests skipped: Failed to create device.
+d3d11.c:33384: Tests skipped: Failed to create device.
+d3d11.c:33425: Tests skipped: Failed to create device.
+d3d11.c:33551: Tests skipped: Failed to create device.
+d3d11.c:33615: Tests skipped: Failed to create device.
+d3d11.c:33994: Tests skipped: Failed to create device.
+d3d11.c:33917: Tests skipped: Failed to create device.
+d3d11.c:18218: Tests skipped: Failed to create device.
+d3d11.c:34322: Tests skipped: Failed to create device.
+d3d11.c:34466: Tests skipped: Failed to create device.
+d3d11.c:34704: Tests skipped: Failed to create device.
+d3d11.c:34755: Tests skipped: Failed to create device.
+d3d11.c:34880: Tests skipped: Failed to create device.
+d3d11.c:35012: Tests skipped: Failed to create device.
+d3d11.c:35179: Tests skipped: Failed to create device.
+d3d11.c:2772: Tests skipped: Failed to create device.
+d3d11.c:35307: Tests skipped: Feature level 0xb100: Failed to create device, feature level 0xb100.
+d3d11.c:35307: Tests skipped: Feature level 0xb000: Failed to create device, feature level 0xb000.
+d3d11.c:35307: Tests skipped: Feature level 0xa100: Failed to create device, feature level 0xa100.
+d3d11.c:35307: Tests skipped: Feature level 0xa000: Failed to create device, feature level 0xa000.
+d3d11.c:35307: Tests skipped: Feature level 0x9300: Failed to create device, feature level 0x9300.
+d3d11.c:35307: Tests skipped: Feature level 0x9200: Failed to create device, feature level 0x9200.
+d3d11.c:35307: Tests skipped: Feature level 0x9100: Failed to create device, feature level 0x9100.
+d3d11.c:35479: Tests skipped: Failed to create device.
+d3d11.c:35661: Tests skipped: Failed to create device.
+d3d11.c:35864: Tests skipped: Failed to create device.
+d3d11.c:36392: Tests skipped: Failed to create device.
+d3d11.c:36582: Tests skipped: Failed to create device.
+d3d11.c:37102: Tests skipped: Failed to create device.
+d3d11.c:37640: Tests skipped: Failed to create device.
+d3d11.c:37744: Failed to create IDXGIFactory, hr 0x887a0004.
+d3d11.c:13832: Tests skipped: Failed to create device.
+d3d11.c:30747: Tests skipped: Failed to create device.
+0194:d3d11: 0 tests executed (0 marked as todo, 0 as flaky, 0 failures), 216 skipped.

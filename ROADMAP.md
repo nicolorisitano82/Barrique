@@ -132,7 +132,8 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 - ✅ Passo 2, audio (giri 8 e 14): timer di coreaudio, salvataggio del registro in un processo figlio (via il buco audio di ~60 ms ogni 20 s). 44,1/48/96 kHz e Bluetooth (AirPods) senza periodi persi.
 - ✅ Passo 3, video (giri 10-14): GStreamer 1.28 con gst-libav sopra FFmpeg LGPL compilati da noi in `deps/`; Media Foundation decodifica H.264, HEVC, VP9, AAC, MP3, WMV2/WMA2 sulle tre architetture. Verificati i386 (correzione WoW64) e MPEG in DirectShow. Giro 12: MPEG-1/2 anche in Media Foundation (gestore `.mpg/.vob/.ts`, decoder MPEG MFT, MP2 in `mp3dmod`), ok sulle tre architetture. Giro 13: mf `transform` da crash a 0 fallimenti sulle tre architetture (encoder H.264 di VideoToolbox, MPEG audio MFT a sé, `swscale` con `accurate_rnd` su ARM), mfreadwrite 0 fallimenti. Giro 14: decodifica VideoToolbox misurata (~4× meno CPU, bit-exact) ma spenta, rompe MPEG-2 e `h264dec`; riferimenti di prova più severi (dY 0,00).
 - ✅ Passo 1b, qualità del testo (giro 11): Retina a 192 DPI nei default dei prefissi della `.app`, Selawik/Carlito/Caladea per Segoe UI/Calibri/Cambria, sostituzioni CJK anche per DirectWrite, fallback DirectWrite sui font macOS. Giro 12: i programmi non DPI-aware sono scalati 2× da Wine come su Windows.
-- ⬜ Passi 4-7: memoria GPU, Vulkan/MoltenVK, banco di prova grafico, Direct3D.
+- ✅ Passo 4, memoria della GPU nella VM (giro 15): copia come base (31,8–54,7 GB/s), importazione in Metal provata senza panic (memoria anonima prima e dopo l'uso della GPU, `MTLBuffer`, IOSurface); `hvf.c` rifiuta comunque le pagine della GPU finché un backend non le usa.
+- ⬜ Passi 5-7: Vulkan/MoltenVK, banco di prova grafico, Direct3D.
 
 - ⬜ **[MS]** Direct3D su Metal in versione ARM64X, così un'unica build serve sia ai programmi ARM64 sia a quelli x86-64 (ARM64EC). Componenti da valutare:
   - D3D10/11/12 con un fork di DXMT (Mullion);

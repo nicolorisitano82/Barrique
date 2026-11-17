@@ -1,0 +1,227 @@
+ddraw7.c:21273: Driver string: "nvd3dum.dll"
+ddraw7.c:21274: Description string: "NVIDIA GeForce 6800"
+ddraw7.c:21275: Driver version 9.14.13.783
+ddraw7.c:1139: Test marked todo: Got unexpected vertex 1 {1.92000000e+002, 6.40000000e+001, 1.00000000e+000, 1.00000000e+000}.
+ddraw7.c:1142: Test marked todo: Got unexpected vertex 2 {6.40000000e+001, 1.92000000e+002, 5.00000000e-001, 1.00000000e+000}.
+ddraw7.c:2002: Test marked todo: Got unexpected hr 0.
+ddraw7.c:2885: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw7.c:2887: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw7.c:2893: Test marked todo: Client rect and window rect are equal.
+ddraw7.c:2899: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw7.c:2901: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw7.c:2921: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw7.c:2923: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw7.c:2930: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw7.c:2933: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw7.c:2937: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw7.c:2940: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw7.c:2968: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw7.c:2971: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw7.c:2992: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw7.c:2994: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw7.c:3015: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw7.c:3017: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw7.c:3030: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw7.c:3033: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw7.c:3050: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw7.c:3053: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw7.c:3059: Test marked todo: Expected window style 0x34cf0000, got 0xb40b0000.
+ddraw7.c:3062: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw7.c:3374: Test failed: Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+ddraw7.c:3386: Test failed: Expected surface width 1024, got 1512.
+ddraw7.c:3388: Test failed: Expected surface height 640, got 982.
+ddraw7.c:3392: Test failed: Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+ddraw7.c:3407: Test failed: Expected message 0x5, but didn't receive it.
+ddraw7.c:3409: Test failed: Expected screen size 960x600, got 0x0.
+ddraw7.c:3414: Test failed: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw7.c:3419: Test failed: Expected surface width 1024, got 1512.
+ddraw7.c:3421: Test failed: Expected surface height 640, got 982.
+ddraw7.c:3440: Test failed: Expected surface width 960, got 1512.
+ddraw7.c:3442: Test failed: Expected surface height 600, got 982.
+ddraw7.c:3447: Test marked flaky: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw7.c:3462: Test failed: Expected message 0x47, but didn't receive it.
+ddraw7.c:3464: Test failed: Expected screen size 1024x640, got 0x0.
+ddraw7.c:3469: Test failed: Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+ddraw7.c:822: Test failed: Got ddraw state 0x887600e1 on message 0x46, expected 0.
+ddraw7.c:822: Test failed: Got ddraw state 0x887600e1 on message 0x47, expected 0.
+ddraw7.c:815: Test failed: Got unexpected wparam 0x1 for message 0x5, expected 0.
+ddraw7.c:822: Test failed: Got ddraw state 0x887600e1 on message 0x5, expected 0.
+ddraw7.c:3476: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw7.c:3489: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw7.c:3492: Test failed: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw7.c:3496: Test failed: Got unexpected screen size 1512x982.
+ddraw7.c:3538: Test marked flaky: Expected message 0x46, but didn't receive it.
+ddraw7.c:3541: Test marked flaky: Expected screen size 1512x982, got 0x0.
+ddraw7.c:3553: Test failed: Expected surface width 960, got 1512.
+ddraw7.c:3555: Test failed: Expected surface height 600, got 982.
+ddraw7.c:3651: Test marked todo: Got unexpected hr 0.
+ddraw7.c:3668: Test failed: Got unexpected hr 0.
+ddraw7.c:3672: Test failed: Got unexpected hr 0.
+ddraw7.c:3674: Test failed: Got unexpected hr 0.
+ddraw7.c:3708: Test failed: Expected surface width 960, got 1512.
+ddraw7.c:3710: Test failed: Expected surface height 600, got 982.
+ddraw7.c:3730: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw7.c:3741: Test failed: Expected surface width 960, got 1512.
+ddraw7.c:3743: Test failed: Expected surface height 600, got 982.
+ddraw7.c:3841: Test marked todo: Got unexpected hr 0.
+ddraw7.c:3858: Test failed: Got unexpected hr 0.
+ddraw7.c:3862: Test failed: Got unexpected hr 0.
+ddraw7.c:3864: Test failed: Got unexpected hr 0.
+ddraw7.c:3898: Test failed: Expected surface width 960, got 1512.
+ddraw7.c:3900: Test failed: Expected surface height 600, got 982.
+ddraw7.c:3920: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw7.c:3931: Test failed: Expected surface width 960, got 1512.
+ddraw7.c:3933: Test failed: Expected surface height 600, got 982.
+ddraw7.c:3995: Test failed: Expected message 0x5, but didn't receive it.
+ddraw7.c:3997: Test failed: Expected screen size 1512x982, got 0x0.
+ddraw7.c:4047: Test failed: Expected surface width 960, got 1512.
+ddraw7.c:4049: Test failed: Expected surface height 600, got 982.
+ddraw7.c:4080: Test failed: Expected message 0x47, but didn't receive it.
+ddraw7.c:4084: Test failed: Expected screen size 2 1512x982, got 0x0.
+ddraw7.c:4090: Test marked flaky: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw7.c:4093: Test failed: Expected (0,0)-(1512,982), got (0,0)-(208,123).
+ddraw7.c:4123: Test marked flaky: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw7.c:4183: Test failed: Got a different mode.
+ddraw7.c:4204: Test failed: Got a different mode.
+ddraw7.c:4255: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:4257: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4259: Test failed: Got unexpected screen height 982.
+ddraw7.c:4272: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:4274: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4276: Test failed: Got unexpected screen height 982.
+ddraw7.c:4280: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:4282: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4284: Test failed: Got unexpected screen height 982.
+ddraw7.c:4303: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:4305: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4307: Test failed: Got unexpected screen height 982.
+ddraw7.c:4311: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:4313: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4315: Test failed: Got unexpected screen height 982.
+ddraw7.c:4335: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:4337: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4339: Test failed: Got unexpected screen height 982.
+ddraw7.c:4344: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4346: Test failed: Got unexpected screen height 982.
+ddraw7.c:4359: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:4361: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4363: Test failed: Got unexpected screen height 982.
+ddraw7.c:4367: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:4369: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4371: Test failed: Got unexpected screen height 982.
+ddraw7.c:4379: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4381: Test failed: Got unexpected screen height 982.
+ddraw7.c:4393: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:4395: Test failed: Got unexpected screen width 1512.
+ddraw7.c:4397: Test failed: Got unexpected screen height 982.
+ddraw7.c:4470: Tests skipped: Failed to change display settings of the second monitor.
+ddraw7.c:5209: Test marked todo: Lit quad with singular world matrix has color 0xff0000ff.
+ddraw7.c:5656: Test marked todo: Expected color 0x803c3c3c for vertex 0, got 0x80ffffff, case 9.
+ddraw7.c:5656: Test marked todo: Expected color 0x80717171 for vertex 1, got 0x80ffffff, case 9.
+ddraw7.c:5656: Test marked todo: Expected color 0x803c3c3c for vertex 2, got 0x80ffffff, case 9.
+ddraw7.c:5656: Test marked todo: Expected color 0x80717171 for vertex 3, got 0x80ffffff, case 9.
+ddraw7.c:5656: Test marked todo: Expected color 0x80717171 for vertex 5, got 0x80ffffff, case 9.
+ddraw7.c:5656: Test marked todo: Expected color 0x803c3c3c for vertex 6, got 0x80ffffff, case 9.
+ddraw7.c:5656: Test marked todo: Expected color 0x80717171 for vertex 7, got 0x80ffffff, case 9.
+ddraw7.c:5656: Test marked todo: Expected color 0x803c3c3c for vertex 8, got 0x80ffffff, case 9.
+ddraw7.c:5656: Test marked todo: Expected color 0x80282828 for vertex 0, got 0x80aaaaaa, case 10.
+ddraw7.c:5656: Test marked todo: Expected color 0x805a5a5a for vertex 1, got 0x80cccccc, case 10.
+ddraw7.c:5656: Test marked todo: Expected color 0x80282828 for vertex 2, got 0x80aaaaaa, case 10.
+ddraw7.c:5656: Test marked todo: Expected color 0x805a5a5a for vertex 3, got 0x80cccccc, case 10.
+ddraw7.c:5656: Test marked todo: Expected color 0x805a5a5a for vertex 5, got 0x80cccccc, case 10.
+ddraw7.c:5656: Test marked todo: Expected color 0x80282828 for vertex 6, got 0x80aaaaaa, case 10.
+ddraw7.c:5656: Test marked todo: Expected color 0x805a5a5a for vertex 7, got 0x80cccccc, case 10.
+ddraw7.c:5656: Test marked todo: Expected color 0x80282828 for vertex 8, got 0x80aaaaaa, case 10.
+ddraw7.c:5656: Test marked todo: Expected color 0x80000000 for vertex 0, got 0x80aaaaaa, case 11.
+ddraw7.c:5656: Test marked todo: Expected color 0x80070707 for vertex 1, got 0x80cccccc, case 11.
+ddraw7.c:5656: Test marked todo: Expected color 0x80000000 for vertex 2, got 0x80aaaaaa, case 11.
+ddraw7.c:5656: Test marked todo: Expected color 0x80070707 for vertex 3, got 0x80cccccc, case 11.
+ddraw7.c:5656: Test marked todo: Expected color 0x80070707 for vertex 5, got 0x80cccccc, case 11.
+ddraw7.c:5656: Test marked todo: Expected color 0x80000000 for vertex 6, got 0x80aaaaaa, case 11.
+ddraw7.c:5656: Test marked todo: Expected color 0x80070707 for vertex 7, got 0x80cccccc, case 11.
+ddraw7.c:5656: Test marked todo: Expected color 0x80000000 for vertex 8, got 0x80aaaaaa, case 11.
+ddraw7.c:5656: Test marked todo: Expected color 0x80141414 for vertex 1, got 0x802e2e2e, case 12.
+ddraw7.c:5656: Test marked todo: Expected color 0x80141414 for vertex 3, got 0x802e2e2e, case 12.
+ddraw7.c:5656: Test marked todo: Expected color 0x80141414 for vertex 5, got 0x802e2e2e, case 12.
+ddraw7.c:5656: Test marked todo: Expected color 0x80141414 for vertex 7, got 0x802e2e2e, case 12.
+ddraw7.c:5656: Test marked todo: Expected color 0x80020202 for vertex 1, got 0x802e2e2e, case 13.
+ddraw7.c:5656: Test marked todo: Expected color 0x80020202 for vertex 3, got 0x802e2e2e, case 13.
+ddraw7.c:5656: Test marked todo: Expected color 0x80020202 for vertex 5, got 0x802e2e2e, case 13.
+ddraw7.c:5656: Test marked todo: Expected color 0x80020202 for vertex 7, got 0x802e2e2e, case 13.
+ddraw7.c:5656: Test marked todo: Expected color 0x805a5a5a for vertex 1, got 0x80cccccc, case 14.
+ddraw7.c:5656: Test marked todo: Expected color 0x805a5a5a for vertex 3, got 0x80cccccc, case 14.
+ddraw7.c:5656: Test marked todo: Expected color 0x805a5a5a for vertex 5, got 0x80cccccc, case 14.
+ddraw7.c:5656: Test marked todo: Expected color 0x805a5a5a for vertex 7, got 0x80cccccc, case 14.
+ddraw7.c:5732: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:5732: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:5732: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:5776: Test failed: Display mode restored after good ddraw1::SetCooperativeLevel call
+ddraw7.c:5732: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:5789: Test failed: Display mode restored after ddraw1::SetCooperativeLevel(SETFOCUSWINDOW) call
+ddraw7.c:5732: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:5805: Test failed: Display mode restored after good-bad ddraw1::SetCooperativeLevel() call sequence
+ddraw7.c:5732: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:5824: Test failed: Display mode restored after ddraw1-ddraw7 SetCooperativeLevel() call sequence
+ddraw7.c:5732: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw7.c:5933: Test succeeded inside todo block: Expected left color 0x0000ff00, got 0x0000ff00, case 1.
+ddraw7.c:6354: Test marked todo: Test 4: Got unexpected hr 0.
+ddraw7.c:6354: Test marked todo: Test 5: Got unexpected hr 0.
+ddraw7.c:6354: Test marked todo: Test 6: Got unexpected hr 0.
+ddraw7.c:6354: Test marked todo: Test 7: Got unexpected hr 0.
+ddraw7.c:7167: Test marked todo: Software device: Got unexpected hr 0x8876086c, test 13, software_device 1.
+ddraw7.c:7167: Test marked todo: Software device: Got unexpected hr 0x8876086c, test 15, software_device 1.
+ddraw7.c:7863: Test marked todo: PRIMARYSURFACE: Got unexpected hr 0.
+ddraw7.c:7863: Test marked todo: OFFSCREENPLAIN: Got unexpected hr 0.
+ddraw7.c:7792: Test marked todo: TEXTURE: Got unexpected hr 0x88760064.
+ddraw7.c:8352: Test marked todo: Got unexpected hr 0x80070057.
+ddraw7.c:8391: Test marked todo: Got unexpected hr 0x80070057.
+ddraw7.c:8456: Test marked todo: Test 1: Got unexpected hr 0.
+ddraw7.c:8456: Test marked todo: Test 2: Got unexpected hr 0.
+ddraw7.c:8456: Test marked todo: Test 3: Got unexpected hr 0.
+ddraw7.c:8641: Test failed: Failed to set 8 bpp display mode, skipping test.
+ddraw7.c:8977: Test marked todo: Got unexpected hr 0.
+ddraw7.c:8985: Test marked todo: Got unexpected hr 0.
+ddraw7.c:9031: Test marked todo: Got unexpected hr 0x8876019a.
+ddraw7.c:9037: Test marked todo: Failed to attach surface, hr 0x8876019a.
+ddraw7.c:9039: Test marked todo: Failed to detach surface, hr 0x88760014.
+ddraw7.c:9246: Tests skipped: Mipmapped textures not supported, skipping mipmap private data test.
+ddraw7.c:9631: Test marked todo: Test 4: Got unexpected pitch 0x100, expected 0xfc.
+ddraw7.c:9631: Test marked todo: Test 5: Got unexpected pitch 0x100, expected 0xfc.
+ddraw7.c:9631: Test marked todo: Test 6: Got unexpected pitch 0x100, expected 0xfc.
+ddraw7.c:9631: Test marked todo: Test 7: Got unexpected pitch 0x100, expected 0xfc.
+ddraw7.c:9614: Test marked todo: Test 17: Got unexpected hr 0.
+ddraw7.c:9614: Test marked todo: Test 18: Got unexpected hr 0.
+ddraw7.c:9614: Test marked todo: Test 21: Got unexpected hr 0.
+ddraw7.c:9614: Test marked todo: Test 22: Got unexpected hr 0.
+ddraw7.c:9631: Test marked todo: Test 23: Got unexpected pitch 0x100, expected 0xfc.
+ddraw7.c:9730: Tests skipped: Mipmapped textures not supported, skipping tests.
+ddraw7.c:9835: Tests skipped: Mipmapped textures not supported, skipping mipmap palette test.
+ddraw7.c:10045: Test marked todo: Pixel 0: Got color 0, expected 0x101010.
+ddraw7.c:10045: Test marked todo: Pixel 1: Got color 0, expected 0x10101.
+ddraw7.c:10045: Test marked todo: Pixel 2: Got color 0, expected 0x20202.
+ddraw7.c:10045: Test marked todo: Pixel 3: Got color 0, expected 0x30303.
+ddraw7.c:10045: Test marked todo: Pixel 4: Got color 0, expected 0x40404.
+ddraw7.c:10045: Test marked todo: Pixel 5: Got color 0, expected 0x50505.
+ddraw7.c:10045: Test marked todo: Pixel 6: Got color 0, expected 0xffffff.
+ddraw7.c:10045: Test marked todo: Pixel 7: Got color 0, expected 0x808080.
+ddraw7.c:10285: Test failed: Failed to set 8 bpp display mode, skipping test.
+ddraw7.c:10470: Test failed: Failed to set 8 bpp display mode, skipping test.
+ddraw7.c:10801: Test marked todo: Got unexpected hr 0.
+ddraw7.c:10803: Test marked todo: Got unexpected hr 0x887600e1.
+ddraw7.c:10809: Test marked todo: Got unexpected hr 0.
+ddraw7.c:11134: Test marked todo: Got unexpected hr 0, type vidmem texture.
+ddraw7.c:11134: Test marked todo: Got unexpected hr 0, type sysmem texture.
+ddraw7.c:11134: Test marked todo: Got unexpected hr 0, type managed texture.
+ddraw7.c:11134: Test marked todo: Got unexpected hr 0, type managed texture.
+ddraw7.c:11134: Test marked todo: Got unexpected hr 0, type cubemap.
+ddraw7.c:11380: Test marked todo: Got unexpected color 0x0000ea15, case 2.
+ddraw7.c:11380: Test marked todo: Got unexpected color 0x0000ea15, case 3.
+ddraw7.c:12264: Tests skipped: Overlays or some YUV formats not supported, skipping YUV colorfill tests.
+ddraw7.c:12320: Test marked todo: Blt returned 0x80070057, expected 0, surface vidmem offscreenplain YUY2.
+ddraw7.c:12325: Test marked todo: Blt returned 0x80070057, expected 0, surface vidmem offscreenplain YUY2.
+ddraw7.c:12320: Test marked todo: Blt returned 0x80070057, expected 0, surface vidmem offscreenplain UYVY.
+ddraw7.c:12325: Test marked todo: Blt returned 0x80070057, expected 0, surface vidmem offscreenplain UYVY.
+ddraw7.c:12320: Test marked todo: Blt returned 0x80070057, expected 0x80004001, surface vidmem texture DXT1.
+ddraw7.c:12325: Test marked todo: Blt returned 0x80070057, expected 0x80004001, surface vidmem texture DXT1.
+ddraw7.c:12320: Test marked todo: Blt returned 0x80070057, expected 0x80004001, surface sysmem texture DXT1.
+ddraw7.c:12325: Test marked todo: Blt returned 0x80070057, expected 0x80004001, surface sysmem texture DXT1.

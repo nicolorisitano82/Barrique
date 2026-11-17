@@ -202,7 +202,7 @@ Verifica finale (`round14/verify2`, vtdec spento): `mfplay` ok su 7 file × 3 ar
 
 **Chiuso (2026-11-17).** Cancello: mf, mfplat, mfreadwrite senza regressioni, quartz come prima, `mfplay` ok sulle tre architetture, librerie tutte in `deps/`. Aperti, fuori dal passo: decodifica VideoToolbox (sopra), audio AC3, avvisi di GStreamer (`gst_video_info_from_caps`, `gst_object_unref`) e `video_frame_wrap_buffer` di mfplat, figlio di mfplat i386 che ogni tanto si appende, percorsi NEON di `swscale` (scalatura) sotto ARM64EC, copia degli IOSurface (passo 4), fallimenti quartz `mpegaudio`/`mpegvideo`.
 
-## Passo 4: memoria della GPU e la VM, esperimento ⬜ ⚠️
+## Passo 4: memoria della GPU e la VM, esperimento ✅
 
 **Questo rischio ce l'abbiamo solo noi.** CrossOver e il GPTK non usano una VM. La VM accetta solo memoria anonima e privata: gli altri tipi di pagina mandano il Mac in kernel panic (SPTM `VIOLATION_ILLEGAL_MAPPING_TYPE`). La memoria che la GPU condivide (MTLBuffer condivisi, IOSurface, memoria Vulkan mappata in modo persistente) è di un altro tipo. `host_page_is_safe` rifiuta oggi le pagine sospette, quindi il panic non dovrebbe arrivare, ma il codice Windows riceverebbe un errore.
 
@@ -212,6 +212,25 @@ Il passo decide **come il codice Windows vede la memoria della GPU**, prima di s
 - **B, importazione:** memoria anonima nostra, data a Metal con `newBufferWithBytesNoCopy` (o a MoltenVK con `VK_EXT_external_memory_host`). Niente copie, ma va verificato che Metal non cambi il tipo delle pagine.
 - Esperimento in `hvproto`, mai dentro Wine: alloca, importa in Metal, interroga il tipo di pagina **senza** `hv_vm_map`. Solo se le pagine risultano identiche a prima si prova la mappatura. Ogni esecuzione con l'OK esplicito dell'utente e con il lavoro salvato: un errore qui fa ripartire il Mac.
 - Cancello: strategia scelta e scritta qui, con le prestazioni misurate (MB/s copiati).
+
+**Punto 1 (2026-11-17, `research/hvproto/gpumem.m`, `gpumem.log`, M3 Max).** Nessuna VM, nessun `hv_vm_map`: solo interrogazioni delle pagine con lo stesso controllo di `hvf.c`, più i campi che quel controllo non guarda.
+- **Importazione** (memoria anonima come quella della VM, `newBufferWithBytesNoCopy`): appena creato il buffer la regione passa da `SM_PRIVATE` a `SM_TRUESHARED` con due riferimenti (Metal tiene l'oggetto di memoria); dopo il primo uso della GPU le pagine diventano **wired** (`VM_PAGE_QUERY_PAGE_WIRED`, presumibilmente mappate nella DART della GPU). Restano così anche dopo il rilascio del buffer. La GPU scrive e la CPU vede, senza copie.
+- **Memoria di Metal** (`MTLBuffer` condiviso, tag `VM_MEMORY_IOACCELERATOR` 100) e **IOSurface** (tag `VM_MEMORY_IOSURFACE` 88): anonime, `SM_TRUESHARED`, senza pager.
+- **`host_page_is_safe` accetta tutti questi casi.** L'ipotesi sopra (che rifiuti già le pagine della GPU) è sbagliata: il controllo non vede il tag né il wiring. Lo spazio utente non vede il tipo di pagina dello SPTM, quindi non sappiamo se queste pagine nella VM manderebbero in panic. Finché il punto 3 non lo prova, `hvf.c` deve rifiutare le pagine coi tag 88/100 e quelle wired dalla GPU.
+- **Copia** (64 MB): `memcpy` da memoria anonima a un `MTLBuffer` condiviso 31,8 GB/s, blit della GPU dal buffer importato a uno privato 73,9 GB/s. 100 MB/s di dati dinamici (molto per un gioco) costano ~0,3% di un core con la copia.
+
+**Controllo stretto in `hvf.c` (2026-11-17).** `page_type_ok` rifiuta ora i tag `VM_MEMORY_IOACCELERATOR`/`VM_MEMORY_IOSURFACE` e le pagine wired non private (le private wired restano: `VirtualLock` usa `mlock`); il messaggio di rifiuto stampa anche il tag. `gpumem` con lo stesso controllo: rifiutati A2–A4, B, C, D3; accettati A0, A1 e `mlock` (E1). Resta scoperto il caso A1 (memoria della VM importata in Metal ma non ancora usata dalla GPU): con la strategia A Wine non importa mai memoria della VM. Copia ripetuta: `memcpy` 31,8–54,7 GB/s a seconda del giro. Verifica (`tests/results/round15`, moduli grafici del giro 6 e `virtual` di kernel32/ntdll sulle tre architetture, `WINEDEBUG=-all,err+hvf`): **nessun rifiuto** in nessun log, quindi nessuna pagina legittima cambia strada. `virtual` identico ai giri 7–8 (kernel32 aarch64 167 fallimenti, ntdll aarch64 86, i386 31, x86_64 in timeout come prima). Contro il giro 6, `compare.py` segna d3d9ex e ddraw peggiorati: i test chiedono di cambiare risoluzione e trovano lo schermo a 1512×982 (lo schermo del portatile, il giro 6 girava con un'altra configurazione di schermi), da cui i nuovi fallimenti di d3d9ex x86_64 e i timeout/crash di ddraw aarch64; `dsurface` 1 fallimento (`dsurface.c:2112`, 0x80004005). Senza rifiuti il codice nuovo non cambia nulla, quindi non dipendono da questa modifica; da rifare con la stessa configurazione di schermi del giro 6 se servono.
+
+**Punto 3 (2026-11-17, `research/hvproto/gpumap.m`, `gpumap.log`, M3 Max, macOS 27.3).** Una VM, un vCPU a EL1 con MMU spenta che legge la pagina, scrive un marcatore ed esce con HVC; poi il marcatore si controlla dalla CPU e dalla GPU (blit verso un buffer privato e ritorno). Un caso per processo, ognuno con l'OK dell'utente.
+- Caso 1, memoria anonima (controllo): ok.
+- Caso 2, memoria anonima importata con `newBufferWithBytesNoCopy`, GPU non ancora usata: **ok, nessun panic**; la GPU legge la pagina mentre è mappata nella VM e vede il marcatore del guest.
+- Caso 3, la stessa dopo che la GPU l'ha riempita (`SM_TRUESHARED` + wired): **ok, nessun panic**; il guest legge il riempimento della GPU (0xa5…), CPU e GPU vedono il marcatore del guest.
+- Caso 4, `MTLBuffer` condiviso allocato da Metal (tag 100): **ok, nessun panic**, CPU e GPU vedono il marcatore del guest.
+- Caso 5, IOSurface bloccato per la CPU (tag 88): **ok, nessun panic**, la CPU vede il marcatore (GPU non controllata: nessun `MTLBuffer` sopra).
+
+Nessuno dei tipi di memoria della GPU che abbiamo trovato manda in panic. Quindi B (importazione) funziona sul nostro hardware: memoria anonima nostra, mappata nella VM e data alla GPU, coerente nei due versi, senza copie. Una prova non copre tutto (pagine compresse o purgeable, versioni future di macOS); `hvf.c` continua a rifiutare tag 88/100 e pagine condivise wired finché un backend non ne ha davvero bisogno.
+
+**Chiuso (2026-11-17). Strategia scelta:** **A (copia) come strategia di base**, costo trascurabile (copia 31,8–54,7 GB/s, blit GPU 64–74 GB/s) e nessun rischio; B (importazione) provato possibile nel punto 3, da usare dove la copia pesa (buffer grandi mappati in modo persistente, Vulkan `HOST_COHERENT`), allentando il controllo di `hvf.c` solo per la memoria che Barrique stessa importa.
 
 ## Passo 5: Vulkan con MoltenVK ⬜
 

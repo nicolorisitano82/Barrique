@@ -1,0 +1,257 @@
+ddraw2.c:17610: Driver string: "nvd3dum.dll"
+ddraw2.c:17611: Description string: "NVIDIA GeForce 6800"
+ddraw2.c:17612: Driver version 9.14.13.783
+ddraw2.c:1738: Test marked todo: Got unexpected hr 0x88760305.
+ddraw2.c:1741: Test marked todo: Got unexpected hr 0x88760305.
+ddraw2.c:1744: Test marked todo: Got unexpected hr 0x88760305.
+ddraw2.c:1754: Test marked todo: Got unexpected hr 0x88760305.
+ddraw2.c:1858: Test marked todo: Got unexpected refcount 1.
+ddraw2.c:1873: Test marked todo: Got unexpected refcount 1.
+ddraw2.c:1907: Test marked todo: Got unexpected refcount 1.
+ddraw2.c:2776: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw2.c:2778: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2784: Test marked todo: Client rect and window rect are equal.
+ddraw2.c:2790: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw2.c:2792: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2812: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw2.c:2814: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2821: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2824: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2828: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw2.c:2831: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2859: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2862: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2883: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2885: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2906: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2908: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2921: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2924: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2941: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2944: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2950: Test marked todo: Expected window style 0x34cf0000, got 0xb40b0000.
+ddraw2.c:2953: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:3266: Test failed: Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+ddraw2.c:3278: Test failed: Expected surface width 1024, got 1512.
+ddraw2.c:3280: Test failed: Expected surface height 640, got 982.
+ddraw2.c:3284: Test failed: Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+ddraw2.c:3299: Test failed: Expected message 0x5, but didn't receive it.
+ddraw2.c:3301: Test failed: Expected screen size 960x600, got 0x0.
+ddraw2.c:3306: Test failed: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:3311: Test failed: Expected surface width 1024, got 1512.
+ddraw2.c:3313: Test failed: Expected surface height 640, got 982.
+ddraw2.c:3332: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3334: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3339: Test marked flaky: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:3354: Test failed: Expected message 0x47, but didn't receive it.
+ddraw2.c:3356: Test failed: Expected screen size 1024x640, got 0x0.
+ddraw2.c:3361: Test failed: Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+ddraw2.c:780: Test failed: Got unexpected wparam 0x1 for message 0x5, expected 0.
+ddraw2.c:3367: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw2.c:3378: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw2.c:3381: Test failed: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:3385: Test failed: Got unexpected screen size 1512x982.
+ddraw2.c:3427: Test marked flaky: Expected message 0x46, but didn't receive it.
+ddraw2.c:3430: Test marked flaky: Expected screen size 1512x982, got 0x0.
+ddraw2.c:3442: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3444: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3540: Test marked todo: Got unexpected hr 0.
+ddraw2.c:3557: Test failed: Got unexpected hr 0.
+ddraw2.c:3568: Test failed: Got unexpected hr 0.
+ddraw2.c:3570: Test failed: Got unexpected hr 0.
+ddraw2.c:3604: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3606: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3626: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw2.c:3637: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3639: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3737: Test marked todo: Got unexpected hr 0.
+ddraw2.c:3754: Test failed: Got unexpected hr 0.
+ddraw2.c:3758: Test failed: Got unexpected hr 0.
+ddraw2.c:3760: Test failed: Got unexpected hr 0.
+ddraw2.c:3794: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3796: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3816: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw2.c:3827: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3829: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3891: Test failed: Expected message 0x5, but didn't receive it.
+ddraw2.c:3893: Test failed: Expected screen size 1512x982, got 0x0.
+ddraw2.c:3943: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3945: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3976: Test failed: Expected message 0x47, but didn't receive it.
+ddraw2.c:3980: Test failed: Expected screen size 2 1512x982, got 0x0.
+ddraw2.c:3986: Test marked flaky: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:3989: Test failed: Expected (0,0)-(1512,982), got (0,0)-(208,123).
+ddraw2.c:4019: Test marked flaky: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:4079: Test failed: Got a different mode.
+ddraw2.c:4100: Test failed: Got a different mode.
+ddraw2.c:4159: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4161: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4163: Test failed: Got unexpected screen height 982.
+ddraw2.c:4176: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4178: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4180: Test failed: Got unexpected screen height 982.
+ddraw2.c:4184: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4186: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4188: Test failed: Got unexpected screen height 982.
+ddraw2.c:4207: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4209: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4211: Test failed: Got unexpected screen height 982.
+ddraw2.c:4215: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4217: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4219: Test failed: Got unexpected screen height 982.
+ddraw2.c:4239: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4241: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4243: Test failed: Got unexpected screen height 982.
+ddraw2.c:4248: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4250: Test failed: Got unexpected screen height 982.
+ddraw2.c:4263: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4265: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4267: Test failed: Got unexpected screen height 982.
+ddraw2.c:4271: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4273: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4275: Test failed: Got unexpected screen height 982.
+ddraw2.c:4283: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4285: Test failed: Got unexpected screen height 982.
+ddraw2.c:4297: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4299: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4301: Test failed: Got unexpected screen height 982.
+ddraw2.c:4374: Tests skipped: Failed to change display settings of the second monitor.
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4731: Test failed: Display mode restored after good ddraw1::SetCooperativeLevel call
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4744: Test failed: Display mode restored after ddraw1::SetCooperativeLevel(SETFOCUSWINDOW) call
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4760: Test failed: Display mode restored after good-bad ddraw1::SetCooperativeLevel() call sequence
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4779: Test failed: Display mode restored after ddraw1-ddraw2 SetCooperativeLevel() call sequence
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:5537: Test marked todo: Got unexpected hr 0x8876086c, test 11, software_device 1.
+ddraw2.c:5537: Test marked todo: Got unexpected hr 0x8876086c, test 13, software_device 1.
+ddraw2.c:6075: Test marked todo: PRIMARYSURFACE: Got unexpected hr 0.
+ddraw2.c:6075: Test marked todo: OFFSCREENPLAIN: Got unexpected hr 0.
+ddraw2.c:6059: Test marked todo: TEXTURE: Failed to create surface, hr 0x88760064.
+ddraw2.c:6569: Test marked todo: Got unexpected hr 0x80070057.
+ddraw2.c:6835: Test failed: Failed to set 8 bpp display mode, skipping test.
+ddraw2.c:7188: Test marked todo: Got unexpected hr 0.
+ddraw2.c:7196: Test marked todo: Got unexpected hr 0.
+ddraw2.c:7237: Test marked todo: Failed to attach surface, hr 0x8876019a.
+ddraw2.c:7239: Test marked todo: Failed to detach surface, hr 0x88760014.
+ddraw2.c:7611: Test marked todo: Test 4: Got unexpected pitch 0x100, expected 0xfc.
+ddraw2.c:7611: Test marked todo: Test 5: Got unexpected pitch 0x100, expected 0xfc.
+ddraw2.c:7611: Test marked todo: Test 6: Got unexpected pitch 0x100, expected 0xfc.
+ddraw2.c:7611: Test marked todo: Test 7: Got unexpected pitch 0x100, expected 0xfc.
+ddraw2.c:7611: Test marked todo: Test 17: Got unexpected pitch 0x100, expected 0xfc.
+ddraw2.c:8025: Test marked todo: Pixel 0: Got color 0, expected 0x101010.
+ddraw2.c:8025: Test marked todo: Pixel 1: Got color 0, expected 0x10101.
+ddraw2.c:8025: Test marked todo: Pixel 2: Got color 0, expected 0x20202.
+ddraw2.c:8025: Test marked todo: Pixel 3: Got color 0, expected 0x30303.
+ddraw2.c:8025: Test marked todo: Pixel 4: Got color 0, expected 0x40404.
+ddraw2.c:8025: Test marked todo: Pixel 5: Got color 0, expected 0x50505.
+ddraw2.c:8025: Test marked todo: Pixel 6: Got color 0, expected 0xffffff.
+ddraw2.c:8025: Test marked todo: Pixel 7: Got color 0, expected 0x808080.
+ddraw2.c:8953: Test failed: Failed to set 8 bpp display mode, skipping test.
+ddraw2.c:9139: Test failed: Failed to set 8 bpp display mode, skipping test.
+ddraw2.c:9397: Test marked todo: Got unexpected hr 0.
+ddraw2.c:9399: Test marked todo: Got unexpected hr 0x887600e1.
+ddraw2.c:9405: Test marked todo: Got unexpected hr 0.
+ddraw2.c:10274: Tests skipped: Overlays or some YUV formats not supported, skipping YUV colorfill tests.
+ddraw2.c:10337: Test marked todo: Blt returned 0x80070057, expected 0, surface vidmem offscreenplain YUY2.
+ddraw2.c:10342: Test marked todo: Blt returned 0x80070057, expected 0, surface vidmem offscreenplain YUY2.
+ddraw2.c:10337: Test marked todo: Blt returned 0x80070057, expected 0, surface vidmem offscreenplain UYVY.
+ddraw2.c:10342: Test marked todo: Blt returned 0x80070057, expected 0, surface vidmem offscreenplain UYVY.
+ddraw2.c:421: Test failed: Failed to lock surface, hr 0x80004005.
+ddraw2.c:11837: Test failed: Got unexpected color 0xdeadbeef.
+ddraw2.c:11867: Test marked todo: Failed to blit, hr 0x80004001.
+ddraw2.c:11869: Test marked todo: Got unexpected color 0x00000000.
+ddraw2.c:11974: Tests skipped: Failed to create surface for format D3DFMT_A2R10G10B10 (hr 0x88760091), skipping tests.
+ddraw2.c:11974: Tests skipped: Failed to create surface for format D3DFMT_A8B8G8R8 (hr 0x88760091), skipping tests.
+ddraw2.c:11974: Tests skipped: Failed to create surface for format D3DFMT_X8B8G8R8 (hr 0x88760091), skipping tests.
+ddraw2.c:11974: Tests skipped: Failed to create surface for format D3DFMT_A8L8 (hr 0x88760091), skipping tests.
+ddraw2.c:12352: HAL line edge antialiasing support: 0.
+ddraw2.c:12354: HAL triangle edge antialiasing support: 0.
+ddraw2.c:12356: HEL line edge antialiasing support: 0.
+ddraw2.c:12358: HEL triangle edge antialiasing support: 0.
+ddraw2.c:12379: Test marked todo: Failed to attach depth buffer, hr 0x8876019a.
+ddraw2.c:13355: Test marked todo: Got unexpected texture stage 0xdeadbeef, size 136, type offscreenplain.
+ddraw2.c:13381: Test marked todo: Got unexpected texture stage 0xdeadbeef, size 136, type offscreenplain.
+ddraw2.c:13355: Test marked todo: Got unexpected texture stage 0xdeadbeef, size 136, type systemmemory texture.
+ddraw2.c:13381: Test marked todo: Got unexpected texture stage 0xdeadbeef, size 136, type systemmemory texture.
+ddraw2.c:13355: Test marked todo: Got unexpected texture stage 0xdeadbeef, size 136, type videomemory texture.
+ddraw2.c:13381: Test marked todo: Got unexpected texture stage 0xdeadbeef, size 136, type videomemory texture.
+ddraw2.c:13791: Test marked todo: Got unexpected content 00ff0000 00ff0000 00001100 00001100 00001100 00110000.
+ddraw2.c:14047: Tests skipped: Format 2 not supported, skipping test.
+ddraw2.c:15259: Test marked todo: Got unexpected refcount 0.
+ddraw2.c:15265: Test marked todo: Got unexpected refcount 0.
+ddraw2.c:15324: Test marked todo: Got refcount 1.
+ddraw2.c:15330: Test marked todo: Got unexpected hr 0.
+ddraw2.c:15331: Test marked todo: 'changed' changed: 0.
+ddraw2.c:15343: Test marked todo: Got unexpected hr 0.
+ddraw2.c:15430: Test marked todo: Got unexpected caps 0x3046737c.
+ddraw2.c:15434: Test marked todo: Got HEL depth caps 0x600.
+ddraw2.c:15499: Test marked todo: Got unexpected caps 0x3046737c.
+ddraw2.c:15529: Test marked todo: Got unexpected caps 0x3046737c.
+ddraw2.c:15531: Test marked todo: Got unexpected caps 0x3046737c.
+ddraw2.c:15562: Test marked todo: depth 16: Got caps 0x10024000.
+ddraw2.c:15555: Test marked todo: depth 24: Got hr 0.
+ddraw2.c:15562: Test marked todo: depth 24: Got caps 0x10024000.
+ddraw2.c:15966: Test failed: Expected width 960, got 1512.
+ddraw2.c:15968: Test failed: Expected height 600, got 982.
+ddraw2.c:15970: Test failed: Expected frequency 60, got 120.
+ddraw2.c:16050: Test marked todo: Got handle 0.
+ddraw2.c:16578: Test marked todo: Got device caps 0x2ff1.
+ddraw2.c:16579: Test marked todo: Got transform caps 0x1.
+ddraw2.c:16580: Test marked todo: Got clipping 0x1.
+ddraw2.c:16581: Test marked todo: Lighting caps didn't match.
+ddraw2.c:16583: Test marked todo: Line caps didn't match.
+ddraw2.c:16584: Test marked todo: Triangle caps didn't match.
+ddraw2.c:16585: Test marked todo: Got colour depth 0x700.
+ddraw2.c:16586: Test marked todo: Got Z depth 0x600.
+ddraw2.c:16588: Test marked todo: Got max vertex count 2048.
+ddraw2.c:16589: Test marked todo: Got min texture width 1.
+ddraw2.c:16590: Test marked todo: Got min texture height 1.
+ddraw2.c:16591: Test marked todo: Got max texture width 16384.
+ddraw2.c:16592: Test marked todo: Got max texture height 16384.
+ddraw2.c:16593: Test marked todo: Got min stipple width 1.
+ddraw2.c:16594: Test marked todo: Got min stipple height 1.
+ddraw2.c:16595: Test marked todo: Got max stipple width 32.
+ddraw2.c:16596: Test marked todo: Got max stipple height 32.
+ddraw2.c:16578: Test marked todo: Got device caps 0x2ff1.
+ddraw2.c:16579: Test marked todo: Got transform caps 0x1.
+ddraw2.c:16580: Test marked todo: Got clipping 0x1.
+ddraw2.c:16581: Test marked todo: Lighting caps didn't match.
+ddraw2.c:16583: Test marked todo: Line caps didn't match.
+ddraw2.c:16584: Test marked todo: Triangle caps didn't match.
+ddraw2.c:16585: Test marked todo: Got colour depth 0x700.
+ddraw2.c:16586: Test marked todo: Got Z depth 0x600.
+ddraw2.c:16588: Test marked todo: Got max vertex count 2048.
+ddraw2.c:16589: Test marked todo: Got min texture width 1.
+ddraw2.c:16590: Test marked todo: Got min texture height 1.
+ddraw2.c:16591: Test marked todo: Got max texture width 16384.
+ddraw2.c:16592: Test marked todo: Got max texture height 16384.
+ddraw2.c:16593: Test marked todo: Got min stipple width 1.
+ddraw2.c:16594: Test marked todo: Got min stipple height 1.
+ddraw2.c:16595: Test marked todo: Got max stipple width 32.
+ddraw2.c:16596: Test marked todo: Got max stipple height 32.
+ddraw2.c:16623: Test marked todo: Got HEL flags 0x7ff.
+ddraw2.c:16625: Test marked todo: Got device caps 0x2ff1.
+ddraw2.c:16662: Test marked todo: Got HEL flags 0x7ff.
+ddraw2.c:16664: Test marked todo: Got device caps 0x82ff1.
+ddraw2.c:16673: Test marked todo: Got light count 8.
+ddraw2.c:16675: Test marked todo: Line caps didn't match.
+ddraw2.c:16676: Test marked todo: Triangle caps didn't match.
+ddraw2.c:16677: Test marked todo: Got colour depth 0x700.
+ddraw2.c:16678: Test marked todo: Got Z depth 0x600.
+ddraw2.c:16682: Test marked todo: Got min texture width 1.
+ddraw2.c:16683: Test marked todo: Got min texture height 1.
+ddraw2.c:16684: Test marked todo: Got max texture width 16384.
+ddraw2.c:16685: Test marked todo: Got max texture height 16384.
+ddraw2.c:16686: Test marked todo: Got min stipple width 1.
+ddraw2.c:16687: Test marked todo: Got min stipple height 1.
+ddraw2.c:16688: Test marked todo: Got max stipple width 32.
+ddraw2.c:16689: Test marked todo: Got max stipple height 32.
+ddraw2.c:16883: Test marked todo: got same handles.
+ddraw2.c:17115: Test failed: got 1512, expected 960.
+ddraw2.c:17116: Test failed: got 982, expected 600.
+0020:ddraw2: 25276 tests executed (139 marked as todo, 5 as flaky, 98 failures), 7 skipped.

@@ -1,0 +1,188 @@
+device.c:793: Test marked todo: Test 0: Got unexpected FVF 0, expected 0x2.
+device.c:793: Test marked todo: Test 1: Got unexpected FVF 0, expected 0x4.
+device.c:1141: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:1982: Tests skipped: Adapter 0 test 1: Failed to create a D3D device.
+device.c:1982: Tests skipped: Adapter 1 test 1: Failed to create a D3D device.
+device.c:2127: Test failed: Screen width is 1512, expected 960
+device.c:2128: Test failed: Screen height is 982, expected 600
+device.c:2180: Test failed: Screen width is 1512, expected 1024
+device.c:2181: Test failed: Screen height is 982, expected 640
+device.c:2238: Test failed: Screen width is 1512, expected 1024.
+device.c:2239: Test failed: Screen height is 982, expected 640.
+device.c:2251: Test failed: Screen width is 1512, expected 1024.
+device.c:2252: Test failed: Screen height is 982, expected 640.
+device.c:3176: Test marked todo: Unexpected vb 000000700D2D4240.
+device.c:3201: Test marked todo: Unexpected index buffer 000000700D2D4240.
+device.c:3234: Test marked todo: DrawIndexedPrimitive failed, hr 0x8876086c.
+device.c:4179: device_window 0000000000230064, focus_window 000000000023005C, dummy_window 00000000001C0066.
+device.c:4234: Test marked todo: Got unexpected hr 0.
+device.c:4244: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=0.
+device.c:4315: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=0.
+device.c:3786: Test marked todo: Received unexpected message 0x46 for window 000000000023005C.
+device.c:3786: Test marked todo: Received unexpected message 0x47 for window 000000000023005C.
+device.c:4406: Test failed: Expected message 0x7e for window 0x1, but didn't receive it, i=0.
+device.c:3786: Test marked todo: Received unexpected message 0x46 for window 000000000023005C.
+device.c:3786: Test marked todo: Received unexpected message 0x85 for window 000000000023005C.
+device.c:3786: Test marked todo: Received unexpected message 0x86 for window 000000000023005C.
+device.c:3786: Test marked todo: Received unexpected message 0x6 for window 000000000023005C.
+device.c:3786: Test marked todo: Received unexpected message 0x8 for window 000000000023005C.
+device.c:3786: Test marked todo: Received unexpected message 0x281 for window 000000000023005C.
+device.c:4179: device_window 000000000020006E, focus_window 000000000031006C, dummy_window 000000000024005C.
+device.c:4234: Test marked todo: Got unexpected hr 0.
+device.c:4244: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=1.
+device.c:4315: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=1.
+device.c:3786: Test marked todo: Received unexpected message 0x46 for window 000000000031006C.
+device.c:4406: Test failed: Expected message 0x7e for window 0x1, but didn't receive it, i=1.
+device.c:3786: Test marked todo: Received unexpected message 0x46 for window 000000000031006C.
+device.c:3786: Test marked todo: Received unexpected message 0x86 for window 000000000031006C.
+device.c:3786: Test marked todo: Received unexpected message 0x6 for window 000000000031006C.
+device.c:3786: Test marked todo: Received unexpected message 0x8 for window 000000000031006C.
+device.c:3786: Test marked todo: Received unexpected message 0x281 for window 000000000031006C.
+device.c:4558: Test marked todo: Expected the device window to be hidden, i=1.
+device.c:4648: device_window 0000000000260064, focus_window 0000000000260060, dummy_window 000000000032006C.
+device.c:5175: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=0.
+device.c:5180: Test marked todo: Expected device window extended style 0x108, got 0x8, i=0.
+device.c:5199: Test marked todo: Client rect and window rect are equal, i=0.
+device.c:5234: Test marked todo: Expected device window style 0x34cf0000, got 0xb40b0000, i=0.
+device.c:5238: Test marked todo: Expected device window extended style 0x108, got 0x8, i=0.
+device.c:5175: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=1.
+device.c:5180: Test marked todo: Expected device window extended style 0x100, got 0x8, i=1.
+device.c:5199: Test marked todo: Client rect and window rect are equal, i=1.
+device.c:5216: Test marked todo: Expected device window extended style 0x100, got 0x108, i=1.
+device.c:5234: Test marked todo: Expected device window style 0x34cf0000, got 0xb40b0000, i=1.
+device.c:5238: Test marked todo: Expected device window extended style 0x108, got 0x8, i=1.
+device.c:5175: Test marked todo: Expected device window style 0x4cf0000, got 0x840b0000, i=2.
+device.c:5180: Test marked todo: Expected device window extended style 0x100, got 0, i=2.
+device.c:5193: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=2.
+device.c:5199: Test marked todo: Client rect and window rect are equal, i=2.
+device.c:5234: Test marked todo: Expected device window style 0x4cf0000, got 0x940b0000, i=2.
+device.c:5238: Test marked todo: Expected device window extended style 0x100, got 0x8, i=2.
+device.c:5175: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=3.
+device.c:5180: Test marked todo: Expected device window extended style 0x100, got 0, i=3.
+device.c:5193: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=3.
+device.c:5199: Test marked todo: Client rect and window rect are equal, i=3.
+device.c:5234: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=3.
+device.c:5238: Test marked todo: Expected device window extended style 0x100, got 0x8, i=3.
+device.c:5533: Test failed: Expected resolution 1024x640, got 1512x982.
+device.c:5632: Test failed: Got a different mode.
+device.c:5658: Test failed: Expected resolution 960x600, got 1512x982.
+device.c:5667: Test failed: Got a different mode.
+device.c:5738: Tests skipped: Failed to change display settings of the second monitor.
+device.c:6755: Expects 0x0000000104000000 samples.
+device.c:6776: Test failed: Got unexpected query result 0x0000000004000000.
+device.c:6824: Tests skipped: Timestamp queries are not supported, skipping tests.
+device.c:7114: Test marked todo: Unexpected consts_swvp 256.
+device.c:7118: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:7121: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:7124: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:7149: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:7157: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:7280: SetPixelShaderConstantF was able to set 224 shader constants.
+device.c:7561: Tests skipped: This GPU supports SM3, skipping unsupported shader test.
+device.c:7612: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:7617: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:7637: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:7645: Test marked todo: Got unexpected hr 0x8876086c.
+device.c:8133: Tests skipped: D3DFMT_A32B32G32R32F supports filtering, skipping tests.
+device.c:8792: Test marked todo: Got unexpected hr 0x8876086c, type default cube texture.
+device.c:8792: Test marked todo: Got unexpected hr 0x8876086c, type sysmem cube texture.
+device.c:8792: Test marked todo: Got unexpected hr 0x8876086c, type scratch cube texture.
+device.c:9165: Tests skipped: Failed to create cube texture for format R8G8B8 (hr 0x8876086c), skipping tests.
+device.c:9896: Tests skipped: Dynamic D3DFMT_YUY2 textures not supported, skipping mipmap test.
+device.c:9896: Tests skipped: Dynamic D3DFMT_UYVY textures not supported, skipping mipmap test.
+device.c:10550: Test marked todo: Failed to update texture, hr 0x8876086c, case 6.
+device.c:10550: Test marked todo: Failed to update texture, hr 0x8876086c, case 7.
+device.c:12636: Test marked todo: Got unexpected hr 0.
+device.c:12639: Test marked todo: Got unexpected hr 0.
+device.c:12642: Test marked todo: Got unexpected hr 0.
+device.c:12646: Test marked todo: Got unexpected hr 0x8876086a.
+device.c:12649: Test marked todo: Got unexpected hr 0x8876086a.
+device.c:12652: Test marked todo: Got unexpected hr 0x8876086a.
+device.c:13182: Max user clip planes: 8.
+device.c:13182: Max user clip planes: 8.
+device.c:13434: Test marked todo: Got hr 0 (formats 0x15/0x15, pools 0/0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x15/0x15, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x15/0x15, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x15/0x15, pool 0).
+device.c:13434: Test marked todo: Got hr 0 (formats 0x15/0x16, pools 0/0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x15/0x16, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x15/0x16, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x15/0x16, pool 0).
+device.c:13434: Test marked todo: Got hr 0 (formats 0x15/0x17, pools 0/0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x15/0x17, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x15/0x17, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x15/0x17, pool 0).
+device.c:13434: Test marked todo: Got hr 0 (formats 0x16/0x15, pools 0/0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x16/0x15, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x16/0x15, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x16/0x15, pool 0).
+device.c:13434: Test marked todo: Got hr 0 (formats 0x16/0x16, pools 0/0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x16/0x16, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x16/0x16, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x16/0x16, pool 0).
+device.c:13434: Test marked todo: Got hr 0 (formats 0x16/0x17, pools 0/0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x16/0x17, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x16/0x17, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x16/0x17, pool 0).
+device.c:13434: Test marked todo: Got hr 0 (formats 0x17/0x15, pools 0/0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x17/0x15, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x17/0x15, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x17/0x15, pool 0).
+device.c:13434: Test marked todo: Got hr 0 (formats 0x17/0x16, pools 0/0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x17/0x16, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x17/0x16, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x17/0x16, pool 0).
+device.c:13434: Test marked todo: Got hr 0 (formats 0x17/0x17, pools 0/0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x17/0x17, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x17/0x17, pool 0).
+device.c:13447: Test marked todo: Got hr 0 (formats 0x17/0x17, pool 0).
+device.c:13959: Test marked todo: Test 2D 0: Got unexpected hr 0.
+device.c:13959: Test marked todo: Test 2D 2: Got unexpected hr 0.
+device.c:13959: Test marked todo: Test 2D 3: Got unexpected hr 0.
+device.c:13959: Test marked todo: Test 2D 6: Got unexpected hr 0.
+device.c:13854: Test marked todo: Test 2D 16: Got unexpected hr 0.
+device.c:13854: Test marked todo: Test 2D 23: Got unexpected hr 0.
+device.c:13854: Test marked todo: Test 2D 30: Got unexpected hr 0.
+device.c:13869: Test marked todo: Test CUBE 16: Got unexpected hr 0.
+device.c:13869: Test marked todo: Test CUBE 23: Got unexpected hr 0.
+device.c:13869: Test marked todo: Test CUBE 30: Got unexpected hr 0.
+device.c:13904: Test marked todo: Test PLAIN 1: Got unexpected hr 0.
+device.c:13904: Test marked todo: Test PLAIN 8: Got unexpected hr 0.
+device.c:13904: Test marked todo: Test PLAIN 22: Got unexpected hr 0.
+device.c:14007: Tests skipped: ATI2N volume texture not supported.
+device.c:14386: Tests skipped: Failed to create a D3D device.
+device.c:14599: Tests skipped: Adapter 1: Failed to detach device \\.\DISPLAY2.
+device.c:14744: Test marked todo: Got unexpected hr 0.
+device.c:14745: Test marked todo: Got unexpected call_count 0.
+device.c:14746: Test marked todo: Got NULL message.
+device.c:14747: Test marked todo: Got NULL message.
+device.c:14748: Test marked todo: Got unexpected message_id[0] 0000000000000000.
+device.c:14749: Test marked todo: Got unexpected message_id[1] 0000000000000000.
+device.c:14750: Test marked todo: Got unexpected line 0.
+device.c:14758: Test marked todo: Got unexpected hr 0.
+device.c:14765: Test marked todo: Got unexpected hr 0.
+device.c:14766: Test marked todo: Got unexpected call_count 0.
+device.c:14767: Test marked todo: Got unexpected message_id[0] 0000000000000000.
+device.c:14768: Test marked todo: Got NULL message.
+device.c:14774: Test marked todo: Got unexpected hr 0.
+device.c:14777: Test marked todo: Validator has 1 references left.
+device.c:14814: Test marked todo: Got unexpected call_count 0, test 1.
+device.c:14815: Test marked todo: Got NULL message, test 1.
+device.c:14816: Test marked todo: Got unexpected message_id[0] 0000000000000000, test 1.
+device.c:14818: Test marked todo: Got unexpected file[0] (null), test 1.
+device.c:14819: Test marked todo: Got unexpected line 0, test 1.
+device.c:14832: Test marked todo: Got unexpected hr 0, test 1.
+device.c:14814: Test marked todo: Got unexpected call_count 0, test 4.
+device.c:14815: Test marked todo: Got NULL message, test 4.
+device.c:14816: Test marked todo: Got unexpected message_id[0] 0000000000000000, test 4.
+device.c:14818: Test marked todo: Got unexpected file[0] (null), test 4.
+device.c:14819: Test marked todo: Got unexpected line 0, test 4.
+device.c:14832: Test marked todo: Got unexpected hr 0, test 4.
+device.c:14836: Test marked todo: Validator has 1 references left.
+device.c:15066: Test marked todo: Adapter 0: Expect window rect (0,0)-(1512,982), got (0,0)-(1511,981).
+device.c:15066: Test marked todo: Adapter 1: Expect window rect (-534,-1440)-(2026,0), got (-534,-1440)-(2025,-1).
+device.c:15275: Test marked todo: Got refcount 2.
+device.c:15278: Test marked todo: Got refcount 1.
+device.c:15307: Test marked todo: Got refcount 1.
+device.c:15321: Tests skipped: Failed to create a D3D12 device, skipping d3d9on12 tests
+0020:device: 160774 tests executed (148 marked as todo, 0 as flaky, 19 failures), 13 skipped.

@@ -1,0 +1,92 @@
+virtual.c:3782: system page size 0x1000
+virtual.c:501: Test failed: Unexpected count 4.
+virtual.c:502: Test failed: Unexpected address 011E0000.
+virtual.c:2764: Test failed: Unexpected status c0000018.
+virtual.c:2767: Test failed: Unexpected size 00000FFF.
+virtual.c:2768: Test failed: Got addr 01201001, addr1 01200000.
+virtual.c:2773: Test failed: Unexpected status c0000018.
+virtual.c:2775: Test failed: Unexpected size 00000FFF.
+virtual.c:2776: Test failed: Got addr 01200001, addr1 01200000.
+virtual.c:2781: Test failed: Unexpected status c0000018.
+virtual.c:2787: Test failed: Unexpected status 00000000.
+virtual.c:2791: Test failed: Unexpected status 00000000.
+virtual.c:2806: Test failed: Unexpected status c00000a0.
+virtual.c:2810: Test failed: Unexpected status c00000a0.
+virtual.c:1440: Test marked todo: 0: got commit 0xfe000
+virtual.c:1440: Test marked todo: 1: got commit 0xfe000
+virtual.c:1440: Test marked todo: 2: got commit 0xfe000
+virtual.c:1440: Test marked todo: 3: got commit 0x1fe000
+virtual.c:1440: Test marked todo: 4: got commit 0x1fe000
+virtual.c:1440: Test marked todo: 5: got commit 0xfe000
+virtual.c:1457: Test marked todo: 5: got 0x2000.
+virtual.c:1458: Test marked todo: 5: got 0.
+virtual.c:1440: Test marked todo: 6: got commit 0xfe000
+virtual.c:1452: Test marked todo: 6: got 0x2000.
+virtual.c:1453: Test marked todo: 6: got 0.
+virtual.c:1440: Test marked todo: 7: got commit 0xfe000
+virtual.c:1440: Test marked todo: 8: got commit 0x10e000
+virtual.c:1440: Test marked todo: 9: got commit 0x13e000
+virtual.c:1440: Test marked todo: 10: got commit 0x13e000
+virtual.c:1440: Test marked todo: 11: got commit 0x13e000
+virtual.c:1440: Test marked todo: 12: got commit 0x13e000
+virtual.c:1440: Test marked todo: 13: got commit 0x3fe000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 4000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size 3f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size 3f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:1145: Test marked todo: unexpected stack committed size f8000, expected 2000
+virtual.c:1163: Test marked todo: unexpected stack committed size f8000, expected 9000
+virtual.c:1180: Test failed: unexpected guard_size 4000, expected 1000, 2000 or 3000
+virtual.c:2312: XState EnabledFeatures 0x7, EnabledSupervisorFeatures 0, EnabledVolatileFeatures 7.
+virtual.c:3374: Test marked todo: wrong size 119000
+virtual.c:3386: Test marked todo: wrong partial map
+virtual.c:3404: Test marked todo: wrong size 119000
+virtual.c:3416: Test marked todo: wrong partial map
+0020:virtual: 2171 tests executed (58 marked as todo, 0 as flaky, 31 failures), 0 skipped.

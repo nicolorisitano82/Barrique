@@ -1,0 +1,7 @@
+d3d.c:168: IDirect3D7::CreateDevice() for a TnL Hal device failed with an error 0x8007000e, trying HAL
+d3d.c:172: IDirect3D7::CreateDevice() for a HAL device failed with an error 0x8007000e, trying RGB
+d3d.c:176: IDirect3D7::CreateDevice() for a RGB device failed with an error 0x8007000e, giving up
+d3d.c:1975: Tests skipped: Skipping d3d7 tests
+d3d.c:1995: Tests skipped: Skipping d3d2 tests.
+d3d.c:2003: Tests skipped: Skipping d3d1 tests
+0020:d3d: 19 tests executed (0 marked as todo, 0 as flaky, 0 failures), 3 skipped.

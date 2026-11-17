@@ -1,0 +1,95 @@
+opengl.c:2679: Test marked todo: DIB: got wglGetExtensionsStringEXT 000000700C4690D4
+opengl.c:2681: Test marked todo: DIB: got wglGetExtensionsStringARB 000000700C469090
+opengl.c:2823: Test marked todo: DIB: got 0x11665544
+opengl.c:2851: Test failed: DIB: got viewport (0,0)-(0,0)
+opengl.c:2859: Test marked todo: DIB: got 0x11665544
+opengl.c:2679: Test marked todo: DDB: got wglGetExtensionsStringEXT 000000700C4690D4
+opengl.c:2681: Test marked todo: DDB: got wglGetExtensionsStringARB 000000700C469090
+opengl.c:2851: Test failed: DDB: got viewport (0,0)-(0,0)
+opengl.c:2860: Test failed: DDB: got 0x11665544
+opengl.c:2914: Test marked todo: Failed to get a 16 bit pixel format with the DRAW_TO_BITMAP flag.
+opengl.c:2918: Tests skipped: Skipping 16-bit rendering test (no 16 bit pixel format with the DRAW_TO_BITMAP flag was available)
+opengl.c:3124: Test marked todo: got 0x11223344
+opengl.c:4243: Test marked todo: got 0
+opengl.c:4383: Test marked todo: got 0xff0000ff
+opengl.c:4393: Test marked todo: got 0xff0000ff
+opengl.c:4498: Test failed: Viewport not equal to client rect.
+opengl.c:4503: Test failed: Failed glClear, error 0x506.
+opengl.c:6190: OpenGL renderer: Apple M3 Max
+opengl.c:6191: OpenGL driver version: 2.1 Metal - 91.7
+opengl.c:6192: OpenGL vendor: Apple
+opengl.c:3278: Test failed: GL_EXT_copy_texture missing
+opengl.c:965: Test failed: Got unexpected cDepthBits 32.
+opengl.c:5032: swap method 0x2029: count 180.
+opengl.c:5032: swap method 0x2028: count 360.
+opengl.c:5032: swap method 0x202a: count 360.
+opengl.c:1072: Tests skipped: glDebugMessageCallbackARB not supported
+opengl.c:1130: SetPixelFormat on main device context succeeded
+opengl.c:4577: Test failed: Failed glClear, error 0x506.
+opengl.c:4601: Test failed: Failed glClear, error 0x506.
+opengl.c:1782: Tests skipped: GL_NV_multisample_filter_hint is not supported.
+opengl.c:1947: Test failed: source_current=1 source_sharing=0 dest_current=1 dest_sharing=0: got 200
+opengl.c:1948: Test failed: source_current=1 source_sharing=0 dest_current=1 dest_sharing=0: got 77
+opengl.c:1947: Test failed: source_current=1 source_sharing=0 dest_current=1 dest_sharing=1: got 200
+opengl.c:1948: Test failed: source_current=1 source_sharing=0 dest_current=1 dest_sharing=1: got 77
+opengl.c:1947: Test failed: source_current=1 source_sharing=1 dest_current=1 dest_sharing=0: got 200
+opengl.c:1948: Test failed: source_current=1 source_sharing=1 dest_current=1 dest_sharing=0: got 77
+opengl.c:1890: Test failed: source_current=1 source_sharing=1 dest_current=1 dest_sharing=1: got 200
+opengl.c:1891: Test failed: source_current=1 source_sharing=1 dest_current=1 dest_sharing=1: got 77
+opengl.c:2030: Tests skipped: Skipping object type texture_ext
+opengl.c:2030: Tests skipped: Skipping object type sampler
+opengl.c:2030: Tests skipped: Skipping object type program_nv
+opengl.c:2030: Tests skipped: Skipping object type semaphore_ext
+opengl.c:2030: Tests skipped: Skipping object type memory_object_ext
+opengl.c:2030: Tests skipped: Skipping object type path_nv
+opengl.c:2030: Tests skipped: Skipping object type shader_ext
+opengl.c:2030: Tests skipped: Skipping object type shader_ati
+opengl.c:2030: Tests skipped: Skipping object type object_buffer_ati
+opengl.c:2030: Tests skipped: Skipping object type command_list_nv
+opengl.c:2030: Tests skipped: Skipping object type fence_nv
+opengl.c:2030: Tests skipped: Skipping object type program_pipeline
+opengl.c:2030: Tests skipped: Skipping object type occlusion_query_nv
+opengl.c:2030: Tests skipped: Skipping object type state_nv
+opengl.c:2030: Tests skipped: Skipping object type transform_feedback
+opengl.c:2030: Tests skipped: Skipping object type transform_feedback_nv
+opengl.c:2030: Tests skipped: Skipping object type vertex_array
+opengl.c:2045: Test failed: 33 vertex_array_apple: got obj 1
+opengl.c:2092: Test failed: 0 buffer: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 1 buffer_arb: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 2 framebuffer: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 3 framebuffer_ext: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 4 renderbuffer: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 5 renderbuffer_ext: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 6 texture: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2061: Tests skipped: Skipping object type texture_ext
+opengl.c:2061: Tests skipped: Skipping object type sampler
+opengl.c:2092: Test failed: 9 display list: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 10 program_arb: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2061: Tests skipped: Skipping object type program_nv
+opengl.c:2061: Tests skipped: Skipping object type semaphore_ext
+opengl.c:2061: Tests skipped: Skipping object type memory_object_ext
+opengl.c:2061: Tests skipped: Skipping object type path_nv
+opengl.c:2092: Test failed: 15 program: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 16 program_object_arb: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 17 shader: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 18 shader_object_arb: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2061: Tests skipped: Skipping object type shader_ext
+opengl.c:2061: Tests skipped: Skipping object type shader_ati
+opengl.c:2061: Tests skipped: Skipping object type object_buffer_ati
+opengl.c:2061: Tests skipped: Skipping object type command_list_nv
+opengl.c:2092: Test failed: 23 fence_apple: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2061: Tests skipped: Skipping object type fence_nv
+opengl.c:2061: Tests skipped: Skipping object type program_pipeline
+opengl.c:2092: Test failed: 26 query: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2092: Test failed: 27 query_arb: 33 vertex_array_apple: other->exists returned 0x1, error 6
+opengl.c:2061: Tests skipped: Skipping object type occlusion_query_nv
+opengl.c:2061: Tests skipped: Skipping object type state_nv
+opengl.c:2061: Tests skipped: Skipping object type transform_feedback
+opengl.c:2061: Tests skipped: Skipping object type transform_feedback_nv
+opengl.c:2061: Tests skipped: Skipping object type vertex_array
+opengl.c:2078: Test failed: 33 vertex_array_apple: test->exists returned 0x1, error 6
+opengl.c:2109: Test failed: 33 vertex_array_apple: test->exists returned 0x1, error 6
+opengl.c:2255: Test marked todo: sync: got obj1 0000000000010001
+opengl.c:2310: Test marked todo: sync: got obj2 0000000000010002
+opengl.c:2352: Test marked todo: sync: got obj3 0000000000010003
+opengl.c:3803: Test failed: got status 0x8219

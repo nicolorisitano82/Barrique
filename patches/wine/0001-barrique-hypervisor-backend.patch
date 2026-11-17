@@ -716,10 +716,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..22b70e7
+index 0000000..f734b6f
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,916 @@
+@@ -0,0 +1,928 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -934,14 +934,26 @@ index 0000000..22b70e7
 +                              (vm_page_info_t)page_info, &count ) == KERN_SUCCESS;
 +}
 +
-+/* anonymous, readable, not executable, not file-backed or code-signing related */
++/*
++ * Anonymous, readable, not executable, not file-backed or code-signing related,
++ * and not GPU memory. Memory Metal allocates (VM_MEMORY_IOACCELERATOR), IOSurfaces
++ * (VM_MEMORY_IOSURFACE) and anonymous memory the GPU has used through
++ * newBufferWithBytesNoCopy (shared and wired, see research/hvproto/gpumem.m) all
++ * pass the tests above, but nothing shows whether the SPTM accepts them in a VM,
++ * so they are refused. Private wired pages (VirtualLock uses mlock) are fine.
++ */
 +static BOOL page_type_ok( const vm_region_extended_info_data_t *info, const vm_page_info_basic_data_t *page_info )
 +{
 +    if (info->external_pager || (info->protection & VM_PROT_EXECUTE) || !(info->protection & VM_PROT_READ))
 +        return FALSE;
++    if (info->user_tag == VM_MEMORY_IOACCELERATOR || info->user_tag == VM_MEMORY_IOSURFACE)
++        return FALSE;
 +    if ((page_info->disposition & VM_PAGE_QUERY_PAGE_PRESENT) &&
 +        (page_info->disposition & (VM_PAGE_QUERY_PAGE_EXTERNAL | VM_PAGE_QUERY_PAGE_CS_VALIDATED |
 +                                   VM_PAGE_QUERY_PAGE_CS_TAINTED | VM_PAGE_QUERY_PAGE_CS_NX)))
++        return FALSE;
++    if ((page_info->disposition & VM_PAGE_QUERY_PAGE_WIRED) &&
++        info->share_mode != SM_PRIVATE && info->share_mode != SM_PRIVATE_ALIASED)
 +        return FALSE;
 +    return TRUE;
 +}
@@ -1032,10 +1044,10 @@ index 0000000..22b70e7
 +
 +refuse:
 +    if (logged++ < 4)
-+        ERR( "refusing to map host page %llx in the VM: pager %u prot %x share mode %u shadow depth %u "
++        ERR( "refusing to map host page %llx in the VM: pager %u prot %x share mode %u tag %u shadow depth %u "
 +             "page depth %d disposition %#x, region %llx-%llx\n",
 +             (unsigned long long)page, info.external_pager, info.protection, info.share_mode,
-+             info.shadow_depth, page_info.depth, page_info.disposition,
++             info.user_tag, info.shadow_depth, page_info.depth, page_info.disposition,
 +             (unsigned long long)addr, (unsigned long long)(addr + size) );
 +    return FALSE;
 +}

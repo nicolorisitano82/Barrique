@@ -1,0 +1,142 @@
+d3d9ex.c:494: GetDisplayModeEx returned Width = 1512, Height = 982, RefreshRate = 120, Format = 16, ScanLineOrdering = 1, rotation = 1.
+d3d9ex.c:427: Adapter luid: 00000000:000003f4.
+d3d9ex.c:569: Tests skipped: Graphics mode is not supported.
+d3d9ex.c:813: Test marked todo: Failed to create surface, hr 0x80004001.
+d3d9ex.c:830: Test marked todo: Got unexpected hr 0x80004001.
+d3d9ex.c:1000: Test failed: Got screen width 1512, expected 960.
+d3d9ex.c:1001: Test failed: Got screen height 982, expected 600.
+d3d9ex.c:1067: Test failed: Got screen width 1512, expected 1024.
+d3d9ex.c:1068: Test failed: Got screen height 982, expected 640.
+d3d9ex.c:1127: Test failed: Screen width is 1512, expected 1024.
+d3d9ex.c:1128: Test failed: Screen height is 982, expected 640.
+d3d9ex.c:1140: Test failed: Screen width is 1512, expected 1024.
+d3d9ex.c:1141: Test failed: Screen height is 982, expected 640.
+d3d9ex.c:1510: Test failed: Got screen width 1512, expected 960.
+d3d9ex.c:1511: Test failed: Got screen height 982, expected 600.
+d3d9ex.c:1579: Test failed: Got screen width 1512, expected 1024.
+d3d9ex.c:1580: Test failed: Got screen height 982, expected 640.
+d3d9ex.c:1646: Test failed: Got screen width 1512, expected 1024.
+d3d9ex.c:1647: Test failed: Got screen height 982, expected 640.
+d3d9ex.c:1706: Test failed: Screen width is 1512, expected 1024.
+d3d9ex.c:1707: Test failed: Screen height is 982, expected 640.
+d3d9ex.c:1721: Test failed: Screen width is 1512, expected 1024.
+d3d9ex.c:1722: Test failed: Screen height is 982, expected 640.
+d3d9ex.c:2026: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:2446: Tests skipped: This GPU supports SM3, skipping unsupported shader test.
+d3d9ex.c:2885: device_window 000000000012006E, focus_window 0000000000120068, dummy_window 00000000000F006A.
+d3d9ex.c:2938: Test marked todo: Got unexpected hr 0, i=0.
+d3d9ex.c:2940: Test marked todo: Got unexpected hr 0, i=0.
+d3d9ex.c:2949: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=0.
+d3d9ex.c:2990: Test failed: Got unexpected screen size 1512x982.
+d3d9ex.c:3007: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=0.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x47 for window 0000000000120068.
+d3d9ex.c:3100: Test marked flaky: Expected message 0x7e for window 0x1, but didn't receive it, i=0.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x86 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x6 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x8 for window 0000000000120068.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x281 for window 0000000000120068.
+d3d9ex.c:2885: device_window 000000000010006A, focus_window 000000000017006C, dummy_window 0000000000070072.
+d3d9ex.c:2938: Test marked todo: Got unexpected hr 0, i=1.
+d3d9ex.c:2940: Test marked todo: Got unexpected hr 0, i=1.
+d3d9ex.c:2949: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=1.
+d3d9ex.c:2990: Test failed: Got unexpected screen size 1512x982.
+d3d9ex.c:3007: Test failed: Expected message 0x7e for window 0, but didn't receive it, i=1.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 000000000017006C.
+d3d9ex.c:3100: Test marked flaky: Expected message 0x7e for window 0x1, but didn't receive it, i=1.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x84 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x46 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x86 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x6 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x8 for window 000000000017006C.
+d3d9ex.c:2520: Test marked todo: Received unexpected message 0x281 for window 000000000017006C.
+d3d9ex.c:3220: Test marked todo: Expected the device window to be hidden, i=1.
+d3d9ex.c:3303: device_window 0000000000080072, focus_window 0000000000080070, dummy_window 0000000000140068.
+d3d9ex.c:3516: Test marked todo: Expected device window style 0x4cf0000, got 0x940b0000, i=0.
+d3d9ex.c:3521: Test marked todo: Expected device window extended style 0x100, got 0x8, i=0.
+d3d9ex.c:3540: Test marked todo: Client rect and window rect are equal, i=0.
+d3d9ex.c:3600: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=0.
+d3d9ex.c:3605: Test marked todo: Expected device window extended style 0x108, got 0x8, i=0.
+d3d9ex.c:3633: Test marked todo: Expected device window style 0x4cf0000, got 0xb40b0000, i=0.
+d3d9ex.c:3637: Test marked todo: Expected device window extended style 0x100, got 0x8, i=0.
+d3d9ex.c:3516: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=1.
+d3d9ex.c:3521: Test marked todo: Expected device window extended style 0x100, got 0x8, i=1.
+d3d9ex.c:3540: Test marked todo: Client rect and window rect are equal, i=1.
+d3d9ex.c:3600: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=1.
+d3d9ex.c:3605: Test marked todo: Expected device window extended style 0x108, got 0x8, i=1.
+d3d9ex.c:3633: Test marked todo: Expected device window style 0x34cf0000, got 0xb40b0000, i=1.
+d3d9ex.c:3637: Test marked todo: Expected device window extended style 0x100, got 0x8, i=1.
+d3d9ex.c:3516: Test marked todo: Expected device window style 0x4cf0000, got 0x840b0000, i=2.
+d3d9ex.c:3521: Test marked todo: Expected device window extended style 0x100, got 0, i=2.
+d3d9ex.c:3534: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=2.
+d3d9ex.c:3540: Test marked todo: Client rect and window rect are equal, i=2.
+d3d9ex.c:3552: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=2.
+d3d9ex.c:3600: Test marked todo: Expected device window style 0x4cf0000, got 0x840b0000, i=2.
+d3d9ex.c:3605: Test marked todo: Expected device window extended style 0x100, got 0, i=2.
+d3d9ex.c:3633: Test marked todo: Expected device window style 0x4cf0000, got 0x840b0000, i=2.
+d3d9ex.c:3637: Test marked todo: Expected device window extended style 0x100, got 0, i=2.
+d3d9ex.c:3516: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=3.
+d3d9ex.c:3521: Test marked todo: Expected device window extended style 0x100, got 0, i=3.
+d3d9ex.c:3534: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=3.
+d3d9ex.c:3540: Test marked todo: Client rect and window rect are equal, i=3.
+d3d9ex.c:3552: Test marked todo: Expected (0,0)-(756,491), got (0,0)-(1512,982), i=3.
+d3d9ex.c:3600: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=3.
+d3d9ex.c:3605: Test marked todo: Expected device window extended style 0x100, got 0, i=3.
+d3d9ex.c:3633: Test marked todo: Expected device window style 0x14cf0000, got 0x940b0000, i=3.
+d3d9ex.c:3637: Test marked todo: Expected device window extended style 0x100, got 0, i=3.
+d3d9ex.c:4026: Test marked todo: Got unexpected hr 0x80004001.
+d3d9ex.c:4027: Test marked todo: Got unexpected iface 00000000DEADBEEF.
+d3d9ex.c:4540: Test marked todo: Test 2D 0: Got unexpected hr 0.
+d3d9ex.c:4540: Test marked todo: Test 2D 2: Got unexpected hr 0.
+d3d9ex.c:4540: Test marked todo: Test 2D 3: Got unexpected hr 0.
+d3d9ex.c:4540: Test marked todo: Test 2D 6: Got unexpected hr 0.
+d3d9ex.c:4402: Test marked todo: Test 2D 23: Got unexpected hr 0.
+d3d9ex.c:4402: Test marked todo: Test 2D 30: Got unexpected hr 0.
+d3d9ex.c:4418: Test marked todo: Test CUBE 23: Got unexpected hr 0.
+d3d9ex.c:4418: Test marked todo: Test CUBE 30: Got unexpected hr 0.
+d3d9ex.c:4471: Test marked todo: Test PLAIN 1: Got unexpected hr 0.
+d3d9ex.c:4471: Test marked todo: Test PLAIN 8: Got unexpected hr 0.
+d3d9ex.c:4471: Test marked todo: Test PLAIN 22: Got unexpected hr 0.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 0: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 1: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 2: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 3: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 4: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 5: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 6: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 7: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 8: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 9: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 10: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 11: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 12: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 13: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 14: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 15: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 16: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 17: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 18: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 19: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 20: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 21: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 22: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 23: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 24: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 25: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 26: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 27: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 28: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 29: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 30: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 31: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 32: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 33: Got unexpected hr 0x80004001.
+d3d9ex.c:4483: Test marked todo: Test PLAIN_EX 34: Got unexpected hr 0x80004001.
+0020:d3d9ex: 2951 tests executed (107 marked as todo, 2 as flaky, 24 failures), 3 skipped.

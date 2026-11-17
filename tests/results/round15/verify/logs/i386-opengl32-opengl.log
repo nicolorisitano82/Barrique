@@ -1,0 +1,171 @@
+opengl.c:2674: Test failed: DIB: wglCreateContext failed, error 6
+opengl.c:2679: Test succeeded inside todo block: DIB: got wglGetExtensionsStringEXT 00000000
+opengl.c:2681: Test succeeded inside todo block: DIB: got wglGetExtensionsStringARB 00000000
+opengl.c:2684: Test failed: DIB: got 0
+opengl.c:2686: Test failed: DIB: got 0
+opengl.c:2690: Test failed: DIB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2693: Test failed: DIB: got 0x4cecd0
+opengl.c:2705: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2708: Test failed: DIB: got 0x4cecd0
+opengl.c:2715: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2721: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2724: Test failed: DIB: got 0x4cecd0
+opengl.c:2731: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2735: Test failed: DIB: got 0x4cecd0
+opengl.c:2738: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2748: Test failed: DIB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2753: Test failed: DIB: got 0x4cecd0
+opengl.c:2759: Test failed: DIB: got 0x4cecd0
+opengl.c:2772: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2778: Test failed: DIB: got 0x4cecd0
+opengl.c:2781: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2782: Test failed: DIB: got 0xdcdcdcdc
+opengl.c:2786: Test failed: DIB: wglMakeCurrent failed, error 6
+opengl.c:2792: Test failed: DIB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2800: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2801: Test failed: DIB: got 0xdcdcdcdc
+opengl.c:2807: Test failed: DIB: wglCreateContext failed, error 6
+opengl.c:2814: Test failed: DIB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2822: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2823: Test marked todo: DIB: got 0xdcdcdcdc
+opengl.c:2831: Test failed: DIB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2839: Test failed: DIB: got 0xcdcdcdcd
+opengl.c:2840: Test failed: DIB: got 0xdcdcdcdc
+opengl.c:2851: Test failed: DIB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2859: Test marked todo: DIB: got 0xcdcdcdcd
+opengl.c:2861: Test failed: DIB: got 0xdcdcdcdc
+opengl.c:2674: Test failed: DDB: wglCreateContext failed, error 6
+opengl.c:2679: Test succeeded inside todo block: DDB: got wglGetExtensionsStringEXT 00000000
+opengl.c:2681: Test succeeded inside todo block: DDB: got wglGetExtensionsStringARB 00000000
+opengl.c:2684: Test failed: DDB: got 0
+opengl.c:2686: Test failed: DDB: got 0
+opengl.c:2690: Test failed: DDB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2693: Test failed: DDB: got 0x4cecd0
+opengl.c:2705: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2708: Test failed: DDB: got 0x4cecd0
+opengl.c:2715: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2721: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2724: Test failed: DDB: got 0x4cecd0
+opengl.c:2731: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2735: Test failed: DDB: got 0x4cecd0
+opengl.c:2738: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2748: Test failed: DDB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2753: Test failed: DDB: got 0x4cecd0
+opengl.c:2772: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2778: Test failed: DDB: got 0x4cecd0
+opengl.c:2781: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2782: Test failed: DDB: got 0xdcdcdcdc
+opengl.c:2786: Test failed: DDB: wglMakeCurrent failed, error 6
+opengl.c:2792: Test failed: DDB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2800: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2801: Test failed: DDB: got 0xdcdcdcdc
+opengl.c:2807: Test failed: DDB: wglCreateContext failed, error 6
+opengl.c:2814: Test failed: DDB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2822: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2824: Test failed: DDB: got 0xdcdcdcdc
+opengl.c:2831: Test failed: DDB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2839: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2840: Test failed: DDB: got 0xdcdcdcdc
+opengl.c:2851: Test failed: DDB: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:2860: Test failed: DDB: got 0xcdcdcdcd
+opengl.c:2861: Test failed: DDB: got 0xdcdcdcdc
+opengl.c:2914: Test marked todo: Failed to get a 16 bit pixel format with the DRAW_TO_BITMAP flag.
+opengl.c:2918: Tests skipped: Skipping 16-bit rendering test (no 16 bit pixel format with the DRAW_TO_BITMAP flag was available)
+opengl.c:3080: Test failed: wglCreateContext failed, error 6
+opengl.c:3085: Test failed: got 0
+opengl.c:3087: Test failed: got 0
+opengl.c:3091: Test failed: got viewport (-842150451,-842150451)-(-842150451,-842150451)
+opengl.c:3095: Test failed: got 0x1620000
+opengl.c:3101: Test failed: got 0xcdcdcdcd
+opengl.c:3103: Test failed: got 0x1620000
+opengl.c:3107: Test failed: got 0xcdcdcdcd
+opengl.c:3109: Test failed: got 0xcdcdcdcd
+opengl.c:3111: Test failed: got 0x1620000
+opengl.c:3115: Test failed: got 0xcdcdcdcd
+opengl.c:3117: Test failed: got 0x1620000
+opengl.c:3118: Test failed: got 0xcdcdcdcd
+opengl.c:3121: Test failed: got 0x1620000
+opengl.c:3124: Test marked todo: got 0x1620000
+opengl.c:3718: Test failed: Failed to create GL context, last error 0x578.
+opengl.c:3727: Test failed: Failed to clear current context, last error 0x6.
+opengl.c:3730: Test failed: Failed to delete GL context, last error 0x6.
+opengl.c:4315: Test failed: Failed to create GL context, last error 0x578.
+opengl.c:4322: Test failed: Viewport not equal to client rect.
+opengl.c:4325: Test failed: Failed to clear current context, last error 0x6.
+opengl.c:4328: Test failed: Failed to delete GL context, last error 0x6.
+opengl.c:4335: Test failed: got 00000000
+opengl.c:4338: Test failed: glGetError returned 0x502, error 6
+opengl.c:4341: Test failed: glGetError returned 0x502, error 6
+opengl.c:4343: Test failed: glGetError returned 0x502, error 6
+opengl.c:4347: Test failed: got 0xdeadbeef
+opengl.c:4348: Test failed: glGetError returned 0x502, error 6
+opengl.c:4355: Test failed: got 0xdeadbeef
+opengl.c:4356: Test failed: glGetError returned 0x502, error 6
+opengl.c:4359: Test failed: glGetError returned 0x502, error 6
+opengl.c:4363: Test failed: got 0xdeadbeef
+opengl.c:4364: Test failed: glGetError returned 0x502, error 6
+opengl.c:4373: Test failed: got 0xdeadbeef
+opengl.c:4374: Test failed: glGetError returned 0x502, error 6
+opengl.c:4235: Test failed: got 00000000
+opengl.c:4237: Test failed: glGetError returned 0x502, error 0
+opengl.c:4239: Test failed: glGetError returned 0x502, error 0
+opengl.c:4243: Test marked todo: got 0xdeadbeef
+opengl.c:4244: Test failed: glGetError returned 0x502, error 0
+opengl.c:4247: Test failed: glGetError returned 0x502, error 0
+opengl.c:4249: Test failed: glGetError returned 0x502, error 0
+opengl.c:4253: Test failed: got 0xdeadbeef
+opengl.c:4254: Test failed: glGetError returned 0x502, error 0
+opengl.c:4256: Test failed: wglMakeCurrent returned 0, error 6
+opengl.c:4257: Test failed: wglDeleteContext returned 0, error 6
+opengl.c:4383: Test marked todo: got 0xdeadbeef
+opengl.c:4384: Test failed: glGetError returned 0x502, error 6
+opengl.c:4393: Test marked todo: got 0xdeadbeef
+opengl.c:4394: Test failed: glGetError returned 0x502, error 6
+opengl.c:4398: Test failed: got 00000000
+opengl.c:4400: Test failed: glGetError returned 0x502, error 6
+opengl.c:4402: Test failed: glGetError returned 0x502, error 6
+opengl.c:4406: Test failed: got 0xdeadbeef
+opengl.c:4407: Test failed: glGetError returned 0x502, error 6
+opengl.c:4409: Test failed: wglMakeCurrent returned 0, error 6
+opengl.c:4410: Test failed: wglDeleteContext returned 0, error 6
+opengl.c:4413: Test failed: wglDeleteContext returned 0, error 6
+opengl.c:4420: Test failed: got 00000000
+opengl.c:4422: Test failed: glGetError returned 0x502, error 6
+opengl.c:4424: Test failed: glGetError returned 0x502, error 6
+opengl.c:4428: Test failed: got 0xdeadbeef
+opengl.c:4429: Test failed: glGetError returned 0x502, error 6
+opengl.c:4431: Test failed: wglMakeCurrent returned 0, error 6
+opengl.c:4432: Test failed: wglDeleteContext returned 0, error 6
+opengl.c:4433: Test failed: SwapBuffers returned 0, error 6
+opengl.c:4491: Test failed: Failed to create GL context, last error 0x578.
+opengl.c:4498: Test failed: Viewport not equal to client rect.
+opengl.c:4503: Test failed: Failed glClear, error 0x502.
+opengl.c:4505: Test failed: Failed SwapBuffers, error 0x578.
+opengl.c:4508: Test failed: Failed to clear current context, last error 0x6.
+opengl.c:4511: Test failed: Failed to delete GL context, last error 0x6.
+opengl.c:6190: OpenGL renderer: (null)
+opengl.c:6191: OpenGL driver version: (null)
+opengl.c:6192: OpenGL vendor: (null)
+opengl.c:3233: Tests skipped: skipping wglGetProcAddress tests because no GL extensions supported
+opengl.c:3179: Tests skipped: wglCreateContext failed!
+opengl.c:2396: Test failed: wglCreateContext failed
+opengl.c:2426: Test failed: wglMakeCurrent failed
+opengl.c:5056: Test failed: wglGetCurrentContext failed, last error 0x6.
+opengl.c:5059: Test failed: Failed to create GL context, last error 0x6.
+opengl.c:5066: Test failed: got 0
+opengl.c:5071: Test failed: Failed to create GL context, last error 0x6.
+opengl.c:5074: Test failed: Failed to copy GL context, last error 0x6.
+opengl.c:5076: Test failed: got 0
+opengl.c:5078: Test failed: got 0
+opengl.c:5083: Test failed: got 0
+opengl.c:5085: Test failed: got 0
+opengl.c:5095: Test failed: got 0
+opengl.c:5097: Test failed: got 0
+opengl.c:5100: Test failed: Failed to copy GL context, last error 0x6.
+opengl.c:5104: Test failed: got 0
+opengl.c:5106: Test failed: got 0
+opengl.c:5109: Test failed: wglMakeCurrent failed, last error 0x6.
+opengl.c:5111: Test failed: Failed to delete GL context, last error 0x6.
+opengl.c:5113: Test failed: Failed to delete GL context, last error 0x6.
+opengl.c:6207: Test failed: wglGetExtensionsStringARB is not available
+0168:opengl: 6458 tests executed (7 marked as todo, 0 as flaky, 157 failures), 3 skipped.

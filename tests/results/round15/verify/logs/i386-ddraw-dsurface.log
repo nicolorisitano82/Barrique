@@ -1,0 +1,15 @@
+dsurface.c:797: Test failed: Got hr 0x88760233.
+dsurface.c:915: Tests skipped: Hardware DXTN textures not supported
+dsurface.c:926: Test failed: Got hr 0x80004001.
+dsurface.c:1043: Tests skipped: Hardware DXTN textures not supported
+dsurface.c:1471: Tests skipped: DDraw reported no VIDEOMEMORY cap. Broken video driver? Skipping surface caps tests.
+dsurface.c:1614: Tests skipped: DDraw reported no VIDEOMEMORY cap. Broken video driver? Skipping surface caps tests.
+dsurface.c:2112: Test failed: Got hr 0x80004005.
+dsurface.c:2245: Tests skipped: D3DFMT_DXT1 surfaces not supported, skipping partial block lock test
+dsurface.c:2245: Tests skipped: D3DFMT_DXT2 surfaces not supported, skipping partial block lock test
+dsurface.c:2245: Tests skipped: D3DFMT_DXT3 surfaces not supported, skipping partial block lock test
+dsurface.c:2245: Tests skipped: D3DFMT_DXT4 surfaces not supported, skipping partial block lock test
+dsurface.c:2245: Tests skipped: D3DFMT_DXT5 surfaces not supported, skipping partial block lock test
+dsurface.c:2245: Tests skipped: D3DFMT_UYVY surfaces not supported, skipping partial block lock test
+dsurface.c:2245: Tests skipped: D3DFMT_YUY2 surfaces not supported, skipping partial block lock test
+013c:dsurface: 856 tests executed (0 marked as todo, 0 as flaky, 3 failures), 11 skipped.

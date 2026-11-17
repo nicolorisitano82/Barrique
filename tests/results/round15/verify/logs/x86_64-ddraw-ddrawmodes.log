@@ -1,0 +1,17 @@
+ddrawmodes.c:144: Calling DirectDrawEnumerateA with test_nullcontext_callbackA callback and NULL context.
+ddrawmodes.c:110: test_nullcontext_callbackA: 0000000000000000 DirectDraw HAL display 0000000000000000
+ddrawmodes.c:149: Calling DirectDrawEnumerateA with test_context_callbackA callback and non-NULL context.
+ddrawmodes.c:121: test_context_callbackA: 0000000000000000 DirectDraw HAL display 00000000DEADBEEF
+ddrawmodes.c:245: Calling DirectDrawEnumerateExA with empty flags and NULL context.
+ddrawmodes.c:193: test_nullcontext_callbackExA: 0000000000000000 DirectDraw HAL display 0000000000000000 0000000000000000
+ddrawmodes.c:250: Calling DirectDrawEnumerateExA with empty flags and non-NULL context.
+ddrawmodes.c:204: test_context_callbackExA: 0000000000000000 DirectDraw HAL display 00000000DEADBEEF 0000000000000000
+ddrawmodes.c:217: test_count_callbackExA: 0000000000000000 DirectDraw HAL display 000000700C23FD10 0000000000000000
+ddrawmodes.c:217: test_count_callbackExA: 0000000000000000 DirectDraw HAL display 000000700C23FD10 0000000000000000
+ddrawmodes.c:217: test_count_callbackExA: 000000700C23FAD8 NVIDIA GeForce 6800 \\.\DISPLAY1 000000700C23FD10 0000000000000001
+ddrawmodes.c:217: test_count_callbackExA: 000000700C23FAD8 NVIDIA GeForce 6800 \\.\DISPLAY2 000000700C23FD10 0000000000000002
+ddrawmodes.c:270: Calling DirectDrawEnumerateExA with all flags set and NULL context.
+ddrawmodes.c:193: test_nullcontext_callbackExA: 0000000000000000 DirectDraw HAL display 0000000000000000 0000000000000000
+ddrawmodes.c:193: test_nullcontext_callbackExA: 000000700C23FAD8 NVIDIA GeForce 6800 \\.\DISPLAY1 0000000000000000 0000000000000001
+ddrawmodes.c:193: test_nullcontext_callbackExA: 000000700C23FAD8 NVIDIA GeForce 6800 \\.\DISPLAY2 0000000000000000 0000000000000002
+072c:ddrawmodes: 1543 tests executed (0 marked as todo, 0 as flaky, 0 failures), 0 skipped.

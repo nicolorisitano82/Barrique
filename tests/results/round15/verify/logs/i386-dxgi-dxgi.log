@@ -1,0 +1,13 @@
+dxgi.c:987: Tests skipped: Failed to create device.
+dxgi.c:1060: Tests skipped: Failed to create device.
+dxgi.c:1178: Tests skipped: DXGI 1.4 is not available.
+dxgi.c:1212: Tests skipped: Failed to create device.
+dxgi.c:1263: Tests skipped: Failed to create device.
+dxgi.c:1321: Tests skipped: Failed to create device.
+dxgi.c:8830: Tests skipped: Failed to create device.
+dxgi.c:1396: Tests skipped: Failed to create device.
+dxgi.c:1465: Tests skipped: Failed to create device.
+dxgi.c:1609: Tests skipped: Failed to create device.
+dxgi.c:4125: Test failed: Got unexpected hr 0x887a0004.
+dxgi.c:4126: Test failed: Got unexpected iface DEADBEEF.
+dxgi.c:4129: Test failed: Got unexpected hr 0x887a0004.

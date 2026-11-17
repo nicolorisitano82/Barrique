@@ -1,0 +1,30 @@
+d3d9ex.c:254: Tests skipped: Direct3D9 is not available
+d3d9ex.c:319: Tests skipped: Direct3D9Ex is not available
+d3d9ex.c:447: Tests skipped: Failed to create a D3D device, skipping swapchain GetDisplayModeEx tests.
+d3d9ex.c:411: Tests skipped: Direct3D9Ex is not available.
+d3d9ex.c:538: Tests skipped: Failed to create IDirect3D9Ex, hr 0x8876086a.
+d3d9ex.c:670: Tests skipped: Failed to create a D3D device.
+d3d9ex.c:748: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:933: Tests skipped: Failed to create a D3D device, skipping test.
+d3d9ex.c:1443: Tests skipped: Failed to create a D3D device.
+d3d9ex.c:1858: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:1924: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:1974: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:2026: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:2413: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:2788: Tests skipped: Failed to create IDirect3D9Ex, hr 0x8876086a.
+d3d9ex.c:3303: device_window 000F0070, focus_window 00100068, dummy_window 000F006C.
+d3d9ex.c:3320: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:3508: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:3722: Tests skipped: Failed to create IDirect3D9Ex, hr 0x8876086a.
+d3d9ex.c:3877: Tests skipped: Failed to create a D3D device.
+d3d9ex.c:3988: Tests skipped: Failed to create a D3D device.
+d3d9ex.c:4063: Tests skipped: Failed to create a D3D device.
+d3d9ex.c:4195: Tests skipped: Failed to create a D3D device.
+d3d9ex.c:4338: Tests skipped: Failed to create a D3D device.
+d3d9ex.c:4747: Tests skipped: Failed to create a D3D device.
+d3d9ex.c:4920: Tests skipped: Test 0: failed to create a D3D device.
+d3d9ex.c:4920: Tests skipped: Test 1: failed to create a D3D device.
+d3d9ex.c:4999: Tests skipped: Failed to create a D3D device, skipping tests.
+d3d9ex.c:5046: Tests skipped: Failed to create a D3D device.
+0154:d3d9ex: 13 tests executed (0 marked as todo, 0 as flaky, 0 failures), 28 skipped.

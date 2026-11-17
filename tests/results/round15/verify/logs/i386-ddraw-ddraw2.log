@@ -1,0 +1,143 @@
+ddraw2.c:17610: Driver string: "wined3d.dll"
+ddraw2.c:17611: Description string: "WineD3D DirectDraw Emulation"
+ddraw2.c:17612: Driver version 9.10.0.0
+ddraw2.c:1161: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:1277: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:1411: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:1411: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:1713: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:1947: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:1947: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:2062: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:2062: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:2199: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:2303: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:2531: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:2613: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:2776: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw2.c:2778: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2784: Test marked todo: Client rect and window rect are equal.
+ddraw2.c:2790: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw2.c:2792: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2812: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw2.c:2814: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2821: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2824: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2828: Test marked todo: Expected window style 0x4cf0000, got 0x840b0000.
+ddraw2.c:2831: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2859: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2862: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2883: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2885: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2906: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2908: Test marked todo: Expected window extended style 0x100, got 0.
+ddraw2.c:2921: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2924: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2941: Test marked todo: Expected window style 0x14cf0000, got 0x940b0000.
+ddraw2.c:2944: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:2950: Test marked todo: Expected window style 0x34cf0000, got 0xb40b0000.
+ddraw2.c:2953: Test marked todo: Expected window extended style 0x108, got 0x8.
+ddraw2.c:3266: Test failed: Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+ddraw2.c:3278: Test failed: Expected surface width 1024, got 1512.
+ddraw2.c:3280: Test failed: Expected surface height 640, got 982.
+ddraw2.c:3284: Test failed: Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+ddraw2.c:3299: Test failed: Expected message 0x5, but didn't receive it.
+ddraw2.c:3301: Test failed: Expected screen size 960x600, got 0x0.
+ddraw2.c:3306: Test failed: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:3311: Test failed: Expected surface width 1024, got 1512.
+ddraw2.c:3313: Test failed: Expected surface height 640, got 982.
+ddraw2.c:3332: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3334: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3339: Test marked flaky: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:3354: Test failed: Expected message 0x47, but didn't receive it.
+ddraw2.c:3356: Test failed: Expected screen size 1024x640, got 0x0.
+ddraw2.c:3361: Test failed: Expected (0,0)-(1024,640), got (0,0)-(1512,982).
+ddraw2.c:780: Test failed: Got unexpected wparam 0x1 for message 0x5, expected 0.
+ddraw2.c:3367: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw2.c:3378: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw2.c:3381: Test failed: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:3385: Test failed: Got unexpected screen size 1512x982.
+ddraw2.c:3427: Test marked flaky: Expected message 0x46, but didn't receive it.
+ddraw2.c:3430: Test marked flaky: Expected screen size 1512x982, got 0x0.
+ddraw2.c:3442: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3444: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3540: Test marked todo: Got unexpected hr 0.
+ddraw2.c:3557: Test failed: Got unexpected hr 0.
+ddraw2.c:3568: Test failed: Got unexpected hr 0.
+ddraw2.c:3570: Test failed: Got unexpected hr 0.
+ddraw2.c:3604: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3606: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3626: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw2.c:3637: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3639: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3737: Test marked todo: Got unexpected hr 0.
+ddraw2.c:3754: Test failed: Got unexpected hr 0.
+ddraw2.c:3758: Test failed: Got unexpected hr 0.
+ddraw2.c:3760: Test failed: Got unexpected hr 0.
+ddraw2.c:3794: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3796: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3816: Test failed: Expected message 0x7e, but didn't receive it.
+ddraw2.c:3827: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3829: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3891: Test failed: Expected message 0x5, but didn't receive it.
+ddraw2.c:3893: Test failed: Expected screen size 1512x982, got 0x0.
+ddraw2.c:3943: Test failed: Expected surface width 960, got 1512.
+ddraw2.c:3945: Test failed: Expected surface height 600, got 982.
+ddraw2.c:3976: Test failed: Expected message 0x47, but didn't receive it.
+ddraw2.c:3980: Test failed: Expected screen size 2 1512x982, got 0x0.
+ddraw2.c:3986: Test marked flaky: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:3989: Test failed: Expected (0,0)-(1512,982), got (0,0)-(208,123).
+ddraw2.c:4019: Test marked flaky: Expected (0,0)-(960,600), got (0,0)-(1512,982).
+ddraw2.c:4079: Test failed: Got a different mode.
+ddraw2.c:4100: Test failed: Got a different mode.
+ddraw2.c:4159: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4161: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4163: Test failed: Got unexpected screen height 982.
+ddraw2.c:4176: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4178: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4180: Test failed: Got unexpected screen height 982.
+ddraw2.c:4184: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4186: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4188: Test failed: Got unexpected screen height 982.
+ddraw2.c:4207: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4209: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4211: Test failed: Got unexpected screen height 982.
+ddraw2.c:4215: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4217: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4219: Test failed: Got unexpected screen height 982.
+ddraw2.c:4239: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4241: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4243: Test failed: Got unexpected screen height 982.
+ddraw2.c:4248: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4250: Test failed: Got unexpected screen height 982.
+ddraw2.c:4263: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4265: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4267: Test failed: Got unexpected screen height 982.
+ddraw2.c:4271: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4273: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4275: Test failed: Got unexpected screen height 982.
+ddraw2.c:4283: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4285: Test failed: Got unexpected screen height 982.
+ddraw2.c:4297: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4299: Test failed: Got unexpected screen width 1512.
+ddraw2.c:4301: Test failed: Got unexpected screen height 982.
+ddraw2.c:4374: Tests skipped: Failed to change display settings of the second monitor.
+ddraw2.c:4628: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4731: Test failed: Display mode restored after good ddraw1::SetCooperativeLevel call
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4744: Test failed: Display mode restored after ddraw1::SetCooperativeLevel(SETFOCUSWINDOW) call
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4760: Test failed: Display mode restored after good-bad ddraw1::SetCooperativeLevel() call sequence
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4779: Test failed: Display mode restored after ddraw1-ddraw2 SetCooperativeLevel() call sequence
+ddraw2.c:4687: Test failed: Failed to set display mode, hr 0x80004001.
+ddraw2.c:4889: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:5141: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:5417: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:5417: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:5835: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:5927: Tests skipped: Failed to create a 3D device, skipping test.
+ddraw2.c:6075: Test marked todo: PRIMARYSURFACE: Got unexpected hr 0.

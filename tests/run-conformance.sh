@@ -36,6 +36,8 @@ for module in "$@"; do
     tsv=$OUT/$arch-$module.tsv
     print "unit\tstatus\texecuted\tfailures\ttodo\tskipped\tseconds" > $tsv
     units=(${(f)"$(grep -o 'func_[a-z0-9_]*' dlls/$module/tests/testlist.c | sort -u | sed 's/func_//')"})
+    # UNITS="a b": only these units (for modules where only some are wanted)
+    [[ -n ${UNITS:-} ]] && units=(${=UNITS})
     for unit in $units; do
         log=$OUT/logs/$arch-$module-$unit.log
         start=$EPOCHSECONDS
