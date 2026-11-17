@@ -1,0 +1,38 @@
+dpi 192 screen 3024x1964
+gdi Segoe UI face=Segoe UI width=736
+gdi Segoe UI Semibold face=Segoe UI Semibold width=776
+gdi Calibri face=Calibri width=682
+gdi Cambria face=Cambria width=669
+gdi Consolas face=Consolas width=918
+gdi Tahoma face=Tahoma width=744
+gdi Arial face=Arial width=739
+gdi Times New Roman face=Times New Roman width=659
+gdi Courier New face=Courier New width=918
+gdi MS Gothic face=MS Gothic width=854
+gdi SimSun face=SimSun width=677
+gdi Microsoft JhengHei face=Microsoft JhengHei width=784
+gdi Malgun Gothic face=Malgun Gothic width=714
+dwrite Segoe UI found=1 width=373.83
+dwrite Segoe UI Semibold found=1 width=373.83
+dwrite Calibri found=1 width=342.21
+dwrite Cambria found=1 width=339.09
+dwrite Consolas found=1 width=476.82
+dwrite Tahoma found=1 width=376.66
+dwrite Arial found=1 width=375.86
+dwrite Times New Roman found=1 width=345.01
+dwrite Courier New found=1 width=475.28
+dwrite MS Gothic found=0 width=376.66
+dwrite SimSun found=1 width=340.05
+dwrite Microsoft JhengHei found=1 width=396.57
+dwrite Malgun Gothic found=1 width=358.45
+fallback U+3042 -
+fallback U+6F22 -
+fallback U+4E2D -
+fallback U+7E41 -
+fallback U+D55C Apple SD Gothic Neo
+fallback U+05D0 Tahoma
+fallback U+0627 Tahoma
+fallback U+0E01 Tahoma
+fallback U+2603 Apple Symbols
+fallback U+1F600 Apple Color Emoji
+RESULT: ok

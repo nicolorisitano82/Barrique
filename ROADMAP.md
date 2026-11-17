@@ -130,8 +130,8 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 - ✅ Grafica a 64 bit sotto HVF: stringhe e buffer GL, blocco e use-after-free in winemac (giro 6, 2026-11-16).
 - ✅ Passo 1, FreeType e font (giro 7, 2026-11-16): FreeType incluso con `@rpath`, 35 unità migliorate. Dal test di fumo: `fork()` da un thread Windows sotto HVF (installer VC++, crash all'uscita dei processi), winedbg e wineserver col debugger.
 - 🔧 Passo 2, audio (giro 8, in corso): timer di coreaudio, salvataggio del registro in un processo figlio (via il buco audio di ~60 ms ogni 20 s). 96 kHz provato; resta il Bluetooth.
-- 🔧 Passo 3, video (giro 10, in corso): GStreamer 1.28 con gst-libav sopra FFmpeg LGPL compilati da noi in `deps/`; Media Foundation decodifica H.264, HEVC, VP9, AAC, MP3, WMV2/WMA2 sulle tre architetture. Da verificare MPEG-2 e i386 in quartz.
-- ⬜ Passo 1b, qualità del testo (Retina, hinting, font con metriche di Windows, fallback DirectWrite).
+- 🔧 Passo 3, video (giro 10, in corso): GStreamer 1.28 con gst-libav sopra FFmpeg LGPL compilati da noi in `deps/`; Media Foundation decodifica H.264, HEVC, VP9, AAC, MP3, WMV2/WMA2 sulle tre architetture. Verificati i386 (correzione WoW64) e MPEG in DirectShow; MPEG-2 in Media Foundation non è supportato da Wine upstream.
+- ✅ Passo 1b, qualità del testo (giro 11): Retina a 192 DPI nei default dei prefissi della `.app`, Selawik/Carlito/Caladea per Segoe UI/Calibri/Cambria, sostituzioni CJK anche per DirectWrite, fallback DirectWrite sui font macOS. Restano i programmi non DPI-aware sotto Retina.
 - ⬜ Passi 4-7: memoria GPU, Vulkan/MoltenVK, banco di prova grafico, Direct3D.
 
 - ⬜ **[MS]** Direct3D su Metal in versione ARM64X, così un'unica build serve sia ai programmi ARM64 sia a quelli x86-64 (ARM64EC). Componenti da valutare:

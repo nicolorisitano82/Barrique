@@ -1,0 +1,40 @@
+== aarch64-mf
+  mf: NEW mf.c:3331 Got different states.
+== aarch64-mfreadwrite
+  mfplat: 1 checks fixed
+== aarch64-quartz
+  filtergraph: better fail(5) -> ok(0)
+  filtergraph: 5 checks fixed
+  mpegsplit: better crash(-) -> ok(0)
+  mpegsplit: 3 checks fixed
+== i386-mf
+  transform: better crash(-) -> ok(0)
+  transform: 9 checks fixed
+== i386-mfreadwrite
+  mfplat: 1 checks fixed
+== i386-quartz
+  filtergraph: better timeout(-) -> fail(1)
+  filtergraph: 1 failing checks not comparable (baseline timeout, now fail)
+  mpegaudio: better timeout(-) -> fail(10)
+  mpegaudio: 2 failing checks not comparable (baseline timeout, now fail)
+  mpegaudio: 10 checks fixed
+  mpeglayer3: better timeout(-) -> ok(0)
+  mpeglayer3: 17 checks fixed
+  mpegsplit: better crash(-) -> ok(0)
+  mpegsplit: 3 checks fixed
+  mpegvideo: better timeout(-) -> fail(7)
+  mpegvideo: 1 failing checks not comparable (baseline timeout, now fail)
+  mpegvideo: 2 checks fixed
+== x86_64-mfreadwrite
+  mfplat: 1 checks fixed
+== x86_64-quartz
+  filtergraph: better fail(5) -> ok(0)
+  filtergraph: 5 checks fixed
+  mpegsplit: better crash(-) -> ok(0)
+  mpegsplit: 3 checks fixed
+  vmr9: WORSE ok(0) -> fail(2)
+  vmr9: NEW vmr9.c:2037 Got active window 0000000000000000.
+  vmr9: NEW vmr9.c:2054 Got active window 0000000000000000.
+
+units worse 1, better 10; failing checks new 3, fixed 60
+REGRESSIONS

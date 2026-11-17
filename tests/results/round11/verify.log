@@ -1,0 +1,13 @@
+aarch64 dwrite analyzer: ok (5303213 tests, 0 failures, 18s)
+aarch64 dwrite font: ok (479119 tests, 0 failures, 176s)
+aarch64 dwrite layout: fail (12283 tests, 4 failures, 46s)
+x86_64 dwrite analyzer: ok (5303213 tests, 0 failures, 23s)
+x86_64 dwrite font: timeout (- tests, - failures, 180s)
+x86_64 dwrite layout: fail (12283 tests, 4 failures, 48s)
+i386 dwrite analyzer: ok (5303213 tests, 0 failures, 28s)
+i386 dwrite font: timeout (- tests, - failures, 180s)
+i386 dwrite layout: fail (12283 tests, 4 failures, 51s)
+aarch64 cjkfont RESULT: ok textshot dwrite MS Gothic found=1 width=429.73 fallback U+3042 Hiragino Sans W3 fallback U+6F22 Hiragino Sans W3 fallback U+4E2D Hiragino Sans W3 fallback U+7E41 Hiragino Sans W3 fallback U+D55C Apple SD Gothic Neo fallback U+05D0 Tahoma fallback U+0627 Tahoma fallback U+0E01 Tahoma fallback U+2603 Apple Symbols fallback U+1F600 Apple Color Emoji RESULT: ok 
+x86_64 cjkfont RESULT: ok textshot dwrite MS Gothic found=1 width=429.73 fallback U+3042 Hiragino Sans W3 fallback U+6F22 Hiragino Sans W3 fallback U+4E2D Hiragino Sans W3 fallback U+7E41 Hiragino Sans W3 fallback U+D55C Apple SD Gothic Neo fallback U+05D0 Tahoma fallback U+0627 Tahoma fallback U+0E01 Tahoma fallback U+2603 Apple Symbols fallback U+1F600 Apple Color Emoji RESULT: ok 
+i686 cjkfont RESULT: ok textshot dwrite MS Gothic found=1 width=429.73 fallback U+3042 Hiragino Sans W3 fallback U+6F22 Hiragino Sans W3 fallback U+4E2D Hiragino Sans W3 fallback U+7E41 Hiragino Sans W3 fallback U+D55C Apple SD Gothic Neo fallback U+05D0 Tahoma fallback U+0627 Tahoma fallback U+0E01 Tahoma fallback U+2603 Apple Symbols fallback U+1F600 Apple Color Emoji RESULT: ok 
+VERIFY DONE

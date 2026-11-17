@@ -5,16 +5,21 @@
 # @loader_path/../../deps (build tree: <build>/deps, install tree:
 # <prefix>/lib/deps).
 #
-#   bundle-deps.sh <wine build or lib dir> [media prefix]
+#   bundle-deps.sh <wine build or lib dir> [media prefix] [fonts dir]
 #
 # FreeType and its libpng come from Homebrew (phase 5 step 1). The media stack
 # (FFmpeg, glib, GStreamer and its plugins, phase 5 step 3) comes from the
 # prefix built by build-gst.sh (default ~/Work/wine/deps-gst), already with
 # @rpath install names; plugins go to deps/gstreamer-1.0. Libraries are
 # re-signed ad hoc after install_name_tool.
+#
+# The fonts with Windows metrics (fetch-fonts.sh, default ~/Work/wine/deps-fonts,
+# phase 5 step 1b) go to <wine build>/fonts, the directory Wine loads its own
+# fonts from in a build tree (share/wine/fonts in an install tree).
 set -e
 dest=${1:?usage: bundle-deps.sh <wine build or lib dir> [media prefix]}/deps
 media=${2:-$HOME/Work/wine/deps-gst}
+fonts=${3:-$HOME/Work/wine/deps-fonts}
 src=${HOMEBREW_PREFIX:-/opt/homebrew}/opt
 mkdir -p $dest
 
@@ -52,4 +57,11 @@ for lib in $copied; do
         print -u2 "$lib: external library path left"; exit 1
     fi
 done
-print "deps in $dest: ${#copied} libraries"
+nfonts=0
+if [[ -d $fonts ]]; then
+    fdest=${dest:h}/fonts
+    [[ -d ${dest:h:h}/share/wine ]] && fdest=${dest:h:h}/share/wine/fonts   # install tree: <prefix>/lib/deps
+    mkdir -p $fdest
+    for f in $fonts/*.ttf(N); do install -m 644 $f $fdest/${f:t}; (( ++nfonts )); done
+fi
+print "deps in $dest: ${#copied} libraries; $nfonts fonts"

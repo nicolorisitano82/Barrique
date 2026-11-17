@@ -1,0 +1,18 @@
+Windows Registry Editor Version 5.00
+
+; Barrique: defaults for the prefixes the .app creates (phase 5 step 1b).
+; Retina: winemac.drv draws at the display's real resolution and Windows sees
+; 192 DPI, instead of drawing at 1x and letting macOS upscale (blurry text).
+; Text: grayscale antialiasing (no ClearType subpixel on Retina panels).
+; Not in wine.inf: the conformance tests expect 96 DPI.
+
+[HKEY_CURRENT_USER\Software\Wine\Mac Driver]
+"RetinaMode"="y"
+
+[HKEY_CURRENT_USER\Control Panel\Desktop]
+"LogPixels"=dword:000000c0
+"FontSmoothing"="2"
+"FontSmoothingType"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\System\CurrentControlSet\Hardware Profiles\Current\Software\Fonts]
+"LogPixels"=dword:000000c0

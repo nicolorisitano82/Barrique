@@ -1,0 +1,23 @@
+== aarch64-dwrite
+  font: WORSE ok(0) -> crash(-)
+  font: NEW font.c:7779 got 0
+  font: NEW font.c:7782 got 0
+  font: NEW font.c:7787 got 0
+== aarch64-user32
+  input: 2 checks fixed
+  menu: WORSE ok(0) -> fail(1)
+  menu: NEW menu.c:2472 test 25
+  msg: 1 checks fixed
+== i386-dwrite
+  font: WORSE ok(0) -> crash(-)
+  font: NEW font.c:7779 got 0
+  font: NEW font.c:7782 got 0
+  font: NEW font.c:7787 got 0
+== x86_64-dwrite
+  font: WORSE ok(0) -> crash(-)
+  font: NEW font.c:7779 got 0
+  font: NEW font.c:7782 got 0
+  font: NEW font.c:7787 got 0
+
+units worse 4, better 0; failing checks new 10, fixed 3
+REGRESSIONS

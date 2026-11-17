@@ -1,0 +1,8 @@
+
+(wine:95000): GStreamer-Video-CRITICAL **: 01:11:15.952: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+
+(wine:95000): GStreamer-Video-CRITICAL **: 01:11:15.975: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+video 50 122.11 122.16 122.31 122.39 122.60 122.67 122.68 122.72 122.72 122.72 122.73 122.71 122.74 122.78 122.84 122.89 122.87 122.84 122.83 122.80 122.87 122.82 122.85 122.81 122.86 122.86 122.83 122.78 122.72 122.65 122.65 122.57 122.57 122.50 122.49 122.41 122.37 122.36 122.40 122.46 122.52 122.54 122.59 122.54 122.55 122.59 122.62 122.60 122.65 122.85
+
+(wine:95000): GStreamer-Video-CRITICAL **: 01:11:15.998: gst_video_info_from_caps: assertion 'gst_caps_is_fixed (caps)' failed
+audio 88201 44100 1 2883.9
