@@ -4,7 +4,7 @@ Obiettivo: Wine nativo arm64 su macOS, che esegue programmi Windows ARM64, x86-6
 
 Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalsharp/MetalSharp-Wine), da reimplementare (il loro codice è AGPL-3.0, Wine è LGPL: si prendono le idee, non il codice). Stato: ✅ fatto · 🔧 scritto, da provare · ⬜ da fare.
 
-## Stato attuale (2026-11-15)
+## Stato attuale (2026-11-17)
 
 | | Stato |
 |---|---|
@@ -15,6 +15,11 @@ Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalshar
 | Build Wine ARM64EC + i386 | ✅ compila |
 | x86-64 via ARM64EC nella VM (FEX) | ✅ `hello64.exe` RESULT ok |
 | x86 a 32 bit via WoW64 (FEX) nella VM, finestra di memoria a `0xE000000000` | ✅ `hello32.exe` RESULT ok, `syswow64` installata da wineboot |
+| Audio (CoreAudio, 44,1-96 kHz, Bluetooth) | ✅ fase 5 passo 2 |
+| Video (Media Foundation e DirectShow: H.264, HEVC, VP9, MPEG-1/2, WMV, AAC, MP3) | ✅ fase 5 passo 3, tre architetture |
+| OpenGL (GL 2.1 di Apple), D3D9 con wined3d | ✅ tre architetture |
+| Vulkan con MoltenVK, D3D12 con vkd3d | ✅ tre architetture (fase 5 passo 5) |
+| D3D11 con DXMT | ✅ ARM64 e x86-64, livello 11_1; ⬜ 32 bit (vedi fase 5) |
 
 ## Fase 1: x86 funzionante ✅ (chiusa il 2026-11-14)
 
@@ -133,14 +138,17 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 - ✅ Passo 3, video (giri 10-14): GStreamer 1.28 con gst-libav sopra FFmpeg LGPL compilati da noi in `deps/`; Media Foundation decodifica H.264, HEVC, VP9, AAC, MP3, WMV2/WMA2 sulle tre architetture. Verificati i386 (correzione WoW64) e MPEG in DirectShow. Giro 12: MPEG-1/2 anche in Media Foundation (gestore `.mpg/.vob/.ts`, decoder MPEG MFT, MP2 in `mp3dmod`), ok sulle tre architetture. Giro 13: mf `transform` da crash a 0 fallimenti sulle tre architetture (encoder H.264 di VideoToolbox, MPEG audio MFT a sé, `swscale` con `accurate_rnd` su ARM), mfreadwrite 0 fallimenti. Giro 14: decodifica VideoToolbox misurata (~4× meno CPU, bit-exact) ma spenta, rompe MPEG-2 e `h264dec`; riferimenti di prova più severi (dY 0,00).
 - ✅ Passo 1b, qualità del testo (giro 11): Retina a 192 DPI nei default dei prefissi della `.app`, Selawik/Carlito/Caladea per Segoe UI/Calibri/Cambria, sostituzioni CJK anche per DirectWrite, fallback DirectWrite sui font macOS. Giro 12: i programmi non DPI-aware sono scalati 2× da Wine come su Windows.
 - ✅ Passo 4, memoria della GPU nella VM (giro 15): copia come base (31,8–54,7 GB/s), importazione in Metal provata senza panic (memoria anonima prima e dopo l'uso della GPU, `MTLBuffer`, IOSurface); `hvf.c` rifiuta comunque le pagine della GPU finché un backend non le usa.
-- ⬜ Passi 5-7: Vulkan/MoltenVK, banco di prova grafico, Direct3D.
+- 🔧 Passo 5, Vulkan con MoltenVK (giri 16-18): MoltenVK 1.4.2 compilato da noi (`scripts/build-moltenvk.sh`), senza loader. Sotto HVF la memoria Vulkan visibile dalla CPU è memoria Windows importata (`VK_EXT_external_memory_host`, strategia del passo 4). vulkan-1 in fondo sulle tre architetture (13 fallimenti, tutti "succeeded inside todo"); d3d12 su vkd3d 671 controlli, 0 fallimenti anche su i386. Corretti: handle e puntatori WoW64 in winevulkan/win32u, `VK_EXT_surface_maintenance1` mai attivata (bug di Wine), blocchi su finestre nascoste/minimizzate/vuote, crash di MoltenVK sul thread di Metal, swapchain a 3 immagini (D3D12 da ~350 a ~850 fps). La grafica a 32 bit (opengl32, wined3d, d3d9/11/12) funziona dopo cinque correzioni WoW64 sotto HVF. Manca: cache delle pipeline di MoltenVK, cancello del passo.
+- 🔧 Passo 6, banco di prova grafico (giro 17): `tests/av/gears.c`, ingranaggi con OpenGL, D3D9, D3D11, D3D12 (FPS, primo fotogramma, controllo su un fotogramma riletto), tre architetture. OpenGL ~3300 fps, D3D9 ~2200, D3D12 ~850, D3D11 con DXMT 120-465 (sincronia col display). Mancano gli altri campioni (DirectDraw, Vulkan diretto), i riferimenti e la validazione di Metal.
+- 🔧 Passo 7, Direct3D (giro 19): **D3D11 con DXMT funziona** sotto HVF, livello 11_1, su programmi ARM64 e x86-64 (FEX). DXMT (main `0df8610`, LGPL) compilato senza modifiche: vieta il codice generato da AI, come FEX, quindi gli adattamenti sono dal lato Wine: `macdrv_functions` in winemac, buffer di DXMT su memoria Windows (`cocoa_dxmt.m`, swizzling di `newBufferWithLength`), DLL ARM64X (`scripts/build-dxmt.sh`), LLVM 15 per il suo compilatore di shader (`scripts/build-llvm15.sh`). wined3d resta il ripiego (D3D9 ok; D3D11 solo livello 9_3, senza shader). Mancano: installazione nella `.app` e interruttore `BARRIQUE_D3D=dxmt`, buffer negli heap Metal (finestra Metal sperimentale, spenta), confronto sul banco, i test d3d11/dxgi con DXMT.
+- **Programmi a 32 bit e D3D10/11 (decisione dell'utente, 2026-11-17: restano fuori):** DXMT non funziona a 32 bit sotto HVF. La sua libreria unix usa gli indirizzi Windows sotto i 4 GB senza tradurli (Barrique li tiene a `0xe000000000` + indirizzo, perché macOS non mappa sotto i 4 GB), e la correzione andrebbe fatta in DXMT, che non possiamo modificare. Per ora i 32 bit restano su wined3d (D3D9 e precedenti, OpenGL) e vkd3d (D3D12); D3D10/11 a 32 bit è fuori, come in CrossOver 27. Da riprendere se l'utente scrive la traduzione in DXMT (`wine_low_window_ptr` sui puntatori dei 32 bit in `winemetal_unix.c`).
 
-- ⬜ **[MS]** Direct3D su Metal in versione ARM64X, così un'unica build serve sia ai programmi ARM64 sia a quelli x86-64 (ARM64EC). Componenti da valutare:
-  - D3D10/11/12 con un fork di DXMT (Mullion);
-  - D3D9/10/11 con DXVK su MoltenVK;
-  - D3D12 con VKD3D-Proton.
+- 🔧 **[MS]** Direct3D su Metal in versione ARM64X, così un'unica build serve sia ai programmi ARM64 sia a quelli x86-64 (ARM64EC):
+  - ✅ D3D10/11 con DXMT, ARM64X (passo 7); niente fork, DXMT è usato com'è;
+  - ⬜ D3D9/10/11 con DXVK su MoltenVK (da confrontare con wined3d e DXMT sul banco);
+  - 🔧 D3D12 con vkd3d (quello di Wine) su MoltenVK funziona; VKD3D-Proton da valutare.
 - ⬜ **[MS]** OpenGL 4.6 su Metal (WineMetalGL) al posto del GL 4.1 di Apple.
-- ⬜ **[MS]** MoltenVK con cache delle pipeline.
+- 🔧 **[MS]** MoltenVK con cache delle pipeline: MoltenVK incluso (passo 5), cache delle pipeline da configurare.
 - ✅ **[MS]** FFmpeg (VideoToolbox/AudioToolbox) e GStreamer/gst-libav per `winedmo`, `winegstreamer`, Media Foundation e DirectShow (passo 3 di FASE5-AV).
 - ⬜ **[MS]** Controller: winebus con SDL2 + IOHID (XInput e DirectInput).
 - ⬜ **[MS]** Mouse raw con GCMouse e schermo intero nativo di macOS.
