@@ -1,0 +1,5 @@
+process awareness 0
+unaware dpi=96 caps=96 screen=1512x982 client=340x200 phys=340x200 text=197
+system dpi=192 caps=192 screen=3024x1964 client=680x400 phys=680x400 text=403
+permonitorv2 dpi=192 caps=192 screen=3024x1964 client=680x400 phys=680x400 text=403
+RESULT done

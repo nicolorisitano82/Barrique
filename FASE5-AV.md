@@ -97,7 +97,7 @@ Test di fumo dopo le due correzioni (`round7/smoke3`, `apps3.out`), confronto co
 ## Passo 1b: qualità del testo ✅ (parziale)
 
 Il difetto più visibile su un Mac non è FreeType ma la risoluzione: con `LogPixels=96` e senza `RetinaMode`, Wine disegna a 1× e macOS ingrandisce la finestra 2×, quindi ogni testo è sfocato. Ordine deciso (2026-11-17):
-1. **Retina nativo**: `HKCU\Software\Wine\Mac Driver` `RetinaMode=y` e `LogPixels=192` nei prefissi creati dalla `.app`. Da verificare: programmi che non dichiarano di gestire i DPI (li scala Wine), test user32 di finestre/DPI, app di prova.
+1. **Retina nativo**: `HKCU\Software\Wine\Mac Driver` `RetinaMode=y` e `LogPixels=192` nei prefissi creati dalla `.app`. Programmi che non dichiarano di gestire i DPI: verificato nel giro 12, Wine li scala 2× (vedi sotto). Da verificare: test user32 di finestre/DPI a 192, app di prova.
 2. **Hinting e contrasto**: `FontSmoothing` in scala di grigi (ClearType subpixel non serve su Retina), `FontSmoothingGamma`, interprete TrueType di FreeType (`truetype:interpreter-version=35` contro il v40 predefinito), da scegliere confrontando le immagini.
 3. **Font con le metriche di Windows**: Selawik (Segoe UI, OFL), Carlito (Calibri, OFL), Caladea (Cambria, Apache) nella `.app` e nelle sostituzioni integrate di `win32u/font.c` come i CJK; `FontLink\SystemLink` di Segoe UI e Tahoma verso i font Apple per simboli e scritture non latine. Download da approvare.
 4. **DirectWrite**: lista di fallback di `dwrite` per macOS (PingFang, Hiragino, Apple Color Emoji, Apple Symbols), oggi pensata per Linux.
@@ -107,14 +107,15 @@ Escluso: disegnare con CoreText invece di FreeType (metriche diverse da Windows,
 Misura: programma di prova `tests/av/textshot.exe` (tabella di font e dimensioni, GDI e DirectWrite, salvata in PNG) confrontato prima/dopo e, se disponibile, con un riferimento generato su Windows; test gdi32 `font`, user32 `text`, dwrite senza regressioni.
 
 **Fatto (2026-11-17, giro 11, `tests/results/round11`).**
-- **Retina**: `scripts/prefix-defaults.reg` (`RetinaMode=y`, `LogPixels=192` utente e macchina, `FontSmoothing=2` con `FontSmoothingType=1`, scala di grigi), da applicare ai prefissi della `.app`; non in `wine.inf` perché i test di conformità si aspettano 96 DPI. Provato su un prefisso nuovo (`prefix-retina`): DPI 192, schermo 3024×1964, testo nitido invece che ingrandito (`round11/after/textshot-compare.jpg`). Da provare ancora: programmi che non dichiarano di gestire i DPI, app reali, test user32 con 192 DPI.
+- **Retina**: `scripts/prefix-defaults.reg` (`RetinaMode=y`, `LogPixels=192` utente e macchina, `FontSmoothing=2` con `FontSmoothingType=1`, scala di grigi), da applicare ai prefissi della `.app`; non in `wine.inf` perché i test di conformità si aspettano 96 DPI. Provato su un prefisso nuovo (`prefix-retina`): DPI 192, schermo 3024×1964, testo nitido invece che ingrandito (`round11/after/textshot-compare.jpg`). Da provare ancora: app reali, test user32 con 192 DPI.
 - **Hinting e gamma**: a 192 DPI l'interprete TrueType 35 e `FontSmoothingGamma=1800` cambiano poco (gamma un po' più scura): restano i valori predefiniti (v40, gamma standard).
 - **Font con le metriche di Windows**: `scripts/fetch-fonts.sh` scarica a commit fissato, con somme SHA-256, Selawik 1.01 (Segoe UI, 5 pesi, OFL, nome riservato: file non modificati), Carlito (Calibri) e Caladea (Cambria) da google/fonts (OFL); `bundle-deps.sh` li copia nella cartella `fonts` di Wine (`share/wine/fonts` installato).
 - **Sostituzioni in `wine.inf`** (`HKCU\Software\Wine\Fonts\Replacements`, MULTI_SZ, non sovrascrivono valori esistenti), lette sia da GDI sia da DirectWrite: Segoe UI e i suoi pesi → Selawik, Segoe UI Symbol → Apple Symbols, Calibri → Carlito, Cambria → Caladea, Consolas → Menlo, e le famiglie CJK (come in `win32u/font.c`, che resta per i prefissi vecchi). DirectWrite chiama le famiglie Hiragino col peso ("Hiragino Sans W3", "Hiragino Mincho ProN W3", "Hiragino Sans GB W3"): sono tra i candidati. Segoe UI Emoji non è sostituito: chi lo chiede si aspetta le tabelle a colori COLR/CPAL, Apple Color Emoji usa `sbix` e il test dwrite `font` (come un programma) andava in crash.
 - **Fallback di DirectWrite** (`dwrite/analyzer.c`): i font macOS dopo i Noto in 41 voci (PingFang, Hiragino, Songti, Apple SD Gothic Neo, Geeza Pro, Arial Hebrew, Thonburi, Kohinoor, Apple Symbols) e una voce per le emoji (Apple Color Emoji).
 - **`tests/av/textshot.c`**: 13 famiglie a 9/11/14 pt con GDI e DirectWrite in BMP, più DPI, font scelto, larghezze e fallback per carattere. Risultato: tutte le famiglie trovate in GDI e DirectWrite, fallback giapponese e cinese → Hiragino Sans W3, coreano → Apple SD Gothic Neo, simboli → Apple Symbols, emoji → Apple Color Emoji; identico su aarch64, x86_64, i686.
 - Test (contro il giro 9): gdi32, user32 senza novità (resta `menu.c:2472`, già instabile); dwrite `layout` 3 controlli corretti; dwrite `font` ok (479.119 controlli, 0 fallimenti) ma ora dura 176-193 s per i font in più: col limite di 180 s del runner va in timeout su x86_64 e i386, con 300 s passa.
-- Aperti: ebraico, arabo e thai in DirectWrite ricadono su Tahoma (che li ha); programmi non DPI-aware sotto Retina; il default nella `.app` (fase 6).
+- **Programmi non DPI-aware (giro 12)**: `tests/av/dpitest.c` apre una finestra per contesto (non DPI-aware, system-aware, per-monitor v2) con cornice 300×150 logica, testo a 10 pt e scacchiera di 1 pixel; `tests/av/winbounds.swift` legge da macOS la dimensione reale delle finestre (CGWindowList, senza permesso di registrazione schermo). In `prefix-retina` le tre finestre misurano 340×232 punti (680×464 pixel): la non DPI-aware vede 96 DPI e 340×200, e Wine la ingrandisce 2× come Windows (un po' sfocata, come su Windows); le altre due vedono 192 DPI, 680×400, testo nitido. Uguale su aarch64, x86_64, i686. A 96 DPI (`prefix-tests`) tutte a 340×200.
+- Aperti: ebraico, arabo e thai in DirectWrite ricadono su Tahoma (che li ha); il default nella `.app` (fase 6).
 
 ## Passo 2: audio 🔧
 
@@ -168,7 +169,17 @@ Upstream Wine ha già il backend FFmpeg (`winedmo`), che nella nostra build è c
 
 Giro 10 rifatto (`round10/after2`, 2026-11-17): la correzione WoW64 funziona (su i386 spariscono 0xd0000005 e timeout, mf `transform` da crash a ok) e col demuxer MPEG quartz `mpegsplit` passa da crash a ok sulle tre architetture, `filtergraph` ok; 10 unità migliorate, 60 controlli corretti. MPEG-2 in Media Foundation resta non supportato: Wine upstream non registra un byte stream handler per `.mpg` (solo mp4/mov/3gp, asf/wmv/wma, avi, mp3, wav); in DirectShow funziona.
 
-Aperti: mf `transform`; i 14 fallimenti di mfreadwrite; gli avvisi di GStreamer (`gst_video_info_from_caps`, `gst_object_unref`) e `video_frame_wrap_buffer` di mfplat; HEVC e H.264 con VideoToolbox (oggi decoder software di FFmpeg, da misurare); copia degli IOSurface (passo 4).
+**MPEG in Media Foundation (giro 12, `tests/results/round12`).** Wine upstream non ha un byte stream handler per MPEG-1/2; Barrique lo aggiunge come su Windows:
+- `mfsrcsnk`: `MPEG2ByteStreamPlugin` (CLSID di Windows `40871c59-…`) per `.mpg .mpeg .mpe .m1v .m2v .mpv2 .vob .ts .m2ts .mts .tts`, `video/mpeg`, `video/mp2t`; demuxer FFmpeg di winedmo (program e transport stream). Usa sempre winedmo e i decoder MF, non il gestore GStreamer di upstream: lì il decodebin sceglie `avdec_mp2` senza parser e l'audio MP2 fallisce ("Received decoded subframe, but no pending frame").
+- `mfplat`: l'intestazione dei program stream (`00 00 01 BA`) fa riconoscere come `.mpg` anche i flussi senza URL.
+- winedmo: il video MPEG-2 esce come `MFVideoFormat_MPEG2` (prima come FOURCC).
+- winegstreamer: decoder MFT MPEG-1/2 (`wg_mpeg2_decoder`, gst-libav), esposto da `msmpeg2vdec` come `CLSID_MSMPEGDecoderMFT` ("Microsoft MPEG Video Decoder MFT"); caps `video/mpeg` mpegversion 2 nei due versi.
+- `mp3dmod`: accetta anche MPEG-1 layer I/II (`MFAudioFormat_MPEG`), che il suo mpg123 decodifica già; prima nessun decoder MF per MP2.
+- WoW64: i thunk di winedmo traducevano `url` e `context` con `UintToPtr` e il buffer del formato (`media_type.format`) non era tradotto: sotto HVF sono indirizzi della finestra bassa (`wine_low_window_ptr`). Su i686 nessun formato passava da winedmo prima di MPEG, per questo non si era visto.
+
+Risultato: `mpeg2.mpg` (MPEG-2 + MP2) ok sulle tre architetture, 50/50 fotogrammi, audio identico al riferimento (`round12/after2`); gli altri 6 file invariati; conformità aarch64: mfsrcsnk, mfplat, mp3dmod 0 fallimenti, mfreadwrite 11 (erano 14). Non coperto: audio AC3 dei DVD (nessun decoder MF).
+
+Aperti: **mf `transform` ancora in crash su aarch64 e x86_64** (da fare; su i386 ok dopo la correzione WoW64); gli 11 fallimenti di mfreadwrite; gli avvisi di GStreamer (`gst_video_info_from_caps`, `gst_object_unref`) e `video_frame_wrap_buffer` di mfplat; HEVC e H.264 con VideoToolbox (oggi decoder software di FFmpeg, da misurare); copia degli IOSurface (passo 4).
 
 ## Passo 4: memoria della GPU e la VM, esperimento ⬜ ⚠️
 
