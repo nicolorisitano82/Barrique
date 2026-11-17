@@ -1,0 +1,3 @@
+gears: 4320 vertices (2160, 1080, 1080), 640x480, 4.0 s per API, 64-bit build
+d3d12  ok   fps    268.7  frames   1075  first   844 ms  red 24.2% green 6.3% blue 4.7%  NVIDIA GeForce 6800
+RESULT gears ok 1/1

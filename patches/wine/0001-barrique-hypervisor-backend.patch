@@ -2178,7 +2178,7 @@ index c80226f..173124f 100644
          {
              ext[count].Type = MemExtendedParameterImageMachine;
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
-index 02b6d57..03fa507 100644
+index 02b6d57..c4f349b 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
 +++ b/dlls/ntdll/unix/signal_arm64.c
 @@ -29,6 +29,8 @@
@@ -2380,7 +2380,29 @@ index 02b6d57..03fa507 100644
      if (!is_inside_syscall( data, SP_sig(context) )) return FALSE;
  
      TRACE( "code=%x flags=%x addr=%p pc=%p\n",
-@@ -1392,6 +1523,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1150,6 +1281,21 @@ static void segv_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+     EXCEPTION_RECORD rec = { .ExceptionAddress = (void *)PC_sig(sigcontext) };
+     DWORD64 esr = get_fault_esr( sigcontext );
+ 
++#ifdef WINE_HVF
++    /* Barrique: a thread Wine did not create (Metal's completion queue, a GCD worker)
++     * has no thread data; handling the fault as a Windows exception faulted again
++     * and hung the process. Let it crash instead, with a macOS crash report. */
++    if (!data)
++    {
++        static const char msg[] = "wine: fault in a host thread that is not a Wine thread, crashing\n";
++        struct sigaction sa = { .sa_handler = SIG_DFL };
++        write( 2, msg, sizeof(msg) - 1 );
++        sigaction( SIGSEGV, &sa, NULL );
++        sigaction( SIGBUS, &sa, NULL );
++        return;
++    }
++#endif
++
+     switch (ESR_ELx_EC(esr))
+     {
+     case ESR_ELx_EC_IABT_LOW:
+@@ -1392,6 +1538,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      ucontext_t *sigcontext = _sigcontext;
      struct thread_data *data = get_thread_data();
  
@@ -2392,7 +2414,7 @@ index 02b6d57..03fa507 100644
      if (is_inside_syscall( data, SP_sig(sigcontext) )) abort_thread(0);
      user_mode_abort_thread( 0, get_syscall_frame( data ));
  }
-@@ -1440,6 +1576,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1440,6 +1591,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      extern const ULONG_PTR __wine_unix_call_dispatcher_user_stack;
      extern const ULONG_PTR call_user_mode_callback_user_stack_ptr;
  
@@ -2428,7 +2450,7 @@ index 02b6d57..03fa507 100644
      /* if we're in a syscall dispatcher, but not yet on the syscall stack, construct
       * the frame now from the signal context. */
      if ((ULONG_PTR)__wine_syscall_dispatcher <= PC_sig(sigcontext) &&
-@@ -1509,6 +1674,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1509,6 +1689,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      struct syscall_frame *frame = get_syscall_frame( data );
      DWORD i;
  
@@ -2438,7 +2460,7 @@ index 02b6d57..03fa507 100644
      if (!is_inside_syscall( data, SP_sig(sigcontext) )) return;
      if (!frame) return;
  
-@@ -1691,6 +1859,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
+@@ -1691,6 +1874,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
  }
  
  
@@ -2446,7 +2468,7 @@ index 02b6d57..03fa507 100644
  /***********************************************************************
   *           signal_start_thread
   */
-@@ -1728,6 +1897,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
+@@ -1728,6 +1912,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
                     "mov sp, x4\n\t"
                     "bl " __ASM_NAME("init_syscall_frame") "\n\t"
                     "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
@@ -2454,7 +2476,7 @@ index 02b6d57..03fa507 100644
  
  
  /***********************************************************************
-@@ -1966,4 +2136,432 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+@@ -1966,4 +2151,432 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
  __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
                        __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
  
@@ -5190,7 +5212,7 @@ index de1a484..c83a235 100644
      {
      case NtUserScrollBarWndProc:
 diff --git a/dlls/win32u/vulkan.c b/dlls/win32u/vulkan.c
-index 3265d74..829c52e 100644
+index 3265d74..8b8b5ea 100644
 --- a/dlls/win32u/vulkan.c
 +++ b/dlls/win32u/vulkan.c
 @@ -60,9 +60,30 @@ static const UINT EXTERNAL_FENCE_WIN32_BITS = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQ
@@ -5331,7 +5353,107 @@ index 3265d74..829c52e 100644
      return instance->p_vkGetPhysicalDevicePresentRectanglesKHR( physical_device->host.physical_device,
                                                                     surface->obj.host.surface, rect_count, rects );
  }
-@@ -3130,6 +3183,12 @@ static void vulkan_init_once(void)
+@@ -1901,6 +1954,14 @@ static VkResult win32u_vkCreateSwapchainKHR( VkDevice client_device, const VkSwa
+     create_info_host.imageExtent.width = max( create_info_host.imageExtent.width, capabilities.minImageExtent.width );
+     create_info_host.imageExtent.height = max( create_info_host.imageExtent.height, capabilities.minImageExtent.height );
+ 
++    /* Barrique: with two images MoltenVK waits ~2.3 ms per frame for a free
++     * CAMetalDrawable (MVK performance tracking, round 18), which capped everything
++     * presented through Vulkan at ~350 fps. Ask for three, the most CAMetalLayer
++     * allows; the application sees the extra image through vkGetSwapchainImagesKHR,
++     * which the specification allows. */
++    if (create_info_host.minImageCount < 3 && (!capabilities.maxImageCount || capabilities.maxImageCount >= 3))
++        create_info_host.minImageCount = 3;
++
+     if (!is_color_space_supported( physical_device, surface, create_info->imageFormat, VK_COLOR_SPACE_PASS_THROUGH_EXT ))
+         client_surface_set_color_space( surface->client, -1 );
+     else if (client_surface_set_color_space( surface->client, create_info->imageColorSpace ))
+@@ -1947,6 +2008,11 @@ static void win32u_vkDestroySwapchainKHR( VkDevice client_device, VkSwapchainKHR
+     if (allocator) FIXME( "Support for allocation callbacks not implemented yet\n" );
+     if (!swapchain) return;
+ 
++    /* Barrique: MoltenVK finishes a present in a Metal scheduled handler that runs on
++     * Metal's completion thread and still uses the swapchain image; destroying the
++     * swapchain right after a present (vulkan-1 does) crashed there now and then.
++     * Let the GPU work, presents included, finish first. */
++    if (device->p_vkDeviceWaitIdle) device->p_vkDeviceWaitIdle( device->host.device );
+     device->p_vkDestroySwapchainKHR( device->host.device, swapchain->obj.host.swapchain, NULL );
+     instance->p_remove_object( instance, &swapchain->obj.obj );
+ 
+@@ -2007,6 +2073,60 @@ static VkResult win32u_vkAcquireNextImageKHR( VkDevice client_device, VkSwapchai
+     return res;
+ }
+ 
++/* Barrique: MoltenVK gives a swapchain image back only once macOS reports its
++ * drawable as shown (addPresentedHandler), which a hidden or minimized window may
++ * never do (same with an empty client area), so the next vkAcquireNextImageKHR or
++ * the wait on its fence blocked forever. On Windows presenting to such a window
++ * completes at once. When every window of the present is hidden, minimized or has
++ * an empty client area, wait for the semaphores with an empty submit and give the
++ * images back with vkReleaseSwapchainImagesEXT (VK_EXT_swapchain_maintenance1)
++ * instead of presenting them. Presents with a pNext chain take the normal path. */
++static BOOL present_to_hidden_windows( struct vulkan_device *device, struct vulkan_queue *queue,
++                                       VkPresentInfoKHR *present_info, const VkSwapchainKHR *client_swapchains )
++{
++    VkPipelineStageFlags stages[16];
++    VkSubmitInfo submit = {.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO};
++    uint32_t i;
++
++    if (!device->p_vkReleaseSwapchainImagesEXT || present_info->pNext || !present_info->swapchainCount) return FALSE;
++    if (present_info->waitSemaphoreCount > ARRAY_SIZE(stages)) return FALSE;
++
++    for (i = 0; i < present_info->swapchainCount; i++)
++    {
++        struct swapchain *swapchain = swapchain_from_handle( client_swapchains[i] );
++        HWND hwnd = swapchain->surface->hwnd;
++        RECT rect;
++
++        if (is_window_visible( hwnd ) && !is_iconic( NtUserGetAncestor( hwnd, GA_ROOT ) ) &&
++            get_surface_rect( hwnd, &rect, get_dpi_for_window( hwnd ) ) && !IsRectEmpty( &rect ))
++            return FALSE;
++    }
++
++    if (present_info->waitSemaphoreCount)
++    {
++        for (i = 0; i < present_info->waitSemaphoreCount; i++) stages[i] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
++        submit.waitSemaphoreCount = present_info->waitSemaphoreCount;
++        submit.pWaitSemaphores = present_info->pWaitSemaphores;
++        submit.pWaitDstStageMask = stages;
++        if (device->p_vkQueueSubmit( queue->host.queue, 1, &submit, VK_NULL_HANDLE )) return FALSE;
++    }
++
++    for (i = 0; i < present_info->swapchainCount; i++)
++    {
++        VkReleaseSwapchainImagesInfoEXT release =
++        {
++            .sType = VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT,
++            .swapchain = present_info->pSwapchains[i],
++            .imageIndexCount = 1,
++            .pImageIndices = &present_info->pImageIndices[i],
++        };
++        device->p_vkReleaseSwapchainImagesEXT( device->host.device, &release );
++        if (present_info->pResults) present_info->pResults[i] = VK_SUCCESS;
++    }
++    TRACE( "windows hidden, released %u images instead of presenting\n", present_info->swapchainCount );
++    return TRUE;
++}
++
+ static VkResult win32u_vkQueuePresentKHR( VkQueue client_queue, const VkPresentInfoKHR *client_present_info )
+ {
+     VkPresentInfoKHR *present_info = (VkPresentInfoKHR *)client_present_info; /* cast away const, it has been copied in the thunks */
+@@ -2045,7 +2165,10 @@ static VkResult win32u_vkQueuePresentKHR( VkQueue client_queue, const VkPresentI
+         client_surface_update( surface->client );
+     }
+ 
+-    res = device->p_vkQueuePresentKHR( queue->host.queue, present_info );
++    if (present_to_hidden_windows( device, queue, present_info, client_swapchains ))
++        res = VK_SUCCESS;
++    else
++        res = device->p_vkQueuePresentKHR( queue->host.queue, present_info );
+ 
+     for (uint32_t i = 0; i < present_info->swapchainCount; i++)
+     {
+@@ -3130,6 +3253,12 @@ static void vulkan_init_once(void)
      VkResult res;
  
  #ifdef SONAME_LIBVULKAN

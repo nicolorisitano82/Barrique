@@ -1,0 +1,24 @@
+run 1: 1173 tests executed (9 marked as todo, 0 as flaky, 13 failures), 3 skipped. 0 foreign-thread faults
+run 2: 1173 tests executed (9 marked as todo, 0 as flaky, 13 failures), 3 skipped. 0 foreign-thread faults
+run 3: 1173 tests executed (9 marked as todo, 0 as flaky, 13 failures), 3 skipped. 0 foreign-thread faults
+run 4: 1173 tests executed (9 marked as todo, 0 as flaky, 13 failures), 3 skipped. 0 foreign-thread faults
+x86_64 vulkan-1 vulkan: fail (1173 tests, 13 failures, 1s)
+i386 vulkan-1 vulkan: fail (1173 tests, 13 failures, 3s)
+aarch64 gl     ok   fps   3231.8  frames  16159  first   344 ms  red 24.2% green 6.3% blue 4.7%  Apple M3 Max, GL 2.1 Metal - 91.7
+aarch64 d3d9   ok   fps   2262.5  frames  11313  first   191 ms  red 24.2% green 6.3% blue 4.7%  NVIDIA GeForce 6800
+aarch64 d3d11  FAIL CreateVertexShader: 0x80070057  NVIDIA GeForce 6800, level 9_3
+aarch64 d3d12  ok   fps    851.8  frames   4260  first   346 ms  red 24.2% green 6.3% blue 4.7%  NVIDIA GeForce 6800
+aarch64 RESULT gears FAILED 3/4
+x86_64 gl     ok   fps   3313.2  frames  16566  first   357 ms  red 24.2% green 6.3% blue 4.7%  Apple M3 Max, GL 2.1 Metal - 91.7
+x86_64 d3d9   ok   fps   2174.4  frames  10876  first   198 ms  red 24.2% green 6.3% blue 4.7%  NVIDIA GeForce 6800
+x86_64 d3d11  FAIL CreateVertexShader: 0x80070057  NVIDIA GeForce 6800, level 9_3
+x86_64 d3d12  ok   fps    842.0  frames   4211  first   343 ms  red 24.2% green 6.3% blue 4.7%  NVIDIA GeForce 6800
+x86_64 RESULT gears FAILED 3/4
+i686 gl     ok   fps   3252.3  frames  16262  first   354 ms  red 24.2% green 6.3% blue 4.7%  Apple M3 Max, GL 2.1 Metal - 91.7
+i686 d3d9   ok   fps   2034.3  frames  10173  first   287 ms  red 24.2% green 6.3% blue 4.7%  NVIDIA GeForce 6800
+i686 d3d11  FAIL CreateVertexShader: 0x80070057  NVIDIA GeForce 6800, level 9_3
+i686 d3d12  ok   fps    851.2  frames   4260  first   444 ms  red 24.2% green 6.3% blue 4.7%  NVIDIA GeForce 6800
+i686 RESULT gears FAILED 3/4
+[mvk-info]   Frame interval                                avg: 1.144 ms, latest: 0.686 ms, prev: 0.948 ms, min: 0.001 ms, max: 19.523 ms, count: 3000
+[mvk-info]   Retrieve a CAMetalDrawable                    avg: 0.929 ms, latest: 0.728 ms, prev: 0.610 ms, min: 0.001 ms, max: 15.758 ms, count: 3003
+DIAG3 DONE
