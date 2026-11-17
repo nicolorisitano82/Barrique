@@ -20,6 +20,7 @@ Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalshar
 | OpenGL (GL 2.1 di Apple), D3D9 con wined3d | ✅ tre architetture |
 | Vulkan con MoltenVK, D3D12 con vkd3d | ✅ tre architetture (fase 5 passo 5) |
 | D3D11 con DXMT | ✅ ARM64 e x86-64, livello 11_1; ⬜ 32 bit (vedi fase 5) |
+| `Barrique.app` unica (macOS 26+), prefisso in `~/Library/Application Support/Barrique` | ✅ costruita da `scripts/make-dist.sh`, provata con un prefisso nuovo (fase 6) |
 
 ## Fase 1: x86 funzionante ✅ (chiusa il 2026-11-14)
 
@@ -161,12 +162,13 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 
 Per ognuno dei componenti grafici e multimediali va controllata la licenza.
 
-## Fase 6: pacchetto e distribuzione
+## Fase 6: pacchetto e distribuzione 🔧 (in corso)
 
 **Requisito: il prodotto finale è un'unica `.app` autosufficiente, senza file sparsi nel sistema.** Dentro il bundle: loader, wineserver, librerie (`@rpath`/`@loader_path`, nessun percorso di Homebrew), DLL Wine per tutte le architetture, FEX, Mono, Gecko, font e strumenti. Niente installazioni in `/usr/local`, nessun `~/.wine` di default, nessun LaunchAgent. I dati che cambiano (prefix Windows, registro, programmi installati) stanno in **un'unica cartella dell'app**, `~/Library/Application Support/<NomeApp>/` (scelta dell'utente, 2026-11-14): scrivere dentro la `.app` ne romperebbe la firma. Cancellando la `.app` e quella cartella non resta nulla nel sistema.
 
-- ⬜ App `.app` con loader firmato e permesso `com.apple.security.hypervisor`. Basta la firma ad-hoc: **non serve un account sviluppatore Apple a pagamento**, a differenza dei 32 bit di MetalSharp.
-- ⬜ **[MS]** Pacchetto `dist/` rilocabile, con controllo dei Mach-O: solo arm64, `minos` ≤ 15.0, nessun percorso di libreria esterno.
+- ✅ App `.app` con loader firmato e permesso `com.apple.security.hypervisor` (giro 21, 2026-11-17): `scripts/make-dist.sh` costruisce `dist/Barrique.app` (1,1 GB): Wine installato nel bundle (`Contents/Resources/wine`), librerie in `lib/deps` con `@rpath` (FreeType, GStreamer/FFmpeg, MoltenVK), FEX nelle DLL di Wine, DXMT in `lib/wine/dxmt` (`winemetal.so` accanto a `winemac.so`), font, informazioni di debug tolte, firma ad hoc di ogni Mach-O e della `.app`; il permesso va al loader vero, `lib/wine/aarch64-unix/wine` (`bin/wine` lo avvia soltanto). Lanciatore `Contents/MacOS/barrique` (`barrique programma.exe`, `barrique --wine <comando>`): dati in `~/Library/Application Support/Barrique`, al primo avvio crea il prefisso (wineboot, Retina e font, chiavi di FEX, segnaposto di `winemetal.dll`), `BARRIQUE_D3D` sceglie il backend. Basta la firma ad hoc: **non serve un account sviluppatore Apple a pagamento**. Prova con solo il bundle e un prefisso nuovo (17 s): gears OpenGL, D3D9, D3D12 ok su aarch64, x86_64, i686; D3D11 con DXMT ok su aarch64 e x86_64.
+- ✅ **[MS]** Pacchetto rilocabile con controllo dei Mach-O: solo arm64, `minos` ≤ **26.0** (decisione dell'utente, 2026-11-17: Barrique richiede macOS 26; prima era 15), nessun percorso di libreria esterno. Wine riconfigurato con `-mmacosx-version-min=26.0` e `--without-usb` (libusb veniva da Homebrew).
+- ⬜ Doppio clic sulla `.app` (oggi apre il file manager di Wine), icona, apertura di un `.exe` dal Finder (tipi di documento), Mono e Gecko inclusi.
 - ⬜ **[MS]** Strumenti inclusi: `innoextract` (installer Inno/GOG) e `cabextract`.
 - ⬜ **[MS]** VC++ 2015-2022 redistributable ufficiali, offerti all'installazione senza modifiche.
 

@@ -23,19 +23,38 @@ what is being fixed and what comes next.
 
 ## Building (outline)
 
-1. Wine 11.22 source with `patches/wine/*.patch` applied; build an arm64 Wine
-   with the ARM64EC and i386 PE targets, passing
-   `aarch64_CFLAGS="-g -O2 -march=armv8.1-a" arm64ec_CFLAGS="-g -O2 -march=armv8.1-a"`
-   to `configure` (LSE atomics, present on every Apple Silicon). The patch to
-   `configure.ac` links the Hypervisor framework; run `autoreconf` if you
-   don't use the patched `configure`.
-2. FEX from `fex/`, cross-built with llvm-mingw for
-   `aarch64-w64-mingw32` (`libwow64fex.dll`) and `arm64ec-w64-mingw32`
-   (`libarm64ecfex.dll`), without LTO and with `-DTUNE_CPU=none`.
-3. Sign the Wine loader with `entitlements.plist`, put the FEX DLLs where Wine
-   finds builtin DLLs, run with `WINE_HVF=1`.
+macOS 26 or later on Apple Silicon, Xcode 26+, llvm-mingw, Homebrew for build
+tools only (bison, meson, ninja, cmake, pkg-config; FreeType/libpng are copied in).
 
-Build scripts and a single self-contained `.app` are planned (roadmap phase 6).
+1. Dependencies, each built by a script in `scripts/` from checksummed source
+   tarballs: `build-gst.sh` (FFmpeg LGPL, GStreamer, gst-libav, applemedia),
+   `build-moltenvk.sh` (MoltenVK), `build-llvm15.sh` and `build-dxmt.sh` (DXMT,
+   built unmodified), `fetch-fonts.sh` (Selawik, Carlito, Caladea).
+2. Wine 11.22 source with `patches/wine/*.patch` applied, configured as:
+
+       PKG_CONFIG_PATH=<deps-gst>/lib/pkgconfig \
+       CFLAGS="-g -O2 -mmacosx-version-min=26.0" \
+       LDFLAGS="-L<deps-vk>/lib -mmacosx-version-min=26.0" \
+       configure --enable-win64 --enable-archs=arm64ec,aarch64,i386 \
+         aarch64_CFLAGS="-g -O2 -march=armv8.1-a" arm64ec_CFLAGS="-g -O2 -march=armv8.1-a" \
+         --without-x --without-usb (plus the other --without-* of a macOS build)
+
+   (LSE atomics are present on every Apple Silicon.) The patch to `configure.ac`
+   links the Hypervisor framework; run `autoreconf` if you don't use the patched
+   `configure`.
+3. FEX from `fex/`, cross-built with llvm-mingw for `aarch64-w64-mingw32`
+   (`libwow64fex.dll`) and `arm64ec-w64-mingw32` (`libarm64ecfex.dll`), without
+   LTO and with `-DTUNE_CPU=none`.
+4. `scripts/make-dist.sh` builds `dist/Barrique.app`: Wine installed inside the
+   bundle, the libraries in `lib/deps` with `@rpath` names, FEX, DXMT, fonts,
+   debug information stripped, every Mach-O signed ad hoc and the loader
+   (`lib/wine/aarch64-unix/wine`) with `entitlements.plist`; then it checks that
+   every Mach-O is arm64-only, for macOS 26 or older, with no library path
+   outside the bundle.
+
+Running: `Barrique.app/Contents/MacOS/barrique program.exe` (or `--wine <command>`).
+Data lives in `~/Library/Application Support/Barrique` (the prefix is created on
+first run); `BARRIQUE_D3D=dxmt` selects DXMT for Direct3D 10/11.
 
 ## Licenses
 

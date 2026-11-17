@@ -1698,7 +1698,7 @@ index 0000000..c833b63
 +
 +#endif  /* __APPLE__ && __aarch64__ */
 diff --git a/dlls/ntdll/unix/loader.c b/dlls/ntdll/unix/loader.c
-index dde4b58..b8eb056 100644
+index dde4b58..934c74e 100644
 --- a/dlls/ntdll/unix/loader.c
 +++ b/dlls/ntdll/unix/loader.c
 @@ -292,16 +292,43 @@ static WORD get_alt_machine( WORD machine )
@@ -1746,7 +1746,7 @@ index dde4b58..b8eb056 100644
      if (!build_dir) dll_paths[count++] = dll_dir;
  
      if (path)
-@@ -1152,6 +1179,21 @@ static NTSTATUS find_builtin_dll( UNICODE_STRING *nt_name, ANSI_STRING *exp_name
+@@ -1152,6 +1179,37 @@ static NTSTATUS find_builtin_dll( UNICODE_STRING *nt_name, ANSI_STRING *exp_name
  
      TRACE( "looking for %s for file %s\n", debugstr_a(file + pos + 1), debugstr_us(nt_name) );
  
@@ -1756,10 +1756,26 @@ index dde4b58..b8eb056 100644
 +        ptr = prepend( ptr, dxmt_dir, strlen(dxmt_dir) );
 +        status = open_builtin_pe_file( ptr, &attr, module, size_ptr, image_info, limit_low, limit_high,
 +                                       load_machine, prefer_native, offset );
-+        ptr = prepend( file + pos, so_dir, strlen(so_dir) );
-+        ptr = prepend( ptr, dxmt_dir, strlen(dxmt_dir) );
 +        if (status != STATUS_DLL_NOT_FOUND)
 +        {
++            /* winemetal.so: in the DXMT directory (development) or, installed, in
++             * Wine's own unix directory next to winemac.so, which it links to */
++            struct stat st;
++            BOOL found = TRUE;
++
++            ptr = prepend( file + pos, so_dir, strlen(so_dir) );
++            ptr = prepend( ptr, dxmt_dir, strlen(dxmt_dir) );
++            if (ext && !build_dir && dll_dir)
++            {
++                strcpy( ext, ".so" );
++                found = !stat( ptr, &st );
++                strcpy( ext, ".dll" );
++            }
++            if (!found)
++            {
++                ptr = prepend( file + pos, so_dir, strlen(so_dir) );
++                ptr = prepend( ptr, dll_dir, strlen(dll_dir) );
++            }
 +            TRACE( "using DXMT's %s\n", debugstr_a(file + pos + 1) );
 +            goto done;
 +        }
@@ -1768,7 +1784,7 @@ index dde4b58..b8eb056 100644
      if (build_dir)
      {
          /* try as a dll */
-@@ -1565,6 +1607,14 @@ static void load_ntdll_functions( HMODULE module )
+@@ -1565,6 +1623,14 @@ static void load_ntdll_functions( HMODULE module )
          *p__wine_unix_call_dispatcher_arm64ec = __wine_unix_call_dispatcher;
      }
      else *p__wine_unix_call_dispatcher = __wine_unix_call_dispatcher;
