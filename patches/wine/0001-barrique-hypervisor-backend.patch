@@ -767,6 +767,138 @@ index d0c2145..34c074b 100644
  #endif
  #ifdef __arm64ec__
          arm64ec_thread_init();
+diff --git a/dlls/ntdll/signal_arm64ec.c b/dlls/ntdll/signal_arm64ec.c
+index ee2936e..1bda9a5 100644
+--- a/dlls/ntdll/signal_arm64ec.c
++++ b/dlls/ntdll/signal_arm64ec.c
+@@ -37,6 +37,7 @@
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(seh);
+ WINE_DECLARE_DEBUG_CHANNEL(relay);
++WINE_DECLARE_DEBUG_CHANNEL(fexnotify);
+ 
+ struct xcontext
+ {
+@@ -633,7 +634,10 @@ NTSTATUS SYSCALL_API NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_
+     NTSTATUS status;
+ 
+     if (!enter_syscall_callback())
++    {
++        TRACE_(fexnotify)( "SKIP NtAllocateVirtualMemory %p %p %#Ix\n", process, *ret, *size_ptr );
+         return syscall_NtAllocateVirtualMemory( process, ret, zero_bits, size_ptr, type, protect );
++    }
+ 
+     if (!*ret && (type & MEM_COMMIT)) type |= MEM_RESERVE;
+ 
+@@ -645,7 +649,11 @@ NTSTATUS SYSCALL_API NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPostVirtualAlloc,
+                                                       *ret, *size_ptr, 3, type, protect, status );
+-    else if (pNotifyMemoryAlloc) pNotifyMemoryAlloc( *ret, *size_ptr, type, protect, TRUE, status );
++    else if (pNotifyMemoryAlloc)
++    {
++        pNotifyMemoryAlloc( *ret, *size_ptr, type, protect, TRUE, status );
++        TRACE_(fexnotify)( "alloc %p %#Ix type %#x prot %#x status %#x\n", *ret, *size_ptr, (int)type, (int)protect, (int)status );
++    }
+ 
+     leave_syscall_callback();
+     return status;
+@@ -658,7 +666,10 @@ NTSTATUS SYSCALL_API NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE
+     NTSTATUS status;
+ 
+     if (!enter_syscall_callback())
++    {
++        TRACE_(fexnotify)( "SKIP NtAllocateVirtualMemoryEx %p %p %#Ix\n", process, *ret, *size_ptr );
+         return syscall_NtAllocateVirtualMemoryEx( process, ret, size_ptr, type, protect, parameters, count );
++    }
+ 
+     if (!*ret && (type & MEM_COMMIT)) type |= MEM_RESERVE;
+ 
+@@ -670,7 +681,11 @@ NTSTATUS SYSCALL_API NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPostVirtualAlloc,
+                                                       *ret, *size_ptr, 3, type, protect, status );
+-    else if (pNotifyMemoryAlloc) pNotifyMemoryAlloc( *ret, *size_ptr, type, protect, TRUE, status );
++    else if (pNotifyMemoryAlloc)
++    {
++        pNotifyMemoryAlloc( *ret, *size_ptr, type, protect, TRUE, status );
++        TRACE_(fexnotify)( "alloc %p %#Ix type %#x prot %#x status %#x\n", *ret, *size_ptr, (int)type, (int)protect, (int)status );
++    }
+ 
+     leave_syscall_callback();
+     return status;
+@@ -715,7 +730,10 @@ NTSTATUS SYSCALL_API NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_
+     NTSTATUS status;
+ 
+     if (!enter_syscall_callback())
++    {
++        TRACE_(fexnotify)( "SKIP NtFreeVirtualMemory %p %p %#Ix\n", process, *addr_ptr, *size_ptr );
+         return syscall_NtFreeVirtualMemory( process, addr_ptr, size_ptr, type );
++    }
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPreVirtualFree,
+                                                       *addr_ptr, *size_ptr, 2, type, 0 );
+@@ -725,7 +743,11 @@ NTSTATUS SYSCALL_API NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPostVirtualFree,
+                                                       *addr_ptr, *size_ptr, 2, type, status );
+-    else if (pNotifyMemoryFree) pNotifyMemoryFree( *addr_ptr, *size_ptr, type, TRUE, status );
++    else if (pNotifyMemoryFree)
++    {
++        pNotifyMemoryFree( *addr_ptr, *size_ptr, type, TRUE, status );
++        TRACE_(fexnotify)( "free %p %#Ix type %#x status %#x\n", *addr_ptr, *size_ptr, (int)type, (int)status );
++    }
+ 
+     leave_syscall_callback();
+     return status;
+@@ -809,7 +831,10 @@ NTSTATUS SYSCALL_API NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SI
+     NTSTATUS status;
+ 
+     if (!enter_syscall_callback())
++    {
++        TRACE_(fexnotify)( "SKIP NtProtectVirtualMemory %p %p %#Ix\n", process, *addr_ptr, *size_ptr );
+         return syscall_NtProtectVirtualMemory( process, addr_ptr, size_ptr, new_prot, old_prot );
++    }
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPreVirtualProtect,
+                                                       *addr_ptr, *size_ptr, 2, new_prot, 0 );
+@@ -819,7 +844,11 @@ NTSTATUS SYSCALL_API NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SI
+ 
+     if (!is_current) send_cross_process_notification( process, CrossProcessPostVirtualProtect,
+                                                       *addr_ptr, *size_ptr, 2, new_prot, status );
+-    else if (pNotifyMemoryProtect) pNotifyMemoryProtect( *addr_ptr, *size_ptr, new_prot, TRUE, status );
++    else if (pNotifyMemoryProtect)
++    {
++        pNotifyMemoryProtect( *addr_ptr, *size_ptr, new_prot, TRUE, status );
++        TRACE_(fexnotify)( "protect %p %#Ix prot %#x status %#x\n", *addr_ptr, *size_ptr, (int)new_prot, (int)status );
++    }
+ 
+     leave_syscall_callback();
+     return status;
+@@ -910,9 +939,11 @@ NTSTATUS SYSCALL_API NtUnmapViewOfSection( HANDLE process, void *addr )
+         pNotifyUnmapViewOfSection( addr, FALSE, 0 );
+         status = syscall_NtUnmapViewOfSection( process, addr );
+         pNotifyUnmapViewOfSection( addr, TRUE, status );
++        TRACE_(fexnotify)( "unmap%s %p status %#x\n", "", addr, (int)status );
+         leave_syscall_callback();
+         return status;
+     }
++    if (is_current && pNotifyUnmapViewOfSection) TRACE_(fexnotify)( "SKIP NtUnmapViewOfSection %p\n", addr );
+     return syscall_NtUnmapViewOfSection( process, addr );
+ }
+ 
+@@ -926,9 +957,11 @@ NTSTATUS SYSCALL_API NtUnmapViewOfSectionEx( HANDLE process, void *addr, ULONG f
+         pNotifyUnmapViewOfSection( addr, FALSE, 0 );
+         status = syscall_NtUnmapViewOfSectionEx( process, addr, flags );
+         pNotifyUnmapViewOfSection( addr, TRUE, status );
++        TRACE_(fexnotify)( "unmap%s %p status %#x\n", "Ex", addr, (int)status );
+         leave_syscall_callback();
+         return status;
+     }
++    if (is_current && pNotifyUnmapViewOfSection) TRACE_(fexnotify)( "SKIP NtUnmapViewOfSectionEx %p\n", addr );
+     return syscall_NtUnmapViewOfSectionEx( process, addr, flags );
+ }
+ 
 diff --git a/dlls/ntdll/unix/file.c b/dlls/ntdll/unix/file.c
 index d99a9a1..b13c9bb 100644
 --- a/dlls/ntdll/unix/file.c
