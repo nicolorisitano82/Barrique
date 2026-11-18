@@ -14,7 +14,7 @@ Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalshar
 | FEX compilato (`libwow64fex.dll`, `libarm64ecfex.dll`) | ✅ |
 | Build Wine ARM64EC + i386 | ✅ compila |
 | x86-64 via ARM64EC nella VM (FEX) | ✅ `hello64.exe` RESULT ok |
-| x86 a 32 bit via WoW64 (FEX) nella VM, finestra di memoria a `0xE000000000` | ✅ `hello32.exe` RESULT ok, `syswow64` installata da wineboot |
+| x86 a 32 bit via WoW64 (FEX) nella VM, finestra di memoria a `0xE000000000` | ✅ congelato (decisione del 2026-11-18): resta, nessun lavoro nuovo specifico; controllo rapido `tests/i386-smoke.sh` |
 | Audio (CoreAudio, 44,1-96 kHz, Bluetooth) | ✅ fase 5 passo 2 |
 | Video (Media Foundation e DirectShow: H.264, HEVC, VP9, MPEG-1/2, WMV, AAC, MP3) | ✅ fase 5 passo 3, tre architetture |
 | OpenGL (GL 2.1 di Apple), D3D9 con wined3d | ✅ tre architetture |
@@ -28,6 +28,8 @@ Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalshar
 | Steam | ⬜ fase 8 |
 
 ## Cosa manca: quadro completo (2026-11-18)
+
+**x86 a 32 bit congelato** (decisione dell'utente, 2026-11-18, studio in `research/drop-x86.md`): resta perché molti installer anche di programmi x64 sono a 32 bit (Firefox, 7-Zip), oltre a giochi e programmi a 32 bit e a Gecko; non si fa lavoro nuovo specifico per i 32 bit (come per D3D10/11) e i fallimenti solo i386 restano aperti. Verifica: `tests/i386-smoke.sh` (installer a 32 bit di un programma x64, `hello32`, OpenTTD x86, .NET x86, HTML con Gecko x86).
 
 Tutto ciò che è aperto, per area, compresi i punti minori. Priorità: **A** blocca l'uso quotidiano o un obiettivo dichiarato (Steam, `.app`), **B** importante ma aggirabile, **C** rifinitura o caso raro. Il dettaglio è nelle fasi indicate.
 
@@ -79,6 +81,10 @@ Tutto ciò che è aperto, per area, compresi i punti minori. Priorità: **A** bl
 - **C** `hv_vcpus_exit` su una vCPU non ancora partita (caso limite della sospensione).
 - **C** Contatori e log diagnostici (`WINE_HVF_STATS` e `+fexnotify` esistono già).
 - **C** Segnalare ad Apple il kernel panic SPTM di `hv_vm_map`.
+
+**Gioco di prova**
+- ✅ **OpenTTD 15.3** (GPL, build ufficiali ARM64, x86, x64 da `cdn.openttd.org`, grafica OpenGFX 8.0), scelto come gioco di riferimento senza problemi di licenza (`tests/apps/openttd.sh`). Senza finestra (`-v null:ticks=50000`): 12 run su 12 ok, 4,4-4,5 s ARM64, 5,3-5,5 s x64, 5,5-5,9 s x86; un blocco x86 visto una volta su circa 10 run in un giro senza `wineserver -k` tra un run e l'altro (raro, da tenere d'occhio). Da provare a mano con la finestra (OpenGL, audio, mouse): `openttd.sh play <arch>`.
+- ⬜ Un secondo gioco open per Direct3D 11/12 e 3D: nessuno di quelli guardati (SuperTuxKart, Luanti, GZDoom) ha una build ARM64 Windows ufficiale.
 
 **Steam (fase 8)**: tutto da fare. Installer, client a 32/64 bit, `steamwebhelper` (CEF, sandbox, processo GPU), login, download e avvio di giochi, overlay, controller.
 
