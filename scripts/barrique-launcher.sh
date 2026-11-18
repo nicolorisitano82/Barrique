@@ -19,7 +19,6 @@ R=$APP/Resources/wine
 DATA=${BARRIQUE_DATA:-$HOME/Library/Application Support/Barrique}
 export WINEPREFIX=${BARRIQUE_PREFIX:-$DATA/prefix}
 export WINE_HVF=1                                   # Windows code runs in the Hypervisor.framework VM
-export WINEDLLOVERRIDES=${WINEDLLOVERRIDES:-"mscoree=d;mshtml=d"}   # no Mono/Gecko download prompts (not bundled yet)
 export BARRIQUE_D3D=${BARRIQUE_D3D:-wined3d}
 export WINEDEBUG=${WINEDEBUG:--all}
 mkdir -p "$DATA/logs"

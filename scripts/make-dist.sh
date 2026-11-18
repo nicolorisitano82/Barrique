@@ -11,7 +11,8 @@
 #   Barrique.app/Contents/Resources/wine/lib/wine/   aarch64-unix, aarch64-windows (+ FEX), i386-windows,
 #                                                    dxmt/ (BARRIQUE_D3D=dxmt), winemetal.so in aarch64-unix
 #   Barrique.app/Contents/Resources/wine/lib/deps/   FreeType, GStreamer/FFmpeg, MoltenVK (@rpath)
-#   Barrique.app/Contents/Resources/wine/share/wine/ wine.inf, nls, fonts (+ Selawik/Carlito/Caladea)
+#   Barrique.app/Contents/Resources/wine/share/wine/ wine.inf, nls, fonts (+ Selawik/Carlito/Caladea),
+#                                                    mono/ and gecko/ (shared Wine Mono and Gecko)
 #
 #   make-dist.sh [app path] [wine build dir]
 #
@@ -42,6 +43,15 @@ print "== DXMT"
 mkdir -p $LIB/dxmt
 cp -R $W/deps-dxmt/dxmt/aarch64-windows $W/deps-dxmt/dxmt/x86_64-windows $LIB/dxmt/
 cp $W/deps-dxmt/dxmt/aarch64-unix/winemetal.so $LIB/aarch64-unix/   # next to winemac.so (@loader_path)
+
+print "== Mono and Gecko"
+# unpacked "shared" installs Wine finds in its data dir: no per-prefix install, no
+# download prompt. Wine Mono's arm64 package holds the x86 one too, with ARM64EC
+# builds of its x86_64 native DLLs. Gecko has no ARM64 build (as upstream).
+ADDONS=${ADDONS:-$W/deps-addons}
+mkdir -p $R/share/wine/mono $R/share/wine/gecko
+cp -R $ADDONS/mono/wine-mono-11.3.0 $R/share/wine/mono/
+cp -R $ADDONS/gecko/wine-gecko-2.47.4-x86 $ADDONS/gecko/wine-gecko-2.47.4-x86_64 $R/share/wine/gecko/
 
 print "== strip"
 find $LIB -type f \( -name "*.dll" -o -name "*.exe" -o -name "*.drv" -o -name "*.sys" -o -name "*.ocx" \
