@@ -54,7 +54,7 @@ Tutto ciò che è aperto, per area, compresi i punti minori. Priorità: **A** bl
 - **B** DXMT: confronto sul banco con wined3d, test d3d11/dxgi con DXMT (oggi si fermano su bug di casi limite di DXMT), buffer negli heap Metal (finestra Metal sperimentale, spenta).
 - **B** D3D9/10/11 con DXVK su MoltenVK, da confrontare con wined3d e DXMT. **[MS]**
 - **B** Banco di prova: campioni DirectDraw e Vulkan diretto, riferimenti, validazione di Metal.
-- **C** OpenGL 4.6 su Metal (Zink su KosmicKrisp): studio fatto, prova di 1-2 giorni prima di decidere. **[MS]**
+- **C** OpenGL 4.6 su Metal (Zink su KosmicKrisp): prova fatta il 2026-11-18, **soglia non superata**: KosmicKrisp 26.3.1 non ha transform feedback né geometry shader, quindi Zink si ferma a GL 2.1 (sotto il GL 4.1 di Apple). Si resta su CGL; da riprovare a ogni release di Mesa. **[MS]**
 - **C** VKD3D-Proton al posto del vkd3d di Wine: da valutare.
 - ➖ D3D10/11 per i programmi a 32 bit: fuori per decisione dell'utente.
 
@@ -208,7 +208,7 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
   - ✅ D3D10/11 con DXMT, ARM64X (passo 7); niente fork, DXMT è usato com'è;
   - ⬜ D3D9/10/11 con DXVK su MoltenVK (da confrontare con wined3d e DXMT sul banco);
   - 🔧 D3D12 con vkd3d (quello di Wine) su MoltenVK funziona; VKD3D-Proton da valutare.
-- ⬜ **[MS]** OpenGL 4.6 su Metal al posto del GL 4.1 di Apple. Studio in `research/opengl46-metal.md` (2026-11-18): Zink su MoltenVK si ferma a ~GL 2.1 (niente geometry shader né transform feedback); l'unica strada è Zink su KosmicKrisp (Mesa) dietro `BARRIQUE_GL=zink`, CGL resta il default. Prima una prova di 1-2 giorni fuori da Wine (soglia: GL 3.3), poi 4-6 settimane; il punto duro sono i buffer persistenti sotto HVF.
+- ⏸️ **[MS]** OpenGL 4.6 su Metal al posto del GL 4.1 di Apple (prova del 2026-11-18: KosmicKrisp 26.3.1 senza transform feedback e geometry shader, Zink a GL 2.1; si resta su CGL, dettagli in `research/opengl46-metal.md`). Studio in `research/opengl46-metal.md` (2026-11-18): Zink su MoltenVK si ferma a ~GL 2.1 (niente geometry shader né transform feedback); l'unica strada è Zink su KosmicKrisp (Mesa) dietro `BARRIQUE_GL=zink`, CGL resta il default. Prima una prova di 1-2 giorni fuori da Wine (soglia: GL 3.3), poi 4-6 settimane; il punto duro sono i buffer persistenti sotto HVF.
 - ✅ **[MS]** MoltenVK con cache delle pipeline: MoltenVK incluso (passo 5) e serializza `VkPipelineCache`; la persistenza su disco è di vkd3d/DXVK.
 - ✅ **[MS]** FFmpeg (VideoToolbox/AudioToolbox) e GStreamer/gst-libav per `winedmo`, `winegstreamer`, Media Foundation e DirectShow (passo 3 di FASE5-AV).
 - **Input** (stato in "Cosa manca"): tastiera e mouse di base funzionano attraverso winemac; da fare:

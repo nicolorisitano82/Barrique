@@ -172,3 +172,18 @@ Totale lato Wine e Mesa-integrazione: **circa 4-6 settimane**, se la sonda è po
 3. **Memoria HVF:** patch a Zink per client pointer o memoria pinned con `VK_EXT_external_memory_host`. Verificare `GL_MAP_PERSISTENT_BIT` e che il limite a 4.3 di WoW64 (`unix_wgl.c:479-495`) non scatti più.
 4. **Presentazione con `CAMetalLayer`** (Kopper + `VK_EXT_metal_surface`), poi bundle e test di wined3d per D3D10/11 a 32 bit.
 5. **Se il cancello non passa:** tenere CGL, ripetere la sonda a ogni release di Mesa (come fa WineMetalGL) e decidere solo allora tra il fork e un'implementazione propria.
+
+## Esito della prova (2026-11-18)
+
+Mesa **26.3.1** compilata fuori da Wine (`~/Work/wine/deps-mesa-probe`) con KosmicKrisp e Zink, EGL surfaceless; programma di prova `research/opengl-probe/glprobe.c`.
+
+**Soglia non superata.** KosmicKrisp 26.3.1 (tabella delle funzioni in `src/kosmickrisp/vulkan/kk_physical_device.c`) non ha **transform feedback** né **geometry shader**; la documentazione di Zink (`docs/drivers/zink.rst`) li richiede rispettivamente per GL 3.0 e GL 3.2. Zink su KosmicKrisp si ferma quindi a **OpenGL 2.1**, sotto il GL 4.1 di Apple che Barrique usa oggi. Decisione: restare su CGL, riprovare a ogni release di Mesa (o valutare il fork MIT che li emula).
+
+Ha già invece, ed è utile per HVF: `VK_EXT_external_memory_host`, `VK_EXT_map_memory_placed`, tessellation, `logicOp`, multi-viewport, conditional rendering, draw indirect count; custom border color è sperimentale.
+
+Note di compilazione su macOS (solo opzioni, sorgenti di Mesa non modificati):
+- dipendenze da Homebrew (solo per la prova): LLVM 23, `libclc`, `spirv-llvm-translator`, `spirv-tools`, `glslang`, `bison` (quello di sistema è 2.3), `vulkan-loader`, `vulkan-tools`; `mako` e `pyyaml` in `~/Work/wine/venv-mesa`;
+- `-Dmoltenvk-dir` deve contenere solo `include/MoltenVK` (con gli header Vulkan di MoltenVK nasconde quelli di Mesa);
+- `-Dc_args`/`-Dcpp_args=-DVK_USE_PLATFORM_METAL_EXT -DVK_USE_PLATFORM_MACOS_MVK` (ordine delle inclusioni in Zink);
+- link con `-lobjc -framework Metal -framework QuartzCore -framework IOSurface`;
+- il driver KosmicKrisp così collegato va in crash all'avvio: i suoi punti d'ingresso Vulkan sono riferimenti deboli e il linker di macOS non estrae dagli archivi statici i file che li definiscono (`-Wl,-all_load` globale rompe `libgallium`). Per farlo girare servirebbe forzare il caricamento solo per il driver, nel `meson.build` di Mesa. Non necessario per questa decisione.
