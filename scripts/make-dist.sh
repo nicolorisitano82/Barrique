@@ -2,7 +2,9 @@
 # Build Barrique.app (phase 6): one self-contained bundle, nothing installed
 # elsewhere. Layout:
 #   Barrique.app/Contents/Info.plist
-#   Barrique.app/Contents/MacOS/barrique             launcher (see barrique-launcher.sh)
+#   Barrique.app/Contents/MacOS/barrique             native launcher (launcher/main.m): Finder
+#                                                    "open" events, terminal arguments
+#   Barrique.app/Contents/Resources/barrique.sh      what it runs (barrique-launcher.sh)
 #   Barrique.app/Contents/Resources/AppIcon.icns     from resources/icon.svg
 #   Barrique.app/Contents/Resources/wine/bin/        wine (starts the loader), wineserver
 #   (the loader, lib/wine/aarch64-unix/wine, is signed with the hypervisor entitlement)
@@ -52,7 +54,9 @@ done
 print "== app"
 mkdir -p $R/share/barrique
 cp $S/prefix-defaults.reg $R/share/barrique/
-install -m 755 $S/barrique-launcher.sh $APP/Contents/MacOS/barrique
+install -m 755 $S/barrique-launcher.sh $APP/Contents/Resources/barrique.sh
+clang -fobjc-arc -O2 -arch arm64 -mmacosx-version-min=26.0 -framework Cocoa \
+    -o $APP/Contents/MacOS/barrique $S/../launcher/main.m
 # icon: resources/icon.svg rendered at every size macOS wants, then iconutil
 iconset=$W/dist/AppIcon.iconset
 rm -rf $iconset; mkdir -p $iconset $APP/Contents/Resources
@@ -80,6 +84,49 @@ cat > $APP/Contents/Info.plist <<PLIST
     <key>LSArchitecturePriority</key>       <array><string>arm64</string></array>
     <key>NSHighResolutionCapable</key>      <true/>
     <key>NSMicrophoneUsageDescription</key> <string>Windows programs that record audio</string>
+    <key>LSUIElement</key>                  <true/>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>     <string>Windows program</string>
+            <key>CFBundleTypeRole</key>     <string>Viewer</string>
+            <key>LSHandlerRank</key>        <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.microsoft.windows-executable</string>
+                <string>org.barrique.windows-installer</string>
+                <string>org.barrique.windows-batch</string>
+                <string>org.barrique.windows-shortcut</string>
+            </array>
+        </dict>
+    </array>
+    <key>UTImportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key>     <string>com.microsoft.windows-executable</string>
+            <key>UTTypeDescription</key>    <string>Windows program</string>
+            <key>UTTypeConformsTo</key>     <array><string>public.data</string><string>public.executable</string></array>
+            <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>exe</string></array></dict>
+        </dict>
+        <dict>
+            <key>UTTypeIdentifier</key>     <string>org.barrique.windows-installer</string>
+            <key>UTTypeDescription</key>    <string>Windows Installer package</string>
+            <key>UTTypeConformsTo</key>     <array><string>public.data</string></array>
+            <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>msi</string></array></dict>
+        </dict>
+        <dict>
+            <key>UTTypeIdentifier</key>     <string>org.barrique.windows-batch</string>
+            <key>UTTypeDescription</key>    <string>Windows batch file</string>
+            <key>UTTypeConformsTo</key>     <array><string>public.plain-text</string></array>
+            <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>bat</string><string>cmd</string></array></dict>
+        </dict>
+        <dict>
+            <key>UTTypeIdentifier</key>     <string>org.barrique.windows-shortcut</string>
+            <key>UTTypeDescription</key>    <string>Windows shortcut</string>
+            <key>UTTypeConformsTo</key>     <array><string>public.data</string></array>
+            <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>lnk</string></array></dict>
+        </dict>
+    </array>
 </dict>
 </plist>
 PLIST

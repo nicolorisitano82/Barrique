@@ -1,7 +1,9 @@
 #!/bin/zsh
-# Barrique.app/Contents/MacOS/barrique: runs Windows programs with the Wine in
-# the bundle. Everything that changes lives in one folder,
-# ~/Library/Application Support/Barrique (prefix, logs); the bundle stays as signed.
+# Barrique.app/Contents/Resources/barrique.sh: runs Windows programs with the Wine in
+# the bundle. Started by the native launcher (Contents/MacOS/barrique, launcher/main.m)
+# for files opened in the Finder, a double click on the app, and terminal use.
+# Everything that changes lives in one folder, ~/Library/Application Support/Barrique
+# (prefix, logs); the bundle stays as signed.
 #
 #   barrique [program.exe [args...]]     no program: Wine's file manager
 #   barrique --wine <wine command...>    any Wine command (winecfg, regedit, wineboot...)
@@ -10,6 +12,7 @@
 #   BARRIQUE_D3D=wined3d|dxmt   Direct3D 10/11 backend (default wined3d until the
 #                               phase 5 step 6 bench says otherwise)
 #   BARRIQUE_PREFIX=<dir>       another prefix (default <data>/prefix)
+#   BARRIQUE_DATA=<dir>         another data folder (default ~/Library/Application Support/Barrique)
 set -e
 APP=${0:A:h:h}
 R=$APP/Resources/wine

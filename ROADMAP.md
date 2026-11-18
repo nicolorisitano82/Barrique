@@ -24,7 +24,7 @@ Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalshar
 | Firefox ARM64 (sandbox, WebGL su GPU) | ✅ 120 fps, sandbox di Chromium attiva |
 | Firefox x64 (FEX) | 🔧 pagine ok in 5 run su 6 dopo la correzione della sospensione; il processo GPU crasha ancora (fase 5) |
 | Input: tastiera e mouse di base | ✅ attraverso winemac; ⬜ mouse raw, cursore bloccato, controller, metodi di input (vedi sotto) |
-| Doppio clic sulla `.app`, apertura di un `.exe` dal Finder | ⬜ fase 6 |
+| Doppio clic sulla `.app`, apertura di un `.exe` dal Finder | ✅ lanciatore nativo, "Apri con" per `.exe`/`.msi`/`.bat`/`.lnk` (fase 6) |
 | Steam | ⬜ fase 8 |
 
 ## Cosa manca: quadro completo (2026-11-18)
@@ -63,7 +63,6 @@ Tutto ciò che è aperto, per area, compresi i punti minori. Priorità: **A** bl
 
 **App e distribuzione**
 - **B** Prova di Barrique su un vero macOS 26 (le funzioni di macOS 27 sono state tolte o protette, fase 6).
-- **A** Doppio clic sulla `.app` (oggi apre il file manager di Wine) e apertura di un `.exe` dal Finder (tipi di documento).
 - **B** Fase 6b: assistente "da installer a `.app`" (prefix dedicato, icona dall'exe, clone APFS del runtime).
 - **C** Aggiornamento del runtime nelle `.app` create, esportazione di un programma installato.
 
@@ -232,7 +231,8 @@ Per ognuno dei componenti grafici e multimediali va controllata la licenza.
 - ✅ App `.app` con loader firmato e permesso `com.apple.security.hypervisor` (giro 21, 2026-11-17): `scripts/make-dist.sh` costruisce `dist/Barrique.app` (1,1 GB): Wine installato nel bundle (`Contents/Resources/wine`), librerie in `lib/deps` con `@rpath` (FreeType, GStreamer/FFmpeg, MoltenVK), FEX nelle DLL di Wine, DXMT in `lib/wine/dxmt` (`winemetal.so` accanto a `winemac.so`), font, informazioni di debug tolte, firma ad hoc di ogni Mach-O e della `.app`; il permesso va al loader vero, `lib/wine/aarch64-unix/wine` (`bin/wine` lo avvia soltanto). Lanciatore `Contents/MacOS/barrique` (`barrique programma.exe`, `barrique --wine <comando>`): dati in `~/Library/Application Support/Barrique`, al primo avvio crea il prefisso (wineboot, Retina e font, chiavi di FEX, segnaposto di `winemetal.dll`), `BARRIQUE_D3D` sceglie il backend. Basta la firma ad hoc: **non serve un account sviluppatore Apple a pagamento**. Prova con solo il bundle e un prefisso nuovo (17 s): gears OpenGL, D3D9, D3D12 ok su aarch64, x86_64, i686; D3D11 con DXMT ok su aarch64 e x86_64.
 - ✅ **[MS]** Pacchetto rilocabile con controllo dei Mach-O: solo arm64, `minos` ≤ **26.0** (decisione dell'utente, 2026-11-17: Barrique richiede macOS 26; prima era 15), nessun percorso di libreria esterno. Wine riconfigurato con `-mmacosx-version-min=26.0` e `--without-usb` (libusb veniva da Homebrew).
 - ✅ Icona: `resources/icon.svg` (barrique su fondo color vino), `make-dist.sh` la converte in `AppIcon.icns`.
-- ⬜ Doppio clic sulla `.app` (oggi apre il file manager di Wine), apertura di un `.exe` dal Finder (tipi di documento), Mono e Gecko inclusi.
+- ✅ Doppio clic sulla `.app` e apertura dal Finder (2026-11-18): lanciatore nativo `Contents/MacOS/barrique` (`launcher/main.m`), perché il Finder passa i file con un Apple Event che uno script non riceve. "Apri con" su `.exe`, `.msi`, `.bat`/`.cmd`, `.lnk` (Barrique è un'app *alternativa*, non predefinita) avvia il programma con l'output nel log della cartella dati; doppio clic sull'app apre il file manager di Wine; dal terminale gli argomenti passano allo script, ora in `Contents/Resources/barrique.sh`. Provato: terminale, `.bat` aperto tramite LaunchServices, doppio clic.
+- ⬜ Mono e Gecko inclusi.
 - ⬜ **[MS]** Strumenti inclusi: `innoextract` (installer Inno/GOG) e `cabextract`.
 - ⬜ **[MS]** VC++ 2015-2022 redistributable ufficiali, offerti all'installazione senza modifiche.
 - 🔧 **macOS 26 davvero supportato** (2026-11-18): `pipe2` esiste solo da macOS 27 e, compilando con target 26, il linker lo lascia debole (su macOS 26 la chiamata salterebbe a 0). Corretto in ntdll (`pipe2_cloexec`, dietro `__builtin_available`, ripiego `pipe()`) e in GLib (`build-gst.sh` toglie `HAVE_PIPE2`, GLib usa il suo ripiego). `make-dist.sh` ora rifiuta qualsiasi funzione C di `libSystem` importata in modo debole, salvo le eccezioni verificate. `HV_FEATURE_REG_ID_AA64ISAR2_EL1` è solo una costante, il suo fallimento è già gestito. Manca una prova su un vero macOS 26.
