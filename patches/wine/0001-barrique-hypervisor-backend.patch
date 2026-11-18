@@ -931,10 +931,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..3a6156b
+index 0000000..0a0c841
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,991 @@
+@@ -0,0 +1,1008 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -1368,6 +1368,12 @@ index 0000000..3a6156b
 + *
 + * Called by virtual.c after it changed the host mapping of Windows memory.
 + */
++/* Bumped by hvf_invalidate() under hvf_mutex. map_guest_page() reads the Windows
++ * protections outside hvf_mutex: if a mapping change came in meanwhile, what it read
++ * is stale and it must read again, or the VM would keep a decommitted page (and the
++ * data written to it) mapped with its old protection */
++static _Atomic uint64_t map_generation;
++
 +void hvf_invalidate( const void *addr, size_t size )
 +{
 +    uint64_t start = (uint64_t)addr & ~(GUEST_PAGE - 1);
@@ -1398,6 +1404,7 @@ index 0000000..3a6156b
 +        *word &= ~(1ULL << (bit % 64));
 +    }
 +    tlb_generation++;
++    map_generation++;
 +    pthread_mutex_unlock( &hvf_mutex );
 +}
 +
@@ -1416,7 +1423,11 @@ index 0000000..3a6156b
 +     * there only the faulting page is mapped */
 +    BOOL edge = block < 0x10000 || (block < 0x100000000ULL && block + FAULT_AROUND > 0xfffe0000);
 +
++    uint64_t generation;
++
 +    if (va >= IPA_LIMIT) return FALSE;
++retry:
++    generation = map_generation;
 +    if (edge) prots[idx] = virtual_hvf_get_prot( hvf_low_ptr( va ));
 +    else virtual_hvf_get_prots( hvf_low_ptr( block ), FAULT_AROUND / GUEST_PAGE, prots );
 +    prot = prots[idx];
@@ -1426,6 +1437,12 @@ index 0000000..3a6156b
 +    if (exec && !(prot & PROT_EXEC)) return FALSE;
 +
 +    pthread_mutex_lock( &hvf_mutex );
++    if (generation != map_generation)
++    {
++        /* the mapping changed after the protections were read */
++        pthread_mutex_unlock( &hvf_mutex );
++        goto retry;
++    }
 +    for (i = 0; i < FAULT_AROUND / GUEST_PAGE; i++)
 +    {
 +        BOOL faulting = (i == idx);
