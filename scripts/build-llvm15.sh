@@ -6,12 +6,12 @@
 #   build-llvm15.sh <download dir> [source dir] [prefix]
 #
 # <download dir> holds llvm-15.0.7.src.tar.xz and cmake-15.0.7.src.tar.xz
-# (checked against SHA-256). Output: <prefix> (default ~/Work/wine/deps-llvm15)
+# (checked against SHA-256). Output: <prefix> (default ~/Work/Personale/wine/deps-llvm15)
 # with include/, lib/*.a and lib/cmake/llvm, for meson -Dnative_llvm_path.
 set -e
 dl=${1:?usage: build-llvm15.sh <download dir> [source dir] [prefix]}
-S=${2:-$HOME/Work/wine/deps-src/llvm-15.0.7}
-P=${3:-$HOME/Work/wine/deps-llvm15}
+S=${2:-$HOME/Work/Personale/wine/deps-src/llvm-15.0.7}
+P=${3:-$HOME/Work/Personale/wine/deps-llvm15}
 
 typeset -A sums
 sums=(

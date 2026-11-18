@@ -16,10 +16,10 @@
 #
 #   make-dist.sh [app path] [wine build dir]
 #
-# Default ~/Work/wine/dist/Barrique.app from ~/Work/wine/build-arm64ec. Does not
+# Default ~/Work/Personale/wine/dist/Barrique.app from ~/Work/Personale/wine/build-arm64ec. Does not
 # run Wine. Debug information is stripped; every Mach-O is signed ad hoc.
 set -e
-W=$HOME/Work/wine
+W=$HOME/Work/Personale/wine
 APP=${1:-$W/dist/Barrique.app}
 WINE_BUILD=${2:-$W/build-arm64ec}
 S=${0:A:h}
@@ -161,7 +161,7 @@ find $R -type f | while read f; do
     # may be weak, plus uses checked to sit behind __builtin_available (allowed below;
     # Objective-C classes are weak anyway and are not checked here)
     allowed=()
-    [[ ${f:t} == ntdll.so ]] && allowed=(_pipe2)   # pipe2_cloexec() in dlls/ntdll/unix/server.c
+    [[ ${f:t} == ntdll.so ]] && allowed=(_pipe2 ___ulock_wait2)   # pipe2_cloexec() in server.c; msync.c weak_import (macOS 11+)
     weak=$(nm -m "$f" 2>/dev/null | grep '(undefined) weak external' | grep 'from libSystem' | grep -v __availability_version_check || true)
     for a in $allowed; do weak=$(print -r -- "$weak" | grep -v " $a " || true); done
     if [[ -n $weak ]]; then print "function newer than macOS 26: $f"; print -r -- "$weak"; bad=1; fi

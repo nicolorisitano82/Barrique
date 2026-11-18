@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Build the media stack Wine's winegstreamer and winedmo need, LGPL only,
-# into one prefix (default ~/Work/wine/deps-gst), for macOS 15+ arm64:
+# into one prefix (default ~/Work/Personale/wine/deps-gst), for macOS 15+ arm64:
 #   FFmpeg (decoders/demuxers, VideoToolbox, AudioToolbox, no GPL/nonfree),
 #   pcre2 (static), glib, GStreamer core, plugins base/good/ugly (subset), gst-libav,
 #   applemedia from plugins bad (VideoToolbox: vtenc_h264 is the H.264 encoder
@@ -16,7 +16,7 @@
 # zlib, so nothing from Homebrew is linked.
 set -e
 src=${1:?usage: build-gst.sh <source dir> [prefix] [stage...]}
-P=${2:-$HOME/Work/wine/deps-gst}
+P=${2:-$HOME/Work/Personale/wine/deps-gst}
 shift $(( $# > 1 ? 2 : 1 ))
 stages=(${@:-${=:-ffmpeg pcre2 glib gstreamer base good ugly bad libav names}})
 

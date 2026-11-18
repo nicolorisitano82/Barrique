@@ -13,7 +13,7 @@
 set -u
 zmodload zsh/datetime   # EPOCHSECONDS
 arch=$1; shift
-WINE_ROOT=${WINE_ROOT:-$HOME/Work/wine}
+WINE_ROOT=${WINE_ROOT:-$HOME/Work/Personale/wine}
 BUILD=$WINE_ROOT/build-arm64ec
 X64_BUILD=${X64_BUILD:-$WINE_ROOT/build-x64tests}
 OUT=${OUT:-$WINE_ROOT/tests/results}

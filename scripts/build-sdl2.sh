@@ -7,11 +7,11 @@
 #
 #   build-sdl2.sh [source dir] [prefix]
 #
-# Default ~/Work/wine/deps-src/SDL2-2.32.10 into ~/Work/wine/deps-sdl2;
+# Default ~/Work/Personale/wine/deps-src/SDL2-2.32.10 into ~/Work/Personale/wine/deps-sdl2;
 # bundle-deps.sh copies lib/libSDL2-2.0.0.dylib next to the other libraries.
 set -e
-S=${1:-$HOME/Work/wine/deps-src/SDL2-2.32.10}
-P=${2:-$HOME/Work/wine/deps-sdl2}
+S=${1:-$HOME/Work/Personale/wine/deps-src/SDL2-2.32.10}
+P=${2:-$HOME/Work/Personale/wine/deps-sdl2}
 B=$S/_build
 unset CFLAGS CXXFLAGS CPPFLAGS LDFLAGS   # nothing from the user's shell (Homebrew paths)
 rm -rf $B

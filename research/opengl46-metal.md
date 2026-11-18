@@ -32,7 +32,7 @@ Data: 2026-11-17. Ambito: sostituire, per i programmi Windows, l'OpenGL di Apple
 - GL 4.6: `samplerAnisotropy`, `depthBiasClamp`, `VK_KHR_draw_indirect_count`, voto dei subgroup.
 - La stessa pagina dice che Zink su macOS è "experimental with very limited capabilities" e che si compila con `-Dgallium-drivers=zink` e `-Dmoltenvk-dir`.
 
-**Cosa ha il nostro MoltenVK 1.4.2** (sorgente in `~/Work/wine/deps-src/moltenvk-1.4.2`, compilato da `Barrique/scripts/build-moltenvk.sh`):
+**Cosa ha il nostro MoltenVK 1.4.2** (sorgente in `~/Work/Personale/wine/deps-src/moltenvk-1.4.2`, compilato da `Barrique/scripts/build-moltenvk.sh`):
 - `geometryShader`: non viene mai impostato in `MoltenVK/MoltenVK/GPUObjects/MVKDevice.mm` (0 occorrenze), quindi resta falso.
 - `tessellationShader`: vero (`MVKDevice.mm:2803`, `:2823`); `multiViewport` vero (`:2813`); `dualSrcBlend`, `depthClamp` veri (`:2790-2791`).
 - `logicOp`: solo con le API private di Metal (`MVKDevice.mm:2765`).
@@ -175,14 +175,14 @@ Totale lato Wine e Mesa-integrazione: **circa 4-6 settimane**, se la sonda è po
 
 ## Esito della prova (2026-11-18)
 
-Mesa **26.3.1** compilata fuori da Wine (`~/Work/wine/deps-mesa-probe`) con KosmicKrisp e Zink, EGL surfaceless; programma di prova `research/opengl-probe/glprobe.c`.
+Mesa **26.3.1** compilata fuori da Wine (`~/Work/Personale/wine/deps-mesa-probe`) con KosmicKrisp e Zink, EGL surfaceless; programma di prova `research/opengl-probe/glprobe.c`.
 
 **Soglia non superata.** KosmicKrisp 26.3.1 (tabella delle funzioni in `src/kosmickrisp/vulkan/kk_physical_device.c`) non ha **transform feedback** né **geometry shader**; la documentazione di Zink (`docs/drivers/zink.rst`) li richiede rispettivamente per GL 3.0 e GL 3.2. Zink su KosmicKrisp si ferma quindi a **OpenGL 2.1**, sotto il GL 4.1 di Apple che Barrique usa oggi. Decisione: restare su CGL, riprovare a ogni release di Mesa (o valutare il fork MIT che li emula).
 
 Ha già invece, ed è utile per HVF: `VK_EXT_external_memory_host`, `VK_EXT_map_memory_placed`, tessellation, `logicOp`, multi-viewport, conditional rendering, draw indirect count; custom border color è sperimentale.
 
 Note di compilazione su macOS (solo opzioni, sorgenti di Mesa non modificati):
-- dipendenze da Homebrew (solo per la prova): LLVM 23, `libclc`, `spirv-llvm-translator`, `spirv-tools`, `glslang`, `bison` (quello di sistema è 2.3), `vulkan-loader`, `vulkan-tools`; `mako` e `pyyaml` in `~/Work/wine/venv-mesa`;
+- dipendenze da Homebrew (solo per la prova): LLVM 23, `libclc`, `spirv-llvm-translator`, `spirv-tools`, `glslang`, `bison` (quello di sistema è 2.3), `vulkan-loader`, `vulkan-tools`; `mako` e `pyyaml` in `~/Work/Personale/wine/venv-mesa`;
 - `-Dmoltenvk-dir` deve contenere solo `include/MoltenVK` (con gli header Vulkan di MoltenVK nasconde quelli di Mesa);
 - `-Dc_args`/`-Dcpp_args=-DVK_USE_PLATFORM_METAL_EXT -DVK_USE_PLATFORM_MACOS_MVK` (ordine delle inclusioni in Zink);
 - link con `-lobjc -framework Metal -framework QuartzCore -framework IOSurface`;

@@ -24,6 +24,11 @@ export WINEDEBUG=${WINEDEBUG:--all}
 mkdir -p "$DATA/logs"
 log="$DATA/logs/barrique.log"
 wine=$R/bin/wine
+# prefix-defaults.reg is applied again when it changes (new font replacements,
+# settings), so that data folders made by an older Barrique get them too
+defaults=$R/share/barrique/prefix-defaults.reg
+stamp=$WINEPREFIX/.barrique-defaults
+sum=$(shasum $defaults | cut -c1-40)
 
 if [[ ! -f $WINEPREFIX/system.reg ]]; then
     print "$(date '+%F %T') creating prefix $WINEPREFIX" >> $log
@@ -46,6 +51,13 @@ EOF
     # loader look for the builtin (lib/wine/dxmt, BARRIQUE_D3D=dxmt)
     cp $R/lib/wine/dxmt/aarch64-windows/winemetal.dll "$WINEPREFIX/drive_c/windows/system32/"
     "$R/bin/wineserver" -w
+    print $sum > $stamp
+fi
+if [[ ! -f $stamp || $(<$stamp) != $sum ]]; then
+    print "$(date '+%F %T') applying new prefix defaults" >> $log
+    "$wine" regedit /S "$defaults" >> $log 2>&1
+    "$R/bin/wineserver" -w
+    print $sum > $stamp
 fi
 
 if [[ $1 == --wine ]]; then

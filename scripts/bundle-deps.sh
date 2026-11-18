@@ -9,18 +9,18 @@
 #
 # FreeType and its libpng come from Homebrew (phase 5 step 1). The media stack
 # (FFmpeg, glib, GStreamer and its plugins, phase 5 step 3) comes from the
-# prefix built by build-gst.sh (default ~/Work/wine/deps-gst), already with
+# prefix built by build-gst.sh (default ~/Work/Personale/wine/deps-gst), already with
 # @rpath install names; plugins go to deps/gstreamer-1.0. Libraries are
 # re-signed ad hoc after install_name_tool.
 #
-# The fonts with Windows metrics (fetch-fonts.sh, default ~/Work/wine/deps-fonts,
+# The fonts with Windows metrics (fetch-fonts.sh, default ~/Work/Personale/wine/deps-fonts,
 # phase 5 step 1b) go to <wine build>/fonts, the directory Wine loads its own
 # fonts from in a build tree (share/wine/fonts in an install tree).
 set -e
 dest=${1:?usage: bundle-deps.sh <wine build or lib dir> [media prefix]}/deps
-media=${2:-$HOME/Work/wine/deps-gst}
-fonts=${3:-$HOME/Work/wine/deps-fonts}
-vk=${4:-$HOME/Work/wine/deps-vk}   # MoltenVK from build-moltenvk.sh (phase 5 step 5)
+media=${2:-$HOME/Work/Personale/wine/deps-gst}
+fonts=${3:-$HOME/Work/Personale/wine/deps-fonts}
+vk=${4:-$HOME/Work/Personale/wine/deps-vk}   # MoltenVK from build-moltenvk.sh (phase 5 step 5)
 src=${HOMEBREW_PREFIX:-/opt/homebrew}/opt
 mkdir -p $dest
 
@@ -53,7 +53,7 @@ if [[ -d $media/lib ]]; then
 fi
 
 # SDL2 from build-sdl2.sh: winebus.sys's SDL backend for game controllers
-sdl=${SDL2_PREFIX:-$HOME/Work/wine/deps-sdl2}
+sdl=${SDL2_PREFIX:-$HOME/Work/Personale/wine/deps-sdl2}
 if [[ -f $sdl/lib/libSDL2-2.0.0.dylib ]]; then
     install -m 644 $sdl/lib/libSDL2-2.0.0.dylib $dest/libSDL2-2.0.0.dylib
     copied+=(libSDL2-2.0.0.dylib)

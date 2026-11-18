@@ -1,6 +1,6 @@
 # Barrique: dare ai programmi Windows l'aspetto e il comportamento di un'app Mac
 
-Studio di fattibilità, 17 novembre 2026. Basato su Wine 11.22 in `~/Work/wine/src` (percorsi relativi a quella cartella). Nessun codice è stato modificato e Wine non è stato eseguito: quello che segue viene dalla lettura dei sorgenti, non da prove.
+Studio di fattibilità, 17 novembre 2026. Basato su Wine 11.22 in `~/Work/Personale/wine/src` (percorsi relativi a quella cartella). Nessun codice è stato modificato e Wine non è stato eseguito: quello che segue viene dalla lettura dei sorgenti, non da prove.
 
 ## Sintesi
 
@@ -255,7 +255,7 @@ R1, R2, R5 subito (pochi giorni, nessun rischio). Poi M1 + M2 + M3 insieme, perc
 
 ## Fonti
 
-Codice (Wine 11.22, `~/Work/wine/src`): citato riga per riga nel testo. Principali: `dlls/winemac.drv/window.c`, `cocoa_window.m`, `cocoa_app.m`, `macdrv_main.c`, `clipboard.c`, `mouse.c`; `dlls/win32u/window.c`, `sysparams.c`, `font.c`, `freetype.c`; `dlls/uxtheme/system.c`; `dlls/aero.msstyles/aero.rc`; `dlls/comdlg32/filedlg.c`, `itemdlg.c`; `dlls/explorerframe/taskbarlist.c`; `dlls/dwmapi/dwmapi_main.c`; `programs/winecfg/theme.c`; `programs/explorer/systray.c`; `loader/wine.inf.in`. Barrique: `scripts/prefix-defaults.reg`, `ROADMAP.md`.
+Codice (Wine 11.22, `~/Work/Personale/wine/src`): citato riga per riga nel testo. Principali: `dlls/winemac.drv/window.c`, `cocoa_window.m`, `cocoa_app.m`, `macdrv_main.c`, `clipboard.c`, `mouse.c`; `dlls/win32u/window.c`, `sysparams.c`, `font.c`, `freetype.c`; `dlls/uxtheme/system.c`; `dlls/aero.msstyles/aero.rc`; `dlls/comdlg32/filedlg.c`, `itemdlg.c`; `dlls/explorerframe/taskbarlist.c`; `dlls/dwmapi/dwmapi_main.c`; `programs/winecfg/theme.c`; `programs/explorer/systray.c`; `loader/wine.inf.in`. Barrique: `scripts/prefix-defaults.reg`, `ROADMAP.md`.
 
 Esterne:
 - Whisky archiviato: https://github.com/Whisky-App/whisky , https://www.techspot.com/news/107499-whisky-popular-wine-frontend-mac-gamers-no-more.html

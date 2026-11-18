@@ -11,15 +11,15 @@
 #
 # Output: <output dir>/<arch>/ with the DLLs and winemetal.so, <output dir>/arm64x/
 # (one DLL set for ARM64 and x86-64 processes) and <output dir>/dxmt/, the directory
-# BARRIQUE_D3D=dxmt uses; default ~/Work/wine/deps-dxmt; archs "aarch64 arm64ec".
+# BARRIQUE_D3D=dxmt uses; default ~/Work/Personale/wine/deps-dxmt; archs "aarch64 arm64ec".
 set -e
-S=${1:-$HOME/Work/wine/deps-src/dxmt-0df8610}   # main @ 0df8610 (2026-11-10): v0.80 does not build with Xcode 27
-WINE_BUILD=${2:-$HOME/Work/wine/build-arm64ec}
-LLVM=${3:-$HOME/Work/wine/deps-llvm15}
-OUT=${4:-$HOME/Work/wine/deps-dxmt}
+S=${1:-$HOME/Work/Personale/wine/deps-src/dxmt-0df8610}   # main @ 0df8610 (2026-11-10): v0.80 does not build with Xcode 27
+WINE_BUILD=${2:-$HOME/Work/Personale/wine/build-arm64ec}
+LLVM=${3:-$HOME/Work/Personale/wine/deps-llvm15}
+OUT=${4:-$HOME/Work/Personale/wine/deps-dxmt}
 archs=(${=${5:-aarch64 arm64ec}})
-MINGW=$HOME/Work/wine/llvm-mingw/bin
-B=$HOME/Work/wine/deps-src/dxmt-build
+MINGW=$HOME/Work/Personale/wine/llvm-mingw/bin
+B=$HOME/Work/Personale/wine/deps-src/dxmt-build
 
 export MACOSX_DEPLOYMENT_TARGET=15.0
 unset CFLAGS CXXFLAGS CPPFLAGS LDFLAGS   # nothing from the user's shell (Homebrew paths)

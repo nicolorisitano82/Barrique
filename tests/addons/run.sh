@@ -5,7 +5,7 @@
 # (no Gecko exists for ARM64: expected to fail there).
 #
 #   run.sh <data folder that does not exist yet>
-W=$HOME/Work/wine
+W=$HOME/Work/Personale/wine
 A=$W/dist/Barrique.app/Contents/MacOS/barrique
 MCS=$W/dist/Barrique.app/Contents/Resources/wine/share/wine/mono/wine-mono-11.3.0/lib/mono/4.5/mcs.exe
 O=$W/samples/addons

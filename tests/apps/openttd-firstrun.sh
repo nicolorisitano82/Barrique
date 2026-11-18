@@ -4,7 +4,7 @@
 # 30 s, sample the hung openttd.exe host processes with macOS sample(1).
 #
 #   openttd-firstrun.sh <base dir for new data folders> [tries] [sample dir]
-W=$HOME/Work/wine
+W=$HOME/Work/Personale/wine
 A=$W/dist/Barrique.app/Contents/MacOS/barrique
 E=$W/samples/openttd/win32/openttd-15.3-windows-win32/openttd.exe
 base=${1:?base dir}; tries=${2:-3}; out=${3:-/tmp}

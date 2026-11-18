@@ -6,10 +6,10 @@
 #                                         the ticks, exit; per architecture, timed
 #   openttd.sh play <arm64|win32|win64>  the game with its window (OpenGL), by hand
 #
-# Expects the zips extracted under ~/Work/wine/samples/openttd/<arch>/ with OpenGFX
+# Expects the zips extracted under ~/Work/Personale/wine/samples/openttd/<arch>/ with OpenGFX
 # in each baseset/ folder. BARRIQUE_DATA picks the data folder (default: a test one).
 zmodload zsh/datetime
-W=$HOME/Work/wine
+W=$HOME/Work/Personale/wine
 A=$W/dist/Barrique.app/Contents/MacOS/barrique
 S=$W/samples/openttd
 export BARRIQUE_DATA=${BARRIQUE_DATA:-$W/dist/test-addons-1}

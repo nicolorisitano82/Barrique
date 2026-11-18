@@ -2,7 +2,7 @@
 # Phase 4 real programs under Barrique, in their own prefix (prefix-apps).
 # Each step runs with a timeout; logs go to logs/<step>.log, one summary line per step.
 set -u
-W=$HOME/Work/wine
+W=$HOME/Work/Personale/wine
 S=$W/samples/phase4
 export WINEPREFIX=$W/prefix-apps WINE_HVF=1 WINEDLLPATH=$W/fex-dlls
 export WINEDLLOVERRIDES="mscoree=d;mshtml=d" WINEDEBUG=${WINEDEBUG:--all}

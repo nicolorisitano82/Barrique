@@ -9,11 +9,11 @@
 #
 # <download dir> holds the tarballs below (checked against SHA-256).
 # Output: <prefix>/lib/libMoltenVK.dylib (install name @rpath/libMoltenVK.dylib)
-# and <prefix>/include (Vulkan and MoltenVK headers), default ~/Work/wine/deps-vk.
+# and <prefix>/include (Vulkan and MoltenVK headers), default ~/Work/Personale/wine/deps-vk.
 set -e
 dl=${1:?usage: build-moltenvk.sh <download dir> [source dir] [prefix]}
-S=${2:-$HOME/Work/wine/deps-src/moltenvk-1.4.2}
-P=${3:-$HOME/Work/wine/deps-vk}
+S=${2:-$HOME/Work/Personale/wine/deps-src/moltenvk-1.4.2}
+P=${3:-$HOME/Work/Personale/wine/deps-vk}
 
 typeset -A sums
 sums=(

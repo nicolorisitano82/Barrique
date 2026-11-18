@@ -8,7 +8,7 @@
 #   - .NET x86 (tests/addons hello-x86.exe) and HTML through Gecko x86 (html-i686.exe).
 #
 #   i386-smoke.sh <data folder that does not exist yet>
-W=$HOME/Work/wine
+W=$HOME/Work/Personale/wine
 A=$W/dist/Barrique.app/Contents/MacOS/barrique
 export BARRIQUE_DATA=${1:?data folder}
 [[ -e $BARRIQUE_DATA ]] && { print "$BARRIQUE_DATA exists: use a new one"; exit 1 }

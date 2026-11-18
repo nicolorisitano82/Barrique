@@ -1,6 +1,6 @@
 # msync in Barrique: studio di fattibilità
 
-Data: 2026-11-17. Base: Wine 11.22 con le patch Barrique (`~/Work/wine/src`, `VERSION` = "Wine version 11.22").
+Data: 2026-11-17. Base: Wine 11.22 con le patch Barrique (`~/Work/Personale/wine/src`, `VERSION` = "Wine version 11.22").
 
 ## Sintesi
 
@@ -259,4 +259,24 @@ Strada **C**, usando **B** come riferimento di lettura.
 - Benchmark ntsync: https://lore.kernel.org/lkml/20240124004028.16826-1-zfigura@codeweavers.com/ ; https://gamingonlinux.com/2024/01/proposed-windows-nt-driver-for-linux-brings-big-wine-proton-performance-improvements
 - API Apple: https://developer.apple.com/documentation/os/os_sync_wait_on_address ; header SDK `os/os_sync_wait_on_address.h`
 - Whisky: https://github.com/Whisky-App/Whisky ; https://github.com/frankea/Whisky
-- Codice locale: `~/Work/wine/src/server/inproc_sync.c`, `server/event.c`, `server/thread.c`, `server/object.h`, `server/protocol.def`, `server/mach.c`, `dlls/ntdll/unix/sync.c`, `dlls/ntdll/unix/server.c`, `dlls/ntdll/unix/syscall.c`, `dlls/ntdll/unix/signal_arm64.c`, `dlls/ntdll/unix/hvf.c`, `dlls/wow64/sync.c`; `~/Work/wine/Barrique/ROADMAP.md`
+- Codice locale: `~/Work/Personale/wine/src/server/inproc_sync.c`, `server/event.c`, `server/thread.c`, `server/object.h`, `server/protocol.def`, `server/mach.c`, `dlls/ntdll/unix/sync.c`, `dlls/ntdll/unix/server.c`, `dlls/ntdll/unix/syscall.c`, `dlls/ntdll/unix/signal_arm64.c`, `dlls/ntdll/unix/hvf.c`, `dlls/wow64/sync.c`; `~/Work/Personale/wine/Barrique/ROADMAP.md`
+
+## Port fatto (2026-11-18/19)
+
+Invece del backend scritto da zero è stato portato il msync di **CrossOver 26.3.0** (sorgenti LGPL, base Wine 11.0): `server/msync.{c,h}` e `dlls/ntdll/unix/msync.{c,h}` con le intestazioni di copyright originali, agganciati allo strato `inproc_sync` di Wine 11.22 (ramo `__APPLE__` accanto a quello ntsync di Linux in `dlls/ntdll/unix/sync.c` e `server/inproc_sync.c`; campo `shm_idx` nella risposta di `get_inproc_sync_fd`). Spento di default, `WINEMSYNC=1` lo accende.
+
+| `syncbench`, µs per operazione | senza | `WINEMSYNC=1` |
+|---|---|---|
+| mutex wait+release | 27,5-28,2 | 3,6-4,0 |
+| semaphore release+wait | 27,1-28,0 | 3,6-4,0 |
+| SetEvent + WaitForMultipleObjects(4) | 27,8-28,1 | 3,6-4,0 |
+| WaitForSingleObject, timeout 0 | 20,0 | 1,5-1,7 |
+| ping-pong di eventi | 31-32 | 13-16 |
+
+Uguale su ARM64, x64 e x86. I circa 3,5 µs rimasti sono l'uscita dalla VM a ogni syscall, non più il viaggio al wineserver.
+
+Correzioni rispetto a CrossOver, trovate con i test di conformità:
+- `NtReleaseMutant`: msync restituisce il numero di acquisizioni, Wine 11 vuole il conteggio precedente del mutante (`1 - count`, come il ramo ntsync);
+- mutex abbandonato dopo la chiusura dell'ultimo handle mentre un altro thread aspetta (kernel32 `sync.c:416`): il server distruggeva l'oggetto msync e lo toglieva da `mutex_list`, quindi alla morte del proprietario nessuno svegliava chi aspettava. Ora un mutex ancora posseduto e ancora usato resta in `orphan_mutex_list` finché il proprietario lo rilascia o termina.
+
+Dopo le correzioni `ntdll` sync/om e `kernel32` sync/thread danno gli stessi risultati con e senza msync sulle tre architetture. Da fare prima di accenderlo di default: un giro con programmi veri; poi valutare `os_sync_wait_on_address` al posto delle API private `__ulock_wait`/`__ulock_wait2` (`make-dist.sh` ammette `___ulock_wait2` debole, esiste da macOS 11).
