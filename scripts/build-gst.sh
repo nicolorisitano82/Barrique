@@ -75,9 +75,21 @@ for s in $stages; do
         cmake --build $d/_build -j $J && cmake --install $d/_build
         ;;
     glib)
-        mesonb glib -Dtests=false -Dintrospection=disabled -Ddocumentation=false -Dman-pages=disabled \
+        # GLib's meson checks functions without their headers, so it finds pipe2() in
+        # the SDK (macOS 27) whatever the deployment target, then calls it unguarded:
+        # weakly linked, that is a jump to 0 on macOS 26. Drop it from config.h, GLib
+        # falls back to pipe() + fcntl() (nm -m: pipe2 is its only post-26 function)
+        d=$(dir glib)
+        rm -rf $d/_build
+        meson setup $d/_build $d --prefix=$P --libdir=lib --buildtype=release \
+            -Db_ndebug=if-release -Ddefault_library=shared \
+            -Dtests=false -Dintrospection=disabled -Ddocumentation=false -Dman-pages=disabled \
             -Dnls=disabled -Dsysprof=disabled -Dlibelf=disabled -Dselinux=disabled -Dxattr=false \
             -Ddtrace=disabled -Dsystemtap=disabled -Dglib_debug=disabled
+        sed -i '' -e '/#define HAVE_PIPE2 1/d' $d/_build/config.h
+        grep -q HAVE_PIPE2 $d/_build/config.h && { print -u2 "HAVE_PIPE2 still set"; exit 1 }
+        meson compile -C $d/_build -j $J
+        meson install -C $d/_build --quiet
         ;;
     gstreamer)
         mesonb gstreamer -Dauto_features=disabled -Dtests=disabled -Dexamples=disabled \

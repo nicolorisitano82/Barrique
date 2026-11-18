@@ -2096,7 +2096,7 @@ index dde4b58..9304e6e 100644
  }
  
 diff --git a/dlls/ntdll/unix/process.c b/dlls/ntdll/unix/process.c
-index 1d10948..e77a4ae 100644
+index 1d10948..19c43ed 100644
 --- a/dlls/ntdll/unix/process.c
 +++ b/dlls/ntdll/unix/process.c
 @@ -387,6 +387,72 @@ static void set_stdio_fd( int stdin_fd, int stdout_fd )
@@ -2299,7 +2299,7 @@ index 1d10948..e77a4ae 100644
      return status;
  }
  
-@@ -467,10 +555,40 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
+@@ -467,13 +555,43 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
  /***********************************************************************
   *           __wine_unix_spawnvp
   */
@@ -2340,7 +2340,11 @@ index 1d10948..e77a4ae 100644
 +    size_t i, count = 0, len = 0;
  
  #ifdef HAVE_PIPE2
-     if (pipe2( fd, O_CLOEXEC ) == -1)
+-    if (pipe2( fd, O_CLOEXEC ) == -1)
++    if (pipe2_cloexec( fd ) == -1)
+ #endif
+     {
+         if (pipe(fd) == -1) return STATUS_TOO_MANY_OPENED_FILES;
 @@ -481,22 +599,28 @@ NTSTATUS WINAPI __wine_unix_spawnvp( char * const argv[], int wait )
          fcntl( fd[1], F_SETFD, FD_CLOEXEC );
      }
@@ -2391,7 +2395,7 @@ index 1d10948..e77a4ae 100644
      return err;
  }
  
-@@ -560,12 +685,70 @@ NTSTATUS wow64_wine_spawnvp( void *args )
+@@ -560,16 +685,74 @@ NTSTATUS wow64_wine_spawnvp( void *args )
   *
   * Fork and exec a new Unix binary, checking for errors.
   */
@@ -2464,6 +2468,11 @@ index 1d10948..e77a4ae 100644
      NTSTATUS status = STATUS_SUCCESS;
  
  #ifdef HAVE_PIPE2
+-    if (pipe2( fd, O_CLOEXEC ) == -1)
++    if (pipe2_cloexec( fd ) == -1)
+ #endif
+     {
+         if (pipe(fd) == -1) return STATUS_TOO_MANY_OPENED_FILES;
 @@ -577,65 +760,31 @@ static NTSTATUS fork_and_exec( OBJECT_ATTRIBUTES *attr, const char *unix_name, i
          fcntl( fd[1], F_SETFD, FD_CLOEXEC );
      }
@@ -2582,7 +2591,7 @@ index 1d10948..e77a4ae 100644
      {
      case ProcessAccessToken:
 diff --git a/dlls/ntdll/unix/server.c b/dlls/ntdll/unix/server.c
-index c80226f..173124f 100644
+index c80226f..ebcc53f 100644
 --- a/dlls/ntdll/unix/server.c
 +++ b/dlls/ntdll/unix/server.c
 @@ -627,6 +627,22 @@ static void invoke_system_apc( const union apc_call *call, union apc_result *res
@@ -2608,6 +2617,39 @@ index c80226f..173124f 100644
          if (call->map_view_ex.machine)
          {
              ext[count].Type = MemExtendedParameterImageMachine;
+@@ -1272,6 +1288,23 @@ NTSTATUS unixcall_wine_server_handle_to_fd( void *args )
+ }
+ 
+ 
++#ifdef HAVE_PIPE2
++/* pipe2() is only in macOS 27 and later: built with an older deployment target it is
++ * weakly linked, and calling it on macOS 26 jumps to address 0. ENOSYS makes the
++ * callers fall back to pipe() */
++int pipe2_cloexec( int fd[2] )
++{
++#ifdef __APPLE__
++    if (__builtin_available( macOS 27.0, * )) return pipe2( fd, O_CLOEXEC );
++    errno = ENOSYS;
++    return -1;
++#else
++    return pipe2( fd, O_CLOEXEC );
++#endif
++}
++#endif
++
++
+ /***********************************************************************
+  *           server_pipe
+  *
+@@ -1285,7 +1318,7 @@ int server_pipe( int fd[2] )
+ 
+     if (have_pipe2)
+     {
+-        if (!(ret = pipe2( fd, O_CLOEXEC ))) return ret;
++        if (!(ret = pipe2_cloexec( fd ))) return ret;
+         if (errno == ENOSYS || errno == EINVAL) have_pipe2 = FALSE;  /* don't try again */
+     }
+ #endif
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
 index 02b6d57..3c15b81 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
@@ -3486,7 +3528,7 @@ index 11171cc..e39e6f0 100644
  
      if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..0322e0a 100644
+index 829db1e..7d20de6 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
 @@ -138,6 +138,69 @@ static inline struct thread_data *get_thread_data(void)
@@ -3559,6 +3601,16 @@ index 829db1e..0322e0a 100644
  /* thread private data, stored in NtCurrentTeb()->GdiTebBatch */
  struct teb_data
  {
+@@ -740,4 +803,9 @@ static inline int is_gdt_sel( WORD sel )
+ 
+ #endif  /* defined(__i386__) || defined(__x86_64__) */
+ 
++
++#ifdef HAVE_PIPE2
++extern int pipe2_cloexec( int fd[2] );
++#endif
++
+ #endif /* __NTDLL_UNIX_PRIVATE_H */
 diff --git a/dlls/ntdll/unix/virtual.c b/dlls/ntdll/unix/virtual.c
 index 84f2a39..33787ea 100644
 --- a/dlls/ntdll/unix/virtual.c

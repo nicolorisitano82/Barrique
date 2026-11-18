@@ -99,6 +99,15 @@ find $R -type f | while read f; do
     if [[ $(lipo -archs "$f" 2>/dev/null) != arm64 ]]; then print "not arm64-only: $f"; bad=1; fi
     minos=$(otool -l "$f" | awk '/LC_BUILD_VERSION/{b=1} b&&/minos/{print $2; exit}')
     if [[ -n $minos && ${minos%%.*} -gt 26 ]]; then print "minos $minos: $f"; bad=1; fi
+    # C functions newer than the deployment target are weakly linked and are a jump
+    # to 0 on the oldest supported macOS (pipe2 was): only __builtin_available's helper
+    # may be weak, plus uses checked to sit behind __builtin_available (allowed below;
+    # Objective-C classes are weak anyway and are not checked here)
+    allowed=()
+    [[ ${f:t} == ntdll.so ]] && allowed=(_pipe2)   # pipe2_cloexec() in dlls/ntdll/unix/server.c
+    weak=$(nm -m "$f" 2>/dev/null | grep '(undefined) weak external' | grep 'from libSystem' | grep -v __availability_version_check || true)
+    for a in $allowed; do weak=$(print -r -- "$weak" | grep -v " $a " || true); done
+    if [[ -n $weak ]]; then print "function newer than macOS 26: $f"; print -r -- "$weak"; bad=1; fi
     if otool -L "$f" | tail -n +2 | grep -q -e /opt/homebrew -e /usr/local -e $HOME; then
         print "external library path: $f"; otool -L "$f" | grep -e /opt/homebrew -e /usr/local -e $HOME; bad=1
     fi
