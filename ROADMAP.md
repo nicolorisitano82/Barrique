@@ -4,7 +4,7 @@ Obiettivo: Wine nativo arm64 su macOS, che esegue programmi Windows ARM64, x86-6
 
 Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalsharp/MetalSharp-Wine), da reimplementare (il loro codice è AGPL-3.0, Wine è LGPL: si prendono le idee, non il codice). Stato: ✅ fatto · 🔧 scritto, da provare · ⬜ da fare.
 
-## Stato attuale (2026-11-17)
+## Stato attuale (2026-11-18)
 
 | | Stato |
 |---|---|
@@ -19,8 +19,68 @@ Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalshar
 | Video (Media Foundation e DirectShow: H.264, HEVC, VP9, MPEG-1/2, WMV, AAC, MP3) | ✅ fase 5 passo 3, tre architetture |
 | OpenGL (GL 2.1 di Apple), D3D9 con wined3d | ✅ tre architetture |
 | Vulkan con MoltenVK, D3D12 con vkd3d | ✅ tre architetture (fase 5 passo 5) |
-| D3D11 con DXMT | ✅ ARM64 e x86-64, livello 11_1; ⬜ 32 bit (vedi fase 5) |
+| D3D11 con DXMT | ✅ ARM64 e x86-64, livello 11_1, dentro la `.app` (`BARRIQUE_D3D=dxmt`); ⬜ 32 bit (decisione: fuori) |
 | `Barrique.app` unica (macOS 26+), prefisso in `~/Library/Application Support/Barrique` | ✅ costruita da `scripts/make-dist.sh`, provata con un prefisso nuovo (fase 6) |
+| Firefox ARM64 (sandbox, WebGL su GPU) | ✅ 120 fps, sandbox di Chromium attiva |
+| Firefox x64 (FEX) | 🔧 pagine ok in 5 run su 6 dopo la correzione della sospensione; il processo GPU crasha ancora (fase 5) |
+| Input: tastiera e mouse di base | ✅ attraverso winemac; ⬜ mouse raw, cursore bloccato, controller, metodi di input (vedi sotto) |
+| Doppio clic sulla `.app`, apertura di un `.exe` dal Finder | ⬜ fase 6 |
+| Steam | ⬜ fase 8 |
+
+## Cosa manca: quadro completo (2026-11-18)
+
+Tutto ciò che è aperto, per area, compresi i punti minori. Priorità: **A** blocca l'uso quotidiano o un obiettivo dichiarato (Steam, `.app`), **B** importante ma aggirabile, **C** rifinitura o caso raro. Il dettaglio è nelle fasi indicate.
+
+**Bug noti**
+- **A** Firefox x64: il processo GPU crasha ancora, circa una volta per run, sia con DXMT sia con wined3d (letture di memoria non mappata `base 64K + 0x14c4` in WebRender, memoria liberata in `Renderer::update`). Causa principale delle pagine bloccate già corretta (sospensione dei thread x64 sotto HVF, giro 23). Fase 5.
+- **A** `pipe2` è disponibile solo da macOS 27 ma Wine è compilato con target macOS 26 (`process.c`, `server.c`): su un vero macOS 26 si va in crash. Da verificare e correggere con un ripiego (`pipe` + `fcntl`). Fase 6.
+- **B** D3D9 su aarch64 nel round 22: il cambio di risoluzione non avviene (1024x640 resta 1512x982), poi crash e timeout a catena. Da rifare per chiudere il cancello del passo 5. Fase 5.
+- **B** CEF `--in-process-gpu`: scritto, il test del round 22 aveva l'output illeggibile; da rifare. Fase 5.
+- **C** kernel32 `console`: a volte il figlio non esce con Ctrl-C (instabile anche prima). Fase 7.
+- **C** i386: kernel32 `virtual` (`test_stack_commit`, pagine da 16K), `debugger` (`DEBUG_PROCESS` da un thread secondario, 0x2db), `loader` (`Wow64Transition`), `process` (livello CPU di FEX). Fase 7.
+- **C** ntdll `exception`: eccezioni "collise" su aarch64, ricorsione dello srotolamento da pc 0 su x86-64, stack overflow dopo `RtlUnwind` su i386. Fase 7.
+- **C** Resti dei test per architettura (ws2_32 `afd` i386, user32 `class` i386, rpcrt4 `cstub` x86-64, dbghelp stack walk x86-64, crypt32 `sip`, exe x64 senza rilocazioni sotto i 4GB). Fase 7.
+
+**Input**
+- **A** Mouse "raw" (movimento grezzo, `WM_INPUT`/DirectInput) con GCMouse, per i giochi con visuale in prima persona. **[MS]**
+- **A** Cursore bloccato nella finestra (`ClipCursor`) e nascosto nei giochi; schermo intero nativo di macOS. **[MS]**
+- **A** Controller: winebus con SDL2 + IOHID (XInput e DirectInput). **[MS]**
+- **B** Tastiera italiana e tasti accentati, tasti morti; corrispondenza Cmd/Ctrl (copia/incolla con Cmd), tasti funzione e `Fn`. Da verificare.
+- **B** Metodi di input (giapponese, cinese, coreano: IME di macOS verso IMM32/TSF). Da verificare.
+- **B** Trackpad: scorrimento fluido e "naturale", velocità della rotellina, zoom a due dita (`WM_GESTURE`/Ctrl+rotellina). Da verificare.
+- **C** Cursore su Retina a 192 DPI: dimensione e nitidezza dei cursori Windows. Da verificare.
+- **C** Appunti (testo, immagini, file) e trascinamento di file dal Finder ai programmi Windows: winemac li supporta, mai provati sotto Barrique.
+
+**Grafica**
+- **B** DXMT: confronto sul banco con wined3d, test d3d11/dxgi con DXMT (oggi si fermano su bug di casi limite di DXMT), buffer negli heap Metal (finestra Metal sperimentale, spenta).
+- **B** D3D9/10/11 con DXVK su MoltenVK, da confrontare con wined3d e DXMT. **[MS]**
+- **B** Banco di prova: campioni DirectDraw e Vulkan diretto, riferimenti, validazione di Metal.
+- **C** OpenGL 4.6 su Metal (Zink su KosmicKrisp): studio fatto, prova di 1-2 giorni prima di decidere. **[MS]**
+- **C** VKD3D-Proton al posto del vkd3d di Wine: da valutare.
+- ➖ D3D10/11 per i programmi a 32 bit: fuori per decisione dell'utente.
+
+**Componenti da includere nella `.app`**
+- **A** Mono e Gecko (oggi spenti con `mscoree=d;mshtml=d`). **[MS]**
+- **B** `innoextract` e `cabextract`; VC++ 2015-2022 redistributable offerti all'installazione. **[MS]**
+
+**App e distribuzione**
+- **A** Doppio clic sulla `.app` (oggi apre il file manager di Wine) e apertura di un `.exe` dal Finder (tipi di documento).
+- **B** Fase 6b: assistente "da installer a `.app`" (prefix dedicato, icona dall'exe, clone APFS del runtime).
+- **C** Aggiornamento del runtime nelle `.app` create, esportazione di un programma installato.
+
+**Prestazioni**
+- **B** msync: sincronizzazione in-process su memoria condivisa (studio fatto, stima 3-8× sulle chiamate di sincronizzazione). **[MS]**
+- **B** Costo dell'uscita dalla VM (~1,7 µs per syscall contro 0,1 nativi): gestire nella VM le syscall frequenti che leggono solo dati del processo. Fase 7.
+- **C** Firefox x64 sotto FEX ~20 s all'avvio: limite della traduzione, la build ARM64 non ce l'ha.
+
+**Robustezza della VM (fase 7)**
+- **B** Pagine host da 16K: liberare o proteggere 4K dentro una pagina da 16K, guard page e crescita dello stack, write-watch per pagina.
+- **B** Sezioni condivise scrivibili basate su file: due viste dello stesso file non si vedono finché non si riscrive (`hvf_shadow`).
+- **C** `hv_vcpus_exit` su una vCPU non ancora partita (caso limite della sospensione).
+- **C** Contatori e log diagnostici (`WINE_HVF_STATS` e `+fexnotify` esistono già).
+- **C** Segnalare ad Apple il kernel panic SPTM di `hv_vm_map`.
+
+**Steam (fase 8)**: tutto da fare. Installer, client a 32/64 bit, `steamwebhelper` (CEF, sandbox, processo GPU), login, download e avvio di giochi, overlay, controller.
 
 ## Fase 1: x86 funzionante ✅ (chiusa il 2026-11-14)
 
@@ -139,9 +199,9 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 - ✅ Passo 3, video (giri 10-14): GStreamer 1.28 con gst-libav sopra FFmpeg LGPL compilati da noi in `deps/`; Media Foundation decodifica H.264, HEVC, VP9, AAC, MP3, WMV2/WMA2 sulle tre architetture. Verificati i386 (correzione WoW64) e MPEG in DirectShow. Giro 12: MPEG-1/2 anche in Media Foundation (gestore `.mpg/.vob/.ts`, decoder MPEG MFT, MP2 in `mp3dmod`), ok sulle tre architetture. Giro 13: mf `transform` da crash a 0 fallimenti sulle tre architetture (encoder H.264 di VideoToolbox, MPEG audio MFT a sé, `swscale` con `accurate_rnd` su ARM), mfreadwrite 0 fallimenti. Giro 14: decodifica VideoToolbox misurata (~4× meno CPU, bit-exact) ma spenta, rompe MPEG-2 e `h264dec`; riferimenti di prova più severi (dY 0,00).
 - ✅ Passo 1b, qualità del testo (giro 11): Retina a 192 DPI nei default dei prefissi della `.app`, Selawik/Carlito/Caladea per Segoe UI/Calibri/Cambria, sostituzioni CJK anche per DirectWrite, fallback DirectWrite sui font macOS. Giro 12: i programmi non DPI-aware sono scalati 2× da Wine come su Windows.
 - ✅ Passo 4, memoria della GPU nella VM (giro 15): copia come base (31,8–54,7 GB/s), importazione in Metal provata senza panic (memoria anonima prima e dopo l'uso della GPU, `MTLBuffer`, IOSurface); `hvf.c` rifiuta comunque le pagine della GPU finché un backend non le usa.
-- 🔧 Passo 5, Vulkan con MoltenVK (giri 16-18): MoltenVK 1.4.2 compilato da noi (`scripts/build-moltenvk.sh`), senza loader. Sotto HVF la memoria Vulkan visibile dalla CPU è memoria Windows importata (`VK_EXT_external_memory_host`, strategia del passo 4). vulkan-1 in fondo sulle tre architetture (13 fallimenti, tutti "succeeded inside todo"); d3d12 su vkd3d 671 controlli, 0 fallimenti anche su i386. Corretti: handle e puntatori WoW64 in winevulkan/win32u, `VK_EXT_surface_maintenance1` mai attivata (bug di Wine), blocchi su finestre nascoste/minimizzate/vuote, crash di MoltenVK sul thread di Metal, swapchain a 3 immagini (D3D12 da ~350 a ~850 fps). La grafica a 32 bit (opengl32, wined3d, d3d9/11/12) funziona dopo cinque correzioni WoW64 sotto HVF. Manca: cache delle pipeline di MoltenVK, cancello del passo.
+- 🔧 Passo 5, Vulkan con MoltenVK (giri 16-18): MoltenVK 1.4.2 compilato da noi (`scripts/build-moltenvk.sh`), senza loader. Sotto HVF la memoria Vulkan visibile dalla CPU è memoria Windows importata (`VK_EXT_external_memory_host`, strategia del passo 4). vulkan-1 in fondo sulle tre architetture (13 fallimenti, tutti "succeeded inside todo"); d3d12 su vkd3d 671 controlli, 0 fallimenti anche su i386. Corretti: handle e puntatori WoW64 in winevulkan/win32u, `VK_EXT_surface_maintenance1` mai attivata (bug di Wine), blocchi su finestre nascoste/minimizzate/vuote, crash di MoltenVK sul thread di Metal, swapchain a 3 immagini (D3D12 da ~350 a ~850 fps). La grafica a 32 bit (opengl32, wined3d, d3d9/11/12) funziona dopo cinque correzioni WoW64 sotto HVF. Cache delle pipeline: MoltenVK serializza già `VkPipelineCache` (non c'è niente da configurare in MoltenVK); il salvataggio su disco spetta a vkd3d e DXVK. Manca: il cancello del passo (round 22: vulkan-1, d3d11, dxgi senza regressioni; d3d9 aarch64 da rifare).
 - 🔧 Passo 6, banco di prova grafico (giro 17): `tests/av/gears.c`, ingranaggi con OpenGL, D3D9, D3D11, D3D12 (FPS, primo fotogramma, controllo su un fotogramma riletto), tre architetture. OpenGL ~3300 fps, D3D9 ~2200, D3D12 ~850, D3D11 con DXMT 120-465 (sincronia col display). Mancano gli altri campioni (DirectDraw, Vulkan diretto), i riferimenti e la validazione di Metal.
-- 🔧 Passo 7, Direct3D (giro 19): **D3D11 con DXMT funziona** sotto HVF, livello 11_1, su programmi ARM64 e x86-64 (FEX). DXMT (main `0df8610`, LGPL) compilato senza modifiche: vieta il codice generato da AI, come FEX, quindi gli adattamenti sono dal lato Wine: `macdrv_functions` in winemac, buffer di DXMT su memoria Windows (`cocoa_dxmt.m`, swizzling di `newBufferWithLength`), DLL ARM64X (`scripts/build-dxmt.sh`), LLVM 15 per il suo compilatore di shader (`scripts/build-llvm15.sh`). wined3d resta il ripiego (D3D9 ok; D3D11 solo livello 9_3, senza shader). Mancano: installazione nella `.app` e interruttore `BARRIQUE_D3D=dxmt`, buffer negli heap Metal (finestra Metal sperimentale, spenta), confronto sul banco, i test d3d11/dxgi con DXMT.
+- 🔧 Passo 7, Direct3D (giro 19): **D3D11 con DXMT funziona** sotto HVF, livello 11_1, su programmi ARM64 e x86-64 (FEX). DXMT (main `0df8610`, LGPL) compilato senza modifiche: vieta il codice generato da AI, come FEX, quindi gli adattamenti sono dal lato Wine: `macdrv_functions` in winemac, buffer di DXMT su memoria Windows (`cocoa_dxmt.m`, swizzling di `newBufferWithLength`), DLL ARM64X (`scripts/build-dxmt.sh`), LLVM 15 per il suo compilatore di shader (`scripts/build-llvm15.sh`). wined3d resta il ripiego (D3D9 ok; D3D11 solo livello 9_3, senza shader). Fatto poi (giro 21): installazione nella `.app` e interruttore `BARRIQUE_D3D=dxmt` nel loader. Mancano: buffer negli heap Metal (finestra Metal sperimentale, spenta), confronto sul banco, i test d3d11/dxgi con DXMT.
 - **Programmi a 32 bit e D3D10/11 (decisione dell'utente, 2026-11-17: restano fuori):** DXMT non funziona a 32 bit sotto HVF. La sua libreria unix usa gli indirizzi Windows sotto i 4 GB senza tradurli (Barrique li tiene a `0xe000000000` + indirizzo, perché macOS non mappa sotto i 4 GB), e la correzione andrebbe fatta in DXMT, che non possiamo modificare. Per ora i 32 bit restano su wined3d (D3D9 e precedenti, OpenGL) e vkd3d (D3D12); D3D10/11 a 32 bit è fuori, come in CrossOver 27. Da riprendere se l'utente scrive la traduzione in DXMT (`wine_low_window_ptr` sui puntatori dei 32 bit in `winemetal_unix.c`).
 
 - 🔧 **[MS]** Direct3D su Metal in versione ARM64X, così un'unica build serve sia ai programmi ARM64 sia a quelli x86-64 (ARM64EC):
@@ -149,18 +209,20 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
   - ⬜ D3D9/10/11 con DXVK su MoltenVK (da confrontare con wined3d e DXMT sul banco);
   - 🔧 D3D12 con vkd3d (quello di Wine) su MoltenVK funziona; VKD3D-Proton da valutare.
 - ⬜ **[MS]** OpenGL 4.6 su Metal al posto del GL 4.1 di Apple. Studio in `research/opengl46-metal.md` (2026-11-18): Zink su MoltenVK si ferma a ~GL 2.1 (niente geometry shader né transform feedback); l'unica strada è Zink su KosmicKrisp (Mesa) dietro `BARRIQUE_GL=zink`, CGL resta il default. Prima una prova di 1-2 giorni fuori da Wine (soglia: GL 3.3), poi 4-6 settimane; il punto duro sono i buffer persistenti sotto HVF.
-- 🔧 **[MS]** MoltenVK con cache delle pipeline: MoltenVK incluso (passo 5), cache delle pipeline da configurare.
+- ✅ **[MS]** MoltenVK con cache delle pipeline: MoltenVK incluso (passo 5) e serializza `VkPipelineCache`; la persistenza su disco è di vkd3d/DXVK.
 - ✅ **[MS]** FFmpeg (VideoToolbox/AudioToolbox) e GStreamer/gst-libav per `winedmo`, `winegstreamer`, Media Foundation e DirectShow (passo 3 di FASE5-AV).
-- ⬜ **[MS]** Controller: winebus con SDL2 + IOHID (XInput e DirectInput).
-- ⬜ **[MS]** Mouse raw con GCMouse e schermo intero nativo di macOS.
+- **Input** (stato in "Cosa manca"): tastiera e mouse di base funzionano attraverso winemac; da fare:
+  - ⬜ **[MS]** Controller: winebus con SDL2 + IOHID (XInput e DirectInput).
+  - ⬜ **[MS]** Mouse raw con GCMouse e schermo intero nativo di macOS; cursore bloccato (`ClipCursor`) e nascosto nei giochi.
+  - ⬜ Da verificare: tastiera italiana e tasti morti, Cmd/Ctrl, metodi di input (IME), trackpad (scorrimento, zoom), cursore su Retina, appunti e trascinamento dal Finder.
 - 🔧 **[MS]** Font:
   - ✅ Arial, Times New Roman e Courier New: macOS li ha già in `/System/Library/Fonts/Supplemental` e Wine li carica tramite CoreText, Liberation non serve;
   - ✅ famiglie CJK di Windows associate ai font di sistema di macOS (Hiragino, Songti, PingFang, Apple SD Gothic Neo; giro 9);
   - ✅ glifi dei pulsanti delle finestre (Segoe Fluent Icons / Segoe MDL2 Assets, usati per esempio dalla barra del titolo di Firefox): **Barrique Caption**, font nostro con disegni originali, generato da `resources/fonts/make-caption-font.py`, sostituzioni in `prefix-defaults.reg` (giro 23).
 - ⬜ **[MS]** Mono (arm64, x86, x86-64) e Gecko inclusi, invece della finestra che chiede di scaricarli.
-- ⬜ **[MS]** CEF/Chromium: `--in-process-gpu` automatico (senza, la pagina resta bianca).
+- 🔧 **[MS]** CEF/Chromium: `--in-process-gpu` automatico (senza, la pagina resta bianca). Scritto nel loader di ntdll (`cef_in_process_gpu`: processi browser di CEF, cioè `libcef.dll` accanto all'exe o `steamwebhelper.exe`, senza `--type=`; `BARRIQUE_CEF_GPU=0` lo spegne), test `tests/pe/cmdline.c`; da rifare la verifica (round 22 illeggibile).
 - ⬜ **[MS]** msync, sincronizzazione su memoria condivisa. Studio in `research/msync.md` (2026-11-18): niente port della patch del 2024 (Wine 9); un backend macOS per la sincronizzazione in-process che Wine 11 ha già (memoria condivisa + `os_sync_wait_on_address`, semaforo Mach per le attese multiple). Guadagno stimato 3-8× sulle chiamate di sincronizzazione; prototipo 1-2 settimane, versione stabile 5-8.
-- 🔧 **[MS]** Firefox (giro 23, 2026-11-18): la build x64 passa da FEX ed è lenta (~20 s all'avvio, JS ~2,7× più lento); la build **ARM64** va a 120 fps con WebGL hardware (ANGLE su D3D11 con DXMT). Corretti per l'ARM64: (1) la sandbox di Chromium controlla che gli stub syscall di `ntdll` siano `svc #N; ret` come su Windows, sotto HVF ora lo sono (`hvf_windows_syscall_stubs`, `BARRIQUE_SVC_STUBS=0` per spegnerli); (2) `GetProcessMitigationPolicy` lasciava il buffer non scritto e il processo GPU si fermava su `!IsWin32kLockedDown()`. Con wined3d niente WebGL: per Firefox serve `BARRIQUE_D3D=dxmt`. **Aperto, x64:** i processi delle pagine e quello GPU della build x64 crashano spesso, con salti verso memoria allocata a runtime e puntatori a memoria già liberata, sia con DXMT sia con wined3d. Esclusi TSO hardware (`WINE_HVF_TSO=0` lo spegne), stub `svc` (`BARRIQUE_SVC_STUBS=0` torna al comportamento precedente), `GetProcessMitigationPolicy`, il font, la cache shader di DXMT, e una regressione (stesso esito con i sorgenti del giorno prima). Con `FEX_SMCCHECKS=full` i crash spariscono (0 su 4 run contro 9 su 6) ma Firefox diventa inutilizzabile: FEX esegue traduzioni non più valide, cioè non viene avvisato di qualche modifica al codice x64. I simboli di Firefox (servizio di Mozilla) mostrano però crash in sottosistemi diversi (cycle collector, WebRender, SWGL): memoria che si rovina in generale, non codice vecchio di FEX (con `full` cambiano solo i tempi). Esclusi anche: porte di completamento I/O (`tests/pe/iocp.c`, schema IPC di Chromium anche tra processi, 0 anomalie), coerenza della memoria tra vCPU (`tests/pe/memstress.c`: decommit/recommit e `VirtualProtect` con thread concorrenti, 0 errori), opzioni del JIT di FEX (multiblocco, AVX, AFP, LRCPC2). Traccia `WINEDEBUG=+fexnotify` per le notifiche di memoria a FEX. Per ora Firefox va usato nella build ARM64.
+- 🔧 **[MS]** Firefox (giro 23, 2026-11-18): la build x64 passa da FEX ed è lenta (~20 s all'avvio, JS ~2,7× più lento); la build **ARM64** va a 120 fps con WebGL hardware (ANGLE su D3D11 con DXMT). Corretti per l'ARM64: (1) la sandbox di Chromium controlla che gli stub syscall di `ntdll` siano `svc #N; ret` come su Windows, sotto HVF ora lo sono (`hvf_windows_syscall_stubs`, `BARRIQUE_SVC_STUBS=0` per spegnerli); (2) `GetProcessMitigationPolicy` lasciava il buffer non scritto e il processo GPU si fermava su `!IsWin32kLockedDown()`. Con wined3d niente WebGL: per Firefox serve `BARRIQUE_D3D=dxmt`. **Aperto, x64:** i processi delle pagine e quello GPU della build x64 crashano spesso, con salti verso memoria allocata a runtime e puntatori a memoria già liberata, sia con DXMT sia con wined3d. Esclusi TSO hardware (`WINE_HVF_TSO=0` lo spegne), stub `svc` (`BARRIQUE_SVC_STUBS=0` torna al comportamento precedente), `GetProcessMitigationPolicy`, il font, la cache shader di DXMT, e una regressione (stesso esito con i sorgenti del giorno prima). Con `FEX_SMCCHECKS=full` i crash spariscono (0 su 4 run contro 9 su 6) ma Firefox diventa inutilizzabile: FEX esegue traduzioni non più valide, cioè non viene avvisato di qualche modifica al codice x64. I simboli di Firefox (servizio di Mozilla) mostrano però crash in sottosistemi diversi (cycle collector, WebRender, SWGL): memoria che si rovina in generale, non codice vecchio di FEX (con `full` cambiano solo i tempi). Esclusi anche: porte di completamento I/O (`tests/pe/iocp.c`, schema IPC di Chromium anche tra processi, 0 anomalie), coerenza della memoria tra vCPU (`tests/pe/memstress.c`: decommit/recommit e `VirtualProtect` con thread concorrenti, 0 errori), opzioni del JIT di FEX (multiblocco, AVX, AFP, LRCPC2). Traccia `WINEDEBUG=+fexnotify` per le notifiche di memoria a FEX. **Causa trovata (giro 23, 2026-11-18):** gli indirizzi dei salti sbagliati erano tutti `multiplo di 16K + 0x7a0`, cioè `hvf_guest_syscall_stub` in `ntdll.so`. Due difetti nostri nella sospensione dei thread x64 sotto HVF: (1) `is_emulated_code` considerava x64 la pagina degli stub HVF, quindi un thread sospeso lì ripartiva in FEX a quell'indirizzo; (2) un segnale rimandato mentre la vCPU girava veniva gestito leggendo e riscrivendo il contesto nativo anche se nel frattempo il thread era entrato in FEX, invece di usare la sospensione cooperativa (il "doorbell") come `usr1_handler`. Dopo la correzione la pagina carica in 5 run su 6 (prima ~1 su 15) e i crash dei processi delle pagine spariscono; restano crash nel processo GPU (memoria non mappata `base 64K + 0x14c4` in `SceneBuilderThread::run`, memoria liberata in `Renderer::update`), uno per run sia con DXMT sia con wined3d: non dipendono dal backend D3D. Test aggiunti, tutti puliti: `simdsusp.c` (registri e stato FP attraverso sospensioni e rilascio delle vCPU, 80 thread), `shmstress.c` (memoria condivisa tra processi con viste che cambiano), benchmark di 7-Zip x64. Per ora conviene la build ARM64.
 
 Per ognuno dei componenti grafici e multimediali va controllata la licenza.
 
@@ -174,6 +236,7 @@ Per ognuno dei componenti grafici e multimediali va controllata la licenza.
 - ⬜ Doppio clic sulla `.app` (oggi apre il file manager di Wine), apertura di un `.exe` dal Finder (tipi di documento), Mono e Gecko inclusi.
 - ⬜ **[MS]** Strumenti inclusi: `innoextract` (installer Inno/GOG) e `cabextract`.
 - ⬜ **[MS]** VC++ 2015-2022 redistributable ufficiali, offerti all'installazione senza modifiche.
+- ⬜ **macOS 26 davvero supportato:** `pipe2` (e `HV_FEATURE_REG_ID_AA64ISAR2_EL1`) esistono solo da macOS 27; compilando con target 26 il linker li lascia deboli e su macOS 26 la chiamata va in crash. Servono un controllo `__builtin_available` con ripiego e una prova su un sistema macOS 26.
 
 ## Fase 6b: wizard "da installer a .app"
 
@@ -202,10 +265,15 @@ Un piccolo assistente, sul modello di winetricks, Whisky, CrossOver e Porting Ki
 ## Fase 7: robustezza della VM
 
 - ⬜ Segnalare ad Apple il kernel panic SPTM (`VIOLATION_ILLEGAL_MAPPING_TYPE`) causato da `hv_vm_map` su una pagina non adatta: un'API usata da un processo utente non dovrebbe poter mandare in panic il kernel.
-- ⬜ Distruggere la vCPU quando il thread termina.
+- ✅ Distruggere la vCPU quando il thread termina (`destroy_vcpu`, fase 2), e rilascio della vCPU dei thread in attesa quando ne sono in uso più di metà; verificato con 80 thread e ~800.000 rilasci (`simdsusp.c`, giro 23).
+- ✅ Sospensione dei thread ARM64EC (x64) sotto HVF: sospensione cooperativa con FEX anche per i segnali rimandati, pagina degli stub HVF mai trattata come codice x64 (giro 23).
 - ⬜ Verificare se `hv_vcpus_exit` su una vCPU non ancora partita viene ricordato: è il caso limite della sospensione.
 - ⬜ Sezioni condivise scrivibili basate su file: oggi non supportate sotto HVF.
-- ⬜ Contatori e log diagnostici attivabili, sul modello del loro `*_TRACE`.
+- ⬜ Contatori e log diagnostici attivabili, sul modello del loro `*_TRACE`. Esistono già `WINE_HVF_STATS=1` (uscite dalla VM) e `WINEDEBUG=+fexnotify` (notifiche di memoria a FEX).
+- ⬜ Pagine host da 16K (dalla fase 2): liberare o proteggere 4K dentro una pagina da 16K, guard page e crescita dello stack (`test_stack_commit`), write-watch per pagina host.
+- ⬜ Uscita dalla VM (dalla fase 3): gestire nella VM alcune syscall frequenti che leggono solo dati del processo.
+- ⬜ Eccezioni (dalla fase 2): `ntdll` `exception` sulle tre architetture (eccezioni collise, srotolamento da pc 0, stack overflow dopo `RtlUnwind` su i386).
+- ⬜ Resti dei test (dalle fasi 2 e 4): `debugger`, `loader`, `rtl` su aarch64; ws2_32 `afd`, user32 `class`, ole32 `dragdrop` su i386; rpcrt4 `cstub`, dbghelp, crypt32 `sip` su x86-64; kernel32 `console` instabile.
 
 ## Fase 8: Steam ⬜
 
