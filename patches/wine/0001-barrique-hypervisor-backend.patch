@@ -799,10 +799,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..6533e3c
+index 0000000..9c0edaf
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,978 @@
+@@ -0,0 +1,982 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -924,6 +924,8 @@ index 0000000..6533e3c
 +static LONG stat_exits, stat_syscalls, stat_unix_calls, stat_page_fills, stat_other;
 +static double stat_start;
 +static double stat_now(void);
++/* svc #N is a Windows syscall (BARRIQUE_SVC_STUBS=0: an exception, as before) */
++BOOL hvf_svc_syscalls = TRUE;
 +static volatile BOOL hvf_tso;      /* x86 memory ordering (Apple's TSO bit) for all vCPUs */
 +
 +struct hvf_vcpu
@@ -1363,6 +1365,7 @@ index 0000000..6533e3c
 +        TRACE( "%u vCPUs at most, released by blocking threads from %d\n", max_vcpus, (int)vcpu_release_threshold );
 +    }
 +    hvf_tso = getenv( "WINE_HVF_TSO" ) && atoi( getenv( "WINE_HVF_TSO" ));
++    if (getenv( "BARRIQUE_SVC_STUBS" ) && !atoi( getenv( "BARRIQUE_SVC_STUBS" ))) hvf_svc_syscalls = FALSE;
 +    TRACE( "VM ready, guest code at %p\n", guest_code );
 +}
 +
@@ -1756,7 +1759,8 @@ index 0000000..6533e3c
 +            /* our two stubs use immediates no syscall id reaches; any other svc #N
 +             * is a Windows syscall stub (svc #N; ret), see hvf_windows_syscall_stubs() */
 +            ex->type = (esr & 0xffff) == HVF_SVC_WINE_SYSCALL ? HVF_EXIT_SYSCALL :
-+                       (esr & 0xffff) == HVF_SVC_UNIX_CALL ? HVF_EXIT_UNIX_CALL : HVF_EXIT_SVC;
++                       (esr & 0xffff) == HVF_SVC_UNIX_CALL ? HVF_EXIT_UNIX_CALL :
++                       hvf_svc_syscalls ? HVF_EXIT_SVC : HVF_EXIT_OTHER;
 +            InterlockedIncrement( ex->type == HVF_EXIT_UNIX_CALL ? &stat_unix_calls : &stat_syscalls );
 +            return;
 +        case 0x20:  /* instruction abort */
@@ -1782,7 +1786,7 @@ index 0000000..6533e3c
 +
 +#endif  /* __APPLE__ && __aarch64__ */
 diff --git a/dlls/ntdll/unix/loader.c b/dlls/ntdll/unix/loader.c
-index dde4b58..004de30 100644
+index dde4b58..9304e6e 100644
 --- a/dlls/ntdll/unix/loader.c
 +++ b/dlls/ntdll/unix/loader.c
 @@ -292,16 +292,43 @@ static WORD get_alt_machine( WORD machine )
@@ -1940,7 +1944,7 @@ index dde4b58..004de30 100644
 +#ifdef WINE_HVF
 +    /* Windows code runs in the VM: enter the host through the guest stubs */
 +    *p__wine_syscall_dispatcher = hvf_syscall_stub;
-+    if (!is_arm64ec() && (!getenv( "BARRIQUE_SVC_STUBS" ) || atoi( getenv( "BARRIQUE_SVC_STUBS" ))))
++    if (!is_arm64ec() && !(getenv( "BARRIQUE_SVC_STUBS" ) && !atoi( getenv( "BARRIQUE_SVC_STUBS" ))))
 +        hvf_windows_syscall_stubs( module, exports );
 +    /* on ARM64EC the exported pointer goes through __wine_unix_call_arm64ec, which jumps
 +     * to __wine_unix_call_dispatcher_arm64ec: replace the target, keep the wrapper */
@@ -1951,7 +1955,7 @@ index dde4b58..004de30 100644
  }
  
 diff --git a/dlls/ntdll/unix/process.c b/dlls/ntdll/unix/process.c
-index 1d10948..b0b1e25 100644
+index 1d10948..e77a4ae 100644
 --- a/dlls/ntdll/unix/process.c
 +++ b/dlls/ntdll/unix/process.c
 @@ -387,6 +387,72 @@ static void set_stdio_fd( int stdin_fd, int stdout_fd )
@@ -2417,7 +2421,7 @@ index 1d10948..b0b1e25 100644
      return status;
  }
  
-@@ -1668,6 +1817,16 @@ NTSTATUS WINAPI NtSetInformationProcess( HANDLE handle, PROCESSINFOCLASS class,
+@@ -1668,6 +1817,18 @@ NTSTATUS WINAPI NtSetInformationProcess( HANDLE handle, PROCESSINFOCLASS class,
  {
      unsigned int ret = STATUS_SUCCESS;
  
@@ -2426,6 +2430,8 @@ index 1d10948..b0b1e25 100644
 +    {
 +        if (size != sizeof(ULONG)) return STATUS_INFO_LENGTH_MISMATCH;
 +        if (handle != NtCurrentProcess()) return STATUS_NOT_SUPPORTED;
++        /* WINE_HVF_TSO=0: refuse, FEX then orders memory accesses itself */
++        if (getenv( "WINE_HVF_TSO" ) && !atoi( getenv( "WINE_HVF_TSO" ))) return STATUS_NOT_SUPPORTED;
 +        hvf_set_tso( *(const ULONG *)info != 0 );
 +        return STATUS_SUCCESS;
 +    }
@@ -3322,10 +3328,10 @@ index 11171cc..e39e6f0 100644
  
      if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..1f4c5d1 100644
+index 829db1e..f9bee90 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
-@@ -138,6 +138,67 @@ static inline struct thread_data *get_thread_data(void)
+@@ -138,6 +138,68 @@ static inline struct thread_data *get_thread_data(void)
      return pthread_getspecific( thread_data_key );
  }
  
@@ -3362,6 +3368,7 @@ index 829db1e..1f4c5d1 100644
 +};
 +
 +extern void *hvf_syscall_stub;
++extern BOOL hvf_svc_syscalls;
 +extern void *hvf_unix_call_stub;
 +extern void hvf_init_process(void);
 +extern void hvf_map_user_shared_data( void *host );
