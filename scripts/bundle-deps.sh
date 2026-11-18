@@ -52,6 +52,13 @@ if [[ -d $media/lib ]]; then
     done
 fi
 
+# SDL2 from build-sdl2.sh: winebus.sys's SDL backend for game controllers
+sdl=${SDL2_PREFIX:-$HOME/Work/wine/deps-sdl2}
+if [[ -f $sdl/lib/libSDL2-2.0.0.dylib ]]; then
+    install -m 644 $sdl/lib/libSDL2-2.0.0.dylib $dest/libSDL2-2.0.0.dylib
+    copied+=(libSDL2-2.0.0.dylib)
+fi
+
 if [[ -f $vk/lib/libMoltenVK.dylib ]]; then
     install -m 644 $vk/lib/libMoltenVK.dylib $dest/libMoltenVK.dylib
     copied+=(libMoltenVK.dylib)

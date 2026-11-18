@@ -40,9 +40,10 @@ Tutto ciò che è aperto, per area, compresi i punti minori. Priorità: **A** bl
 - **C** Resti dei test per architettura (ws2_32 `afd` i386, user32 `class` i386, rpcrt4 `cstub` x86-64, dbghelp stack walk x86-64, crypt32 `sip`, exe x64 senza rilocazioni sotto i 4GB). Fase 7.
 
 **Input**
-- **A** Mouse "raw" (movimento grezzo, `WM_INPUT`/DirectInput) con GCMouse, per i giochi con visuale in prima persona. **[MS]**
-- **A** Cursore bloccato nella finestra (`ClipCursor`) e nascosto nei giochi; schermo intero nativo di macOS. **[MS]**
-- **A** Controller: winebus con SDL2 + IOHID (XInput e DirectInput). **[MS]**
+- 🔧 **A** Mouse "raw" (movimento grezzo, `WM_INPUT`): registrazione ok; resta da verificare a mano che il movimento relativo arrivi con il cursore bloccato (`tests/pe/inputtest.c`, modalità interattiva) e valutare GCMouse. **[MS]**
+- 🔧 **A** Cursore bloccato nella finestra (`ClipCursor`, metodo "confinement" di winemac, senza permessi) verificato sulle tre architetture; cursore nascosto e schermo intero nativo di macOS da provare a mano (`inputtest`). **[MS]**
+- ✅ Elenco dei dispositivi raw (`GetRawInputDeviceList`) vuoto sotto HVF: `win32u` riceve l'handle raw di mouse e tastiera virtuali in un buffer sul proprio stack, che è lo stack macOS del thread e non una vista Windows, e `check_write_access` lo rifiutava (`STATUS_INVALID_USER_BUFFER`). Ora i buffer sullo stack host del thread sono accettati: 2 dispositivi su ARM64, x64 e i386; user32 `input` +8 controlli per architettura, dinput pulito su ARM64 (round 25). Correzione generale: vale per ogni chiamata al server dal lato Unix con risposta su stack.
+- 🔧 **A** Controller: SDL2 2.32.10 compilata da noi (`scripts/build-sdl2.sh`, macOS 26; quella di Homebrew è sdl2-compat e richiede macOS 27) e inclusa in `lib/deps`; `winebus` la carica da `@loader_path/../../deps` e il backend SDL parte (2026-11-18). Da provare con un controller vero (`inputtest`). **[MS]**
 - **B** Tastiera italiana e tasti accentati, tasti morti; corrispondenza Cmd/Ctrl (copia/incolla con Cmd), tasti funzione e `Fn`. Da verificare.
 - **B** Metodi di input (giapponese, cinese, coreano: IME di macOS verso IMM32/TSF). Da verificare.
 - **B** Trackpad: scorrimento fluido e "naturale", velocità della rotellina, zoom a due dita (`WM_GESTURE`/Ctrl+rotellina). Da verificare.
@@ -68,7 +69,7 @@ Tutto ciò che è aperto, per area, compresi i punti minori. Priorità: **A** bl
 - **C** Aggiornamento del runtime nelle `.app` create, esportazione di un programma installato.
 
 **Prestazioni**
-- **B** msync: sincronizzazione in-process su memoria condivisa (studio fatto, stima 3-8× sulle chiamate di sincronizzazione). **[MS]**
+- **B** msync: sincronizzazione in-process su memoria condivisa (studio fatto). Misurato (`tests/pe/syncbench.c`, 2026-11-18): mutex, semafori, eventi, `WaitForMultipleObjects` e ping-pong di eventi costano **26-32 µs** per operazione sulle tre architetture (passano dal wineserver; su Windows 0,2-1 µs); critical section, SRW e `WaitOnAddress` restano nel processo (5-370 ns). **[MS]**
 - **B** Costo dell'uscita dalla VM (~1,7 µs per syscall contro 0,1 nativi): gestire nella VM le syscall frequenti che leggono solo dati del processo. Fase 7.
 - **C** Firefox x64 sotto FEX ~20 s all'avvio: limite della traduzione, la build ARM64 non ce l'ha.
 
