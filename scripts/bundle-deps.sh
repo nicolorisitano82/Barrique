@@ -70,4 +70,9 @@ if [[ -d $fonts ]]; then
     mkdir -p $fdest
     for f in $fonts/*.ttf(N); do install -m 644 $f $fdest/${f:t}; (( ++nfonts )); done
 fi
+# Barrique's own caption glyphs (Segoe Fluent Icons / MDL2 Assets replacement, prefix-defaults.reg)
+fdest=${dest:h}/fonts
+[[ -d ${dest:h:h}/share/wine ]] && fdest=${dest:h:h}/share/wine/fonts
+mkdir -p $fdest
+python3 -I ${0:A:h}/../resources/fonts/make-caption-font.py $fdest/barrique-caption.ttf && (( ++nfonts ))
 print "deps in $dest: ${#copied} libraries; $nfonts fonts"

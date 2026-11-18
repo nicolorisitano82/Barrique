@@ -312,6 +312,26 @@ index a0bc41e..e7f8208 100644
  };
  
  struct text_source_context
+diff --git a/dlls/kernelbase/process.c b/dlls/kernelbase/process.c
+index c58e977..7e49a5a 100644
+--- a/dlls/kernelbase/process.c
++++ b/dlls/kernelbase/process.c
+@@ -916,6 +916,15 @@ BOOL WINAPI /* DECLSPEC_HOTPATCH */ GetProcessMitigationPolicy( HANDLE process,
+                                                           void *buffer, SIZE_T length )
+ {
+     FIXME( "(%p, %u, %p, %Iu): stub\n", process, policy, buffer, length );
++    if (!buffer || !length || policy >= MaxProcessMitigationPolicy)
++    {
++        SetLastError( ERROR_INVALID_PARAMETER );
++        return FALSE;
++    }
++    /* Wine enforces none of the policies: report them all off. Leaving the buffer
++     * untouched made Firefox's GPU process read stack garbage as
++     * DisallowWin32kSystemCalls and abort (MOZ_RELEASE_ASSERT(!IsWin32kLockedDown())). */
++    memset( buffer, 0, length );
+     return TRUE;
+ }
+ 
 diff --git a/dlls/mfplat/main.c b/dlls/mfplat/main.c
 index 53db521..74560d2 100644
 --- a/dlls/mfplat/main.c
@@ -666,10 +686,73 @@ index 4c43b77..cb7d252 100644
  	unix/loadorder.c \
  	unix/process.c \
 diff --git a/dlls/ntdll/loader.c b/dlls/ntdll/loader.c
-index d0c2145..7fcaa16 100644
+index d0c2145..34c074b 100644
 --- a/dlls/ntdll/loader.c
 +++ b/dlls/ntdll/loader.c
-@@ -4521,7 +4521,13 @@ void loader_init( CONTEXT *context, void **entry )
+@@ -4426,6 +4426,54 @@ static void release_address_space(void)
+ #endif
+ }
+ 
++/***********************************************************************
++ *		cef_in_process_gpu
++ *
++ * Barrique: CEF/Chromium browsers show a blank page under Wine on macOS unless
++ * their GPU process runs inside the browser process (MetalSharp's finding, also
++ * needed for Steam's steamwebhelper). For the browser process of a CEF program
++ * (libcef.dll next to the executable, or steamwebhelper.exe) without --type=,
++ * --in-process-gpu is appended to the command line. BARRIQUE_CEF_GPU=0 turns it off.
++ */
++static void cef_in_process_gpu( RTL_USER_PROCESS_PARAMETERS *params )
++{
++    static const WCHAR in_process_gpu[] = L" --in-process-gpu";
++    UNICODE_STRING *cmdline = &params->CommandLine, var = RTL_CONSTANT_STRING( L"BARRIQUE_CEF_GPU" ), value;
++    const WCHAR *image = params->ImagePathName.Buffer, *name;
++    WCHAR env[8], *path, *buf;
++    BOOL cef = FALSE;
++    SIZE_T dir_len;
++
++    if (!image || !cmdline->Buffer || !cmdline->Length) return;
++    value.Buffer = env;
++    value.MaximumLength = sizeof(env);
++    if (!RtlQueryEnvironmentVariable_U( NULL, &var, &value ) && value.Length == sizeof(WCHAR) && env[0] == '0')
++        return;
++    if (wcsstr( cmdline->Buffer, L"--type=" ) || wcsstr( cmdline->Buffer, L"--in-process-gpu" )) return;
++
++    name = (name = wcsrchr( image, '\\' )) ? name + 1 : image;
++    if (!wcsicmp( name, L"steamwebhelper.exe" )) cef = TRUE;
++    else
++    {
++        dir_len = name - image;
++        if (!(path = RtlAllocateHeap( GetProcessHeap(), 0, (dir_len + 12) * sizeof(WCHAR) ))) return;
++        memcpy( path, image, dir_len * sizeof(WCHAR) );
++        wcscpy( path + dir_len, L"libcef.dll" );
++        cef = RtlDoesFileExists_U( path );
++        RtlFreeHeap( GetProcessHeap(), 0, path );
++    }
++    if (!cef) return;
++
++    if (!(buf = RtlAllocateHeap( GetProcessHeap(), 0, cmdline->Length + sizeof(in_process_gpu) ))) return;
++    memcpy( buf, cmdline->Buffer, cmdline->Length );
++    memcpy( (char *)buf + cmdline->Length, in_process_gpu, sizeof(in_process_gpu) );
++    cmdline->Buffer = buf;
++    cmdline->Length += sizeof(in_process_gpu) - sizeof(WCHAR);
++    cmdline->MaximumLength = cmdline->Length + sizeof(WCHAR);
++    TRACE( "CEF browser %s: added --in-process-gpu\n", debugstr_w(name) );
++}
++
++
+ /******************************************************************
+  *		loader_init
+  *
+@@ -4474,6 +4522,7 @@ void loader_init( CONTEXT *context, void **entry )
+             InitializeListHead( &hash_table[i] );
+ 
+         init_user_process_params();
++        cef_in_process_gpu( peb->ProcessParameters );
+         load_global_options();
+         version_init();
+         open_known_dll_ntdir();
+@@ -4521,7 +4570,13 @@ void loader_init( CONTEXT *context, void **entry )
      else
      {
  #ifdef _WIN64
@@ -716,10 +799,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..c833b63
+index 0000000..6533e3c
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,977 @@
+@@ -0,0 +1,978 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -819,11 +902,11 @@ index 0000000..c833b63
 +    ".endr\n\t"
 +    ".p2align 4\n"
 +    __ASM_NAME("hvf_guest_syscall_stub") ":\n\t"
-+    "svc #1\n\t"
++    "svc #0xff01\n\t"   /* HVF_SVC_WINE_SYSCALL */
 +    "ret\n\t"
 +    ".p2align 4\n"
 +    __ASM_NAME("hvf_guest_unix_call_stub") ":\n\t"
-+    "svc #2\n\t"
++    "svc #0xff02\n\t"   /* HVF_SVC_UNIX_CALL */
 +    "ret\n\t"
 +    ".p2align 12\n"
 +    __ASM_NAME("hvf_guest_end") ":\n\t"
@@ -1670,10 +1753,11 @@ index 0000000..c833b63
 +        switch (esr >> 26)
 +        {
 +        case 0x15:  /* svc */
-+            ex->type = (esr & 0xffff) == 1 ? HVF_EXIT_SYSCALL :
-+                       (esr & 0xffff) == 2 ? HVF_EXIT_UNIX_CALL : HVF_EXIT_OTHER;
-+            InterlockedIncrement( ex->type == HVF_EXIT_SYSCALL ? &stat_syscalls :
-+                                  ex->type == HVF_EXIT_UNIX_CALL ? &stat_unix_calls : &stat_other );
++            /* our two stubs use immediates no syscall id reaches; any other svc #N
++             * is a Windows syscall stub (svc #N; ret), see hvf_windows_syscall_stubs() */
++            ex->type = (esr & 0xffff) == HVF_SVC_WINE_SYSCALL ? HVF_EXIT_SYSCALL :
++                       (esr & 0xffff) == HVF_SVC_UNIX_CALL ? HVF_EXIT_UNIX_CALL : HVF_EXIT_SVC;
++            InterlockedIncrement( ex->type == HVF_EXIT_UNIX_CALL ? &stat_unix_calls : &stat_syscalls );
 +            return;
 +        case 0x20:  /* instruction abort */
 +        case 0x24:  /* data abort */
@@ -1698,7 +1782,7 @@ index 0000000..c833b63
 +
 +#endif  /* __APPLE__ && __aarch64__ */
 diff --git a/dlls/ntdll/unix/loader.c b/dlls/ntdll/unix/loader.c
-index dde4b58..934c74e 100644
+index dde4b58..004de30 100644
 --- a/dlls/ntdll/unix/loader.c
 +++ b/dlls/ntdll/unix/loader.c
 @@ -292,16 +292,43 @@ static WORD get_alt_machine( WORD machine )
@@ -1784,13 +1868,80 @@ index dde4b58..934c74e 100644
      if (build_dir)
      {
          /* try as a dll */
-@@ -1565,6 +1623,14 @@ static void load_ntdll_functions( HMODULE module )
+@@ -1521,6 +1579,64 @@ static const void *get_module_data_dir( HMODULE module, ULONG dir, ULONG *size )
+     return get_rva( module, data->VirtualAddress );
+ }
+ 
++#ifdef WINE_HVF
++/***********************************************************************
++ *           hvf_windows_syscall_stubs
++ *
++ * Give ntdll's ARM64 syscall stubs the shape Windows has, svc #id; ret, which
++ * hvf_run() reports as HVF_EXIT_SVC. Code that checks the stubs before hooking
++ * them, such as the Chromium sandbox used by Firefox and Chrome (it wants
++ * svc #N; ret; 8 zero bytes, and fails every child process launch otherwise),
++ * then accepts them. Only under HVF: outside the VM svc would reach macOS.
++ * Wine's stub is mov x8, #id; mov x9, x30; ldr x16, 1f; ldr x16, [x16];
++ * blr x16; ret; 1: .quad, its first 16 bytes are replaced.
++ */
++static void hvf_windows_syscall_stubs( HMODULE module, const IMAGE_EXPORT_DIRECTORY *exports )
++{
++    const DWORD *functions = get_rva( module, exports->AddressOfFunctions );
++    char *start = NULL, *end = NULL;
++    unsigned int i, count = 0;
++    void *addr;
++    SIZE_T size;
++    ULONG old;
++
++    for (i = 0; i < exports->NumberOfFunctions; i++)
++    {
++        const UINT *code = get_rva( module, functions[i] );
++        if (!functions[i] || (code[0] & 0xffe0001f) != 0xd2800008 || code[1] != 0xaa1e03e9 ||
++            code[2] != 0x58000090 || code[3] != 0xf9400210 || code[4] != 0xd63f0200 || code[5] != 0xd65f03c0)
++            continue;
++        if (!start || (char *)code < start) start = (char *)code;
++        if ((char *)code + 16 > end) end = (char *)code + 16;
++    }
++    if (!start) return;
++
++    addr = start;
++    size = end - start;
++    if (NtProtectVirtualMemory( NtCurrentProcess(), &addr, &size, PAGE_EXECUTE_READWRITE, &old ))
++    {
++        ERR( "can't make the syscall stubs writable\n" );
++        return;
++    }
++    for (i = 0; i < exports->NumberOfFunctions; i++)
++    {
++        UINT *code = get_rva( module, functions[i] );
++        UINT id;
++        if (!functions[i] || (char *)code < start || (char *)code >= end) continue;
++        if ((code[0] & 0xffe0001f) != 0xd2800008 || code[1] != 0xaa1e03e9 || code[2] != 0x58000090) continue;
++        id = (code[0] >> 5) & 0xffff;
++        if (id >= HVF_SVC_WINE_SYSCALL) continue;
++        code[0] = 0xd4000001 | (id << 5);  /* svc #id */
++        code[1] = 0xd65f03c0;              /* ret */
++        code[2] = code[3] = 0;
++        count++;
++    }
++    __builtin___clear_cache( start, end );
++    NtProtectVirtualMemory( NtCurrentProcess(), &addr, &size, old, &old );
++    TRACE( "%u syscall stubs\n", count );
++}
++#endif
++
+ /***********************************************************************
+  *           load_ntdll_functions
+  */
+@@ -1565,6 +1681,16 @@ static void load_ntdll_functions( HMODULE module )
          *p__wine_unix_call_dispatcher_arm64ec = __wine_unix_call_dispatcher;
      }
      else *p__wine_unix_call_dispatcher = __wine_unix_call_dispatcher;
 +#ifdef WINE_HVF
 +    /* Windows code runs in the VM: enter the host through the guest stubs */
 +    *p__wine_syscall_dispatcher = hvf_syscall_stub;
++    if (!is_arm64ec() && (!getenv( "BARRIQUE_SVC_STUBS" ) || atoi( getenv( "BARRIQUE_SVC_STUBS" ))))
++        hvf_windows_syscall_stubs( module, exports );
 +    /* on ARM64EC the exported pointer goes through __wine_unix_call_arm64ec, which jumps
 +     * to __wine_unix_call_dispatcher_arm64ec: replace the target, keep the wrapper */
 +    if (p__wine_unix_call_dispatcher_arm64ec) *p__wine_unix_call_dispatcher_arm64ec = hvf_unix_call_stub;
@@ -2311,7 +2462,7 @@ index c80226f..173124f 100644
          {
              ext[count].Type = MemExtendedParameterImageMachine;
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
-index 02b6d57..c4f349b 100644
+index 02b6d57..40c5419 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
 +++ b/dlls/ntdll/unix/signal_arm64.c
 @@ -29,6 +29,8 @@
@@ -2609,7 +2760,7 @@ index 02b6d57..c4f349b 100644
  
  
  /***********************************************************************
-@@ -1966,4 +2151,432 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+@@ -1966,4 +2151,439 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
  __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
                        __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
  
@@ -2896,11 +3047,13 @@ index 02b6d57..c4f349b 100644
 +        hvf_run( &ex, &hvf_pending );
 +        data = get_thread_data();
 +        frame = get_syscall_frame( data );
-+        hvf_get_user_regs( &regs, ex.type != HVF_EXIT_SYSCALL && ex.type != HVF_EXIT_UNIX_CALL );
++        hvf_get_user_regs( &regs, ex.type != HVF_EXIT_SYSCALL && ex.type != HVF_EXIT_SVC &&
++                                  ex.type != HVF_EXIT_UNIX_CALL );
 +
 +        switch (ex.type)
 +        {
 +        case HVF_EXIT_SYSCALL:
++        case HVF_EXIT_SVC:
 +        case HVF_EXIT_UNIX_CALL:
 +        {
 +            jmp_buf jmp, *prev = hvf_syscall_jmp;
@@ -2908,6 +3061,11 @@ index 02b6d57..c4f349b 100644
 +
 +            if (ex.type == HVF_EXIT_SYSCALL)  /* thunk: mov x8, id; mov x9, x30; ldr x16, dispatcher; blr x16; ret */
 +                hvf_save_frame( frame, &regs, regs.x[9], regs.x[30] );
++            else if (ex.type == HVF_EXIT_SVC)  /* svc #id; ret: as on Windows, back after the svc */
++            {
++                regs.x[8] = ex.esr & 0xffff;
++                hvf_save_frame( frame, &regs, regs.x[30], regs.pc );
++            }
 +            else
 +                hvf_save_frame( frame, &regs, regs.x[30], regs.x[30] );
 +            hvf_lazy_fp = frame;  /* regs has no FP state, see hvf_sync_fp() */
@@ -2919,7 +3077,7 @@ index 02b6d57..c4f349b 100644
 +            if (!(fault = setjmp( jmp )))
 +            {
 +                hvf_syscall_jmp = &jmp;
-+                if (ex.type == HVF_EXIT_SYSCALL) ret = hvf_dispatch_syscall( data, &regs );
++                if (ex.type != HVF_EXIT_UNIX_CALL) ret = hvf_dispatch_syscall( data, &regs );
 +                else ret = ((unixlib_entry_t *)regs.x[0])[regs.x[1]]( (void *)regs.x[2] );
 +            }
 +            else
@@ -3164,10 +3322,10 @@ index 11171cc..e39e6f0 100644
  
      if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..2091b1d 100644
+index 829db1e..1f4c5d1 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
-@@ -138,6 +138,61 @@ static inline struct thread_data *get_thread_data(void)
+@@ -138,6 +138,67 @@ static inline struct thread_data *get_thread_data(void)
      return pthread_getspecific( thread_data_key );
  }
  
@@ -3186,8 +3344,14 @@ index 829db1e..2091b1d 100644
 +    NEON128  v[32];
 +};
 +
-+enum hvf_exit_type { HVF_EXIT_SYSCALL, HVF_EXIT_UNIX_CALL, HVF_EXIT_FAULT, HVF_EXIT_OTHER,
++enum hvf_exit_type { HVF_EXIT_SYSCALL,    /* Wine's stub: id in x8, return address in x9 */
++                    HVF_EXIT_SVC,        /* Windows-shaped stub: svc #id; ret */
++                    HVF_EXIT_UNIX_CALL, HVF_EXIT_FAULT, HVF_EXIT_OTHER,
 +                    HVF_EXIT_INTERRUPT };  /* a signal asked for the guest state, see hvf_kick() */
++
++/* svc immediates of hvf_syscall_stub and hvf_unix_call_stub, above any syscall id */
++#define HVF_SVC_WINE_SYSCALL 0xff01
++#define HVF_SVC_UNIX_CALL    0xff02
 +
 +struct hvf_exit
 +{

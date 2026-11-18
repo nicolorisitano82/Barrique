@@ -148,17 +148,19 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
   - ✅ D3D10/11 con DXMT, ARM64X (passo 7); niente fork, DXMT è usato com'è;
   - ⬜ D3D9/10/11 con DXVK su MoltenVK (da confrontare con wined3d e DXMT sul banco);
   - 🔧 D3D12 con vkd3d (quello di Wine) su MoltenVK funziona; VKD3D-Proton da valutare.
-- ⬜ **[MS]** OpenGL 4.6 su Metal (WineMetalGL) al posto del GL 4.1 di Apple.
+- ⬜ **[MS]** OpenGL 4.6 su Metal al posto del GL 4.1 di Apple. Studio in `research/opengl46-metal.md` (2026-11-18): Zink su MoltenVK si ferma a ~GL 2.1 (niente geometry shader né transform feedback); l'unica strada è Zink su KosmicKrisp (Mesa) dietro `BARRIQUE_GL=zink`, CGL resta il default. Prima una prova di 1-2 giorni fuori da Wine (soglia: GL 3.3), poi 4-6 settimane; il punto duro sono i buffer persistenti sotto HVF.
 - 🔧 **[MS]** MoltenVK con cache delle pipeline: MoltenVK incluso (passo 5), cache delle pipeline da configurare.
 - ✅ **[MS]** FFmpeg (VideoToolbox/AudioToolbox) e GStreamer/gst-libav per `winedmo`, `winegstreamer`, Media Foundation e DirectShow (passo 3 di FASE5-AV).
 - ⬜ **[MS]** Controller: winebus con SDL2 + IOHID (XInput e DirectInput).
 - ⬜ **[MS]** Mouse raw con GCMouse e schermo intero nativo di macOS.
 - 🔧 **[MS]** Font:
   - ✅ Arial, Times New Roman e Courier New: macOS li ha già in `/System/Library/Fonts/Supplemental` e Wine li carica tramite CoreText, Liberation non serve;
-  - ✅ famiglie CJK di Windows associate ai font di sistema di macOS (Hiragino, Songti, PingFang, Apple SD Gothic Neo; giro 9).
+  - ✅ famiglie CJK di Windows associate ai font di sistema di macOS (Hiragino, Songti, PingFang, Apple SD Gothic Neo; giro 9);
+  - ✅ glifi dei pulsanti delle finestre (Segoe Fluent Icons / Segoe MDL2 Assets, usati per esempio dalla barra del titolo di Firefox): **Barrique Caption**, font nostro con disegni originali, generato da `resources/fonts/make-caption-font.py`, sostituzioni in `prefix-defaults.reg` (giro 23).
 - ⬜ **[MS]** Mono (arm64, x86, x86-64) e Gecko inclusi, invece della finestra che chiede di scaricarli.
 - ⬜ **[MS]** CEF/Chromium: `--in-process-gpu` automatico (senza, la pagina resta bianca).
-- ⬜ **[MS]** msync, sincronizzazione su memoria condivisa. Da verificare con la VM: la memoria condivisa `shm` nella VM è già provata.
+- ⬜ **[MS]** msync, sincronizzazione su memoria condivisa. Studio in `research/msync.md` (2026-11-18): niente port della patch del 2024 (Wine 9); un backend macOS per la sincronizzazione in-process che Wine 11 ha già (memoria condivisa + `os_sync_wait_on_address`, semaforo Mach per le attese multiple). Guadagno stimato 3-8× sulle chiamate di sincronizzazione; prototipo 1-2 settimane, versione stabile 5-8.
+- 🔧 **[MS]** Firefox (giro 23, 2026-11-18): la build x64 passa da FEX ed è lenta (~20 s all'avvio, JS ~2,7× più lento); la build **ARM64** va a 120 fps con WebGL hardware (ANGLE su D3D11 con DXMT). Corretti per l'ARM64: (1) la sandbox di Chromium controlla che gli stub syscall di `ntdll` siano `svc #N; ret` come su Windows, sotto HVF ora lo sono (`hvf_windows_syscall_stubs`, `BARRIQUE_SVC_STUBS=0` per spegnerli); (2) `GetProcessMitigationPolicy` lasciava il buffer non scritto e il processo GPU si fermava su `!IsWin32kLockedDown()`. Con wined3d niente WebGL: per Firefox serve `BARRIQUE_D3D=dxmt`.
 
 Per ognuno dei componenti grafici e multimediali va controllata la licenza.
 

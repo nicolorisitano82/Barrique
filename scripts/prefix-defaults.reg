@@ -16,3 +16,10 @@ Windows Registry Editor Version 5.00
 
 [HKEY_LOCAL_MACHINE\System\CurrentControlSet\Hardware Profiles\Current\Software\Fonts]
 "LogPixels"=dword:000000c0
+
+; Window caption glyphs: Windows 10/11 programs (Firefox's title bar buttons)
+; draw them from Segoe Fluent Icons or Segoe MDL2 Assets, which Wine lacks.
+; Barrique Caption (resources/fonts/make-caption-font.py) has the same code points.
+[HKEY_CURRENT_USER\Software\Wine\Fonts\Replacements]
+"Segoe Fluent Icons"="Barrique Caption"
+"Segoe MDL2 Assets"="Barrique Caption"
