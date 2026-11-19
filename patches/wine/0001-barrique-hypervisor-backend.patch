@@ -1078,10 +1078,10 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..ef69819
+index 0000000..c212379
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,1067 @@
+@@ -0,0 +1,1072 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -1481,19 +1481,20 @@ index 0000000..ef69819
 +    mach_vm_size_t size;
 +    uint64_t *pte, page = va & ~(GUEST_PAGE - 1);
 +    BOOL ret = FALSE;
++    sigset_t sigset;
 +
 +    if (!query_page( page & ~(HOST_PAGE - 1), &info, &page_info, &addr, &size )) return FALSE;
 +    if (info.user_tag != VM_MEMORY_IOACCELERATOR || !(info.protection & VM_PROT_READ)) return FALSE;
 +    if (write && !(info.protection & VM_PROT_WRITE)) return FALSE;
 +
-+    pthread_mutex_lock( &hvf_mutex );
++    server_enter_uninterrupted_section( &hvf_mutex, &sigset );
 +    if (map_stage2_ex( page, TRUE ) && (pte = pte_for( page, TRUE )))
 +    {
 +        *pte = page | prot_to_pte( PROT_READ | ((info.protection & VM_PROT_WRITE) ? PROT_WRITE : 0) );
 +        tlb_generation++;
 +        ret = TRUE;
 +    }
-+    pthread_mutex_unlock( &hvf_mutex );
++    server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +    if (ret) TRACE( "mapped Metal page %llx\n", (unsigned long long)page );
 +    return ret;
 +}
@@ -1535,11 +1536,12 @@ index 0000000..ef69819
 +    uint64_t start = (uint64_t)addr & ~(GUEST_PAGE - 1);
 +    uint64_t end = ((uint64_t)addr + size + GUEST_PAGE - 1) & ~(GUEST_PAGE - 1);
 +    uint64_t bit, last;
++    sigset_t sigset;
 +
 +    if (!ttbr0 || start >= IPA_LIMIT || !size) return;
 +    if (end > IPA_LIMIT) end = IPA_LIMIT;
 +
-+    pthread_mutex_lock( &hvf_mutex );
++    server_enter_uninterrupted_section( &hvf_mutex, &sigset );
 +    clear_ptes( (uint64_t *)ttbr0, 0, 0, start, end );
 +    /* the low window is also mapped at its Windows address, see hvf_low_ptr() */
 +    if (start < HVF_LOW_BASE + 0x100000000ULL && end > HVF_LOW_BASE)
@@ -1561,7 +1563,7 @@ index 0000000..ef69819
 +    }
 +    tlb_generation++;
 +    map_generation++;
-+    pthread_mutex_unlock( &hvf_mutex );
++    server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +    if (tlb_kick) kick_running_vcpus();
 +}
 +
@@ -1582,6 +1584,7 @@ index 0000000..ef69819
 +                (block < 0x100000000ULL && block + FAULT_AROUND > 0xfffe0000);
 +
 +    uint64_t generation;
++    sigset_t sigset;
 +
 +    if (va >= IPA_LIMIT) return FALSE;
 +retry:
@@ -1594,11 +1597,11 @@ index 0000000..ef69819
 +    if (write && !(prot & PROT_WRITE)) return FALSE;
 +    if (exec && !(prot & PROT_EXEC)) return FALSE;
 +
-+    pthread_mutex_lock( &hvf_mutex );
++    server_enter_uninterrupted_section( &hvf_mutex, &sigset );
 +    if (generation != map_generation)
 +    {
 +        /* the mapping changed after the protections were read */
-+        pthread_mutex_unlock( &hvf_mutex );
++        server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +        goto retry;
 +    }
 +    for (i = 0; i < FAULT_AROUND / GUEST_PAGE; i++)
@@ -1619,7 +1622,7 @@ index 0000000..ef69819
 +        if (faulting) ret = TRUE;
 +    }
 +    if (ret) tlb_generation++;   /* a stale permission entry may still be cached */
-+    pthread_mutex_unlock( &hvf_mutex );
++    server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +    return ret;
 +}
 +
@@ -1727,6 +1730,7 @@ index 0000000..ef69819
 +{
 +    pthread_t thread;
 +    uint64_t *pte;
++    sigset_t sigset;
 +
 +    kusd_source = host;
 +    kusd_copy = vm_mmap( HOST_PAGE );
@@ -1737,17 +1741,17 @@ index 0000000..ef69819
 +    }
 +    memcpy( kusd_copy, kusd_source, GUEST_PAGE );
 +
-+    pthread_mutex_lock( &hvf_mutex );
++    server_enter_uninterrupted_section( &hvf_mutex, &sigset );
 +    if (!map_stage2( (uint64_t)kusd_copy ))
 +    {
-+        pthread_mutex_unlock( &hvf_mutex );
++        server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +        ERR( "cannot map the shared data copy\n" );
 +        exit(1);
 +    }
 +    pte = pte_for( KUSD_VA, TRUE );
 +    *pte = (uint64_t)kusd_copy | D_AF | D_SH_INNER | D_TABLE | D_VALID | D_AP_RO | D_UXN | D_PXN;
 +    tlb_generation++;
-+    pthread_mutex_unlock( &hvf_mutex );
++    server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +
 +    pthread_create( &thread, NULL, kusd_refresh_thread, NULL );
 +    pthread_detach( thread );
@@ -2082,6 +2086,7 @@ index 0000000..ef69819
 +            /* stage-2 fault: the host page isn't (or no longer) mapped in the VM */
 +            uint64_t ipa = v->exit->exception.physical_address, bit = ipa / HOST_PAGE;
 +            BOOL ok;
++            sigset_t sigset;
 +            if (ipa < IPA_LIMIT && (stage2_bitmap[bit / 64] & (1ULL << (bit % 64))))
 +            {
 +                /* already mapped: a permission fault, retrying would spin forever */
@@ -2089,9 +2094,9 @@ index 0000000..ef69819
 +                     (unsigned long long)ipa, (unsigned long long)syndrome );
 +                abort();
 +            }
-+            pthread_mutex_lock( &hvf_mutex );
++            server_enter_uninterrupted_section( &hvf_mutex, &sigset );
 +            ok = map_stage2( ipa );
-+            pthread_mutex_unlock( &hvf_mutex );
++            server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +            if (ok) continue;
 +            ERR( "stage-2 fault at IPA %llx with no host memory\n", (unsigned long long)ipa );
 +            abort();
@@ -10956,8 +10961,22 @@ index fa5634c..f7f68e9 100644
      { "SECTION_TOO_BIG",             STATUS_SECTION_TOO_BIG },
      { "SEMAPHORE_LIMIT_EXCEEDED",    STATUS_SEMAPHORE_LIMIT_EXCEEDED },
      { "SHARING_VIOLATION",           STATUS_SHARING_VIOLATION },
+diff --git a/server/signal.c b/server/signal.c
+index 0b38e23..d393572 100644
+--- a/server/signal.c
++++ b/server/signal.c
+@@ -154,6 +154,9 @@ static void sighup_callback(void)
+ #ifdef DEBUG_OBJECTS
+     dump_objects();
+ #endif
++#if defined(__APPLE__) && defined(__aarch64__)
++    dump_thread_waits();  /* Barrique, see thread.c */
++#endif
+ }
+ 
+ /* SIGTERM callback */
 diff --git a/server/thread.c b/server/thread.c
-index 986cf5d..d6a7683 100644
+index 986cf5d..3a1f87f 100644
 --- a/server/thread.c
 +++ b/server/thread.c
 @@ -59,6 +59,7 @@
@@ -10968,7 +10987,64 @@ index 986cf5d..d6a7683 100644
  
  
  /* thread queues */
-@@ -2396,6 +2397,7 @@ DECL_HANDLER(get_inproc_alert_fd)
+@@ -1021,6 +1022,56 @@ static int object_sync_signaled( struct object *obj, struct wait_queue_entry *en
+     return ret;
+ }
+ 
++#if defined(__APPLE__) && defined(__aarch64__)
++/* Barrique: debugging aid, wineserver SIGHUP (kill -HUP <wineserver pid>): write
++ * waits-<time>.txt in the server directory with every thread, whether it is waiting
++ * in the server and on which objects (type, name, signaled). Changes nothing; meant
++ * for hangs that disappear under +server or +sync tracing. */
++void dump_thread_waits(void)
++{
++    char path[64];
++    struct thread *thread;
++    int fd, saved;
++
++    snprintf( path, sizeof(path), "waits-%ld.txt", (long)time( NULL ) );
++    if ((fd = open( path, O_WRONLY | O_CREAT | O_TRUNC, 0600 )) == -1) return;
++    fflush( stderr );
++    saved = dup( 2 );
++    dup2( fd, 2 );
++    close( fd );
++
++    LIST_FOR_EACH_ENTRY( thread, &thread_list, struct thread, entry )
++    {
++        struct thread_wait *wait = thread->wait;
++        struct process *process = thread->process;
++        int i;
++
++        fprintf( stderr, "pid %04x tid %04x unix %d/%d ", process->id, thread->id, thread->unix_pid, thread->unix_tid );
++        if (process->image)
++        {
++            data_size_t len = process->imagelen / sizeof(WCHAR), start = len;
++            while (start && process->image[start - 1] != '\\') start--;
++            for (; start < len; start++) fputc( process->image[start] < 0x80 ? process->image[start] : '?', stderr );
++        }
++        if (thread->state == TERMINATED) { fprintf( stderr, " terminated\n" ); continue; }
++        if (!wait) { fprintf( stderr, " not waiting in the server\n" ); continue; }
++        fprintf( stderr, " waiting: %s, %d object(s), flags %#x%s\n",
++                 wait->select == SELECT_WAIT_ALL ? "all" : "any", wait->count, wait->flags,
++                 wait->user ? ", with timeout" : "" );
++        for (i = 0; i < wait->count; i++)
++        {
++            struct object *obj = wait->queues[i].obj;
++            fprintf( stderr, "    [%d] %s ", i, object_sync_signaled( obj, &wait->queues[i] ) ? "SIGNALED" : "-" );
++            dump_object_name( obj );
++            obj->ops->dump( obj, 0 );
++        }
++    }
++    fflush( stderr );
++    dup2( saved, 2 );
++    close( saved );
++}
++#endif
++
+ void signal_sync( struct object *obj )
+ {
+     obj->ops->signal( obj, 0, 1 );
+@@ -2396,6 +2447,7 @@ DECL_HANDLER(get_inproc_alert_fd)
      int fd;
  
      if ((fd = get_inproc_sync_fd( current->alert_sync )) < 0) set_error( STATUS_INVALID_PARAMETER );
@@ -10976,3 +11052,17 @@ index 986cf5d..d6a7683 100644
      else
      {
          reply->handle = get_thread_id( current ) | 1; /* arbitrary token */
+diff --git a/server/thread.h b/server/thread.h
+index 96c643c..30b8d76 100644
+--- a/server/thread.h
++++ b/server/thread.h
+@@ -123,6 +123,9 @@ extern int wake_thread_queue_entry( struct wait_queue_entry *entry );
+ extern int add_queue( struct object *obj, struct wait_queue_entry *entry );
+ extern void remove_queue( struct object *obj, struct wait_queue_entry *entry );
+ extern void kill_thread( struct thread *thread, int violent_death );
++#if defined(__APPLE__) && defined(__aarch64__)
++extern void dump_thread_waits(void);
++#endif
+ extern void wake_up( struct object *obj, int max );
+ extern int thread_queue_apc( struct process *process, struct thread *thread, struct object *owner, const union apc_call *call_data );
+ extern void thread_cancel_apc( struct thread *thread, struct object *owner, enum apc_type type );
