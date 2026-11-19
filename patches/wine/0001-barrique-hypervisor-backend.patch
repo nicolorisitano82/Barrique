@@ -2336,10 +2336,10 @@ index dde4b58..f5c3b1c 100644
      init_files();
 diff --git a/dlls/ntdll/unix/msync.c b/dlls/ntdll/unix/msync.c
 new file mode 100644
-index 0000000..8f23987
+index 0000000..ded3411
 --- /dev/null
 +++ b/dlls/ntdll/unix/msync.c
-@@ -0,0 +1,1154 @@
+@@ -0,0 +1,1156 @@
 +/*
 + * mach semaphore-based synchronization objects
 + *
@@ -2980,6 +2980,8 @@ index 0000000..8f23987
 +        ERR("Failed to map tid shared memory");
 +        exit(1);
 +    }
++
++    server_watch_death();  /* Barrique: see server.c */
 +}
 +
 +static inline void signal_all( void *shm, unsigned int shm_idx )
@@ -4045,7 +4047,7 @@ index 1d10948..19c43ed 100644
      {
      case ProcessAccessToken:
 diff --git a/dlls/ntdll/unix/server.c b/dlls/ntdll/unix/server.c
-index c80226f..ebcc53f 100644
+index c80226f..a787d2f 100644
 --- a/dlls/ntdll/unix/server.c
 +++ b/dlls/ntdll/unix/server.c
 @@ -627,6 +627,22 @@ static void invoke_system_apc( const union apc_call *call, union apc_result *res
@@ -4104,6 +4106,58 @@ index c80226f..ebcc53f 100644
          if (errno == ENOSYS || errno == EINVAL) have_pipe2 = FALSE;  /* don't try again */
      }
  #endif
+@@ -1473,6 +1506,51 @@ static int server_connect(void)
+ #include <mach/mach.h>
+ #include <mach/mach_error.h>
+ #include <servers/bootstrap.h>
++#include <sys/event.h>
++#include <sys/un.h>
++
++/* Barrique: with msync, threads wait in shared memory instead of on their server
++ * pipe, so they never see the wineserver go away (wineserver -k, crash) and the
++ * process would live on, holding its VM. Watch the server process and exit with it,
++ * as the threads of a process without msync do when their pipe closes. */
++static void *server_watch_thread( void *arg )
++{
++    pid_t pid = (pid_t)(ULONG_PTR)arg;
++    struct kevent ev, out;
++    sigset_t set;
++    int kq = kqueue();
++
++    sigfillset( &set );
++    pthread_sigmask( SIG_BLOCK, &set, NULL );
++    if (kq == -1) return NULL;
++    EV_SET( &ev, pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, NULL );
++    if (kevent( kq, &ev, 1, NULL, 0, NULL ) == -1)
++    {
++        if (errno == ESRCH) _exit( 1 );  /* already gone */
++        return NULL;
++    }
++    while (kevent( kq, NULL, 0, &out, 1, NULL ) == -1 && errno == EINTR);
++    _exit( 1 );
++}
++
++void server_watch_death(void)
++{
++    pid_t pid = 0;
++    socklen_t len = sizeof(pid);
++    pthread_attr_t attr;
++    pthread_t thread;
++
++    if (getsockopt( fd_socket, SOL_LOCAL, LOCAL_PEERPID, &pid, &len ) || pid <= 0)
++    {
++        WARN( "no server pid: %s\n", strerror( errno ) );
++        return;
++    }
++    pthread_attr_init( &attr );
++    pthread_attr_setstacksize( &attr, 64 * 1024 );
++    pthread_attr_setdetachstate( &attr, PTHREAD_CREATE_DETACHED );
++    pthread_create( &thread, &attr, server_watch_thread, (void *)(ULONG_PTR)pid );
++    pthread_attr_destroy( &attr );
++}
+ 
+ extern NTSTATUS apple_spawn_main_thread(void);
+ 
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
 index 02b6d57..2d0d9ce 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
@@ -5071,8 +5125,78 @@ index 83084b8..ec1677d 100644
  #else
  
  static DWORD get_core_id_regs_arm64( struct smbios_wine_id_reg_value_arm64 *regs,
+diff --git a/dlls/ntdll/unix/thread.c b/dlls/ntdll/unix/thread.c
+index 11171cc..e7fbffb 100644
+--- a/dlls/ntdll/unix/thread.c
++++ b/dlls/ntdll/unix/thread.c
+@@ -1520,6 +1520,15 @@ NTSTATUS WINAPI PsCreateSystemThread( HANDLE *handle, ACCESS_MASK access, OBJECT
+  */
+ void abort_thread( int status )
+ {
++#ifdef __APPLE__
++    /* Barrique: the process's original thread runs Cocoa's run loop (apple_main_thread)
++     * and calls into Wine from AppKit callbacks. If it ever has to leave (the
++     * wineserver went away under a wine_server_call, for example), end the process:
++     * after a pthread_exit of the main thread libdispatch hands the main queue to
++     * worker threads, AppKit asserts there (NSMenu off the main thread) and macOS
++     * shows a crash report for a process that was being killed anyway. */
++    if (pthread_main_np()) abort_process( status );
++#endif
+     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
+     if (InterlockedDecrement( &nb_threads ) <= 0) abort_process( status );
+     pthread_exit_wrapper( status );
+@@ -1543,6 +1552,9 @@ static DECLSPEC_NORETURN void exit_thread( int status )
+     static void *prev_data;
+     struct thread_data *data;
+ 
++#ifdef __APPLE__
++    if (pthread_main_np()) exit_process( status );  /* see abort_thread() */
++#endif
+     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
+ 
+     if (InterlockedDecrement( &nb_threads ) <= 0) exit_process( status );
+@@ -1564,6 +1576,10 @@ static DECLSPEC_NORETURN void exit_thread( int status )
+  */
+ void exit_process( int status )
+ {
++#ifdef WINE_HVF
++    virtual_hvf_flush_shadows();
++    hvf_print_stats();
++#endif
+     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
+     process_exit_wrapper( get_unix_exit_code( status ));
+ }
+@@ -1689,11 +1705,27 @@ NTSTATUS send_debug_event( struct thread_data *data, EXCEPTION_RECORD *rec,
+ NTSTATUS WINAPI NtRaiseException( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL first_chance )
+ {
+     struct thread_data *data = get_thread_data();
+-    NTSTATUS status = send_debug_event( data, rec, context, first_chance );
++    NTSTATUS status;
++#ifdef __aarch64__
++    /* Barrique: FEX (ARM64EC) moves the PC of an x64 int3 back onto the int3
++     * before raising it. An x64 debugger expects Rip after the int3, like
++     * x86-64 Windows and setup_raise_exception() in signal_x86_64.c: show it
++     * that, and move it back only for the program's own handlers. */
++    BOOL x64_breakpoint = rec->ExceptionCode == EXCEPTION_BREAKPOINT &&
++                          context->Pc == (ULONG_PTR)rec->ExceptionAddress &&
++                          is_emulated_code( context->Pc );
++
++    if (x64_breakpoint) context->Pc++;
++#endif
++    status = send_debug_event( data, rec, context, first_chance );
+ 
+     if (status == DBG_CONTINUE || status == DBG_EXCEPTION_HANDLED)
+         return NtContinue( context, FALSE );
+ 
++#ifdef __aarch64__
++    if (x64_breakpoint) context->Pc--;
++#endif
++
+     if (first_chance) return call_user_exception_dispatcher( data, rec, context );
+ 
+     if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..b196d98 100644
+index 829db1e..b4a1b38 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
 @@ -138,6 +138,70 @@ static inline struct thread_data *get_thread_data(void)
@@ -5146,7 +5270,17 @@ index 829db1e..b196d98 100644
  /* thread private data, stored in NtCurrentTeb()->GdiTebBatch */
  struct teb_data
  {
-@@ -740,4 +804,9 @@ static inline int is_gdt_sel( WORD sel )
+@@ -266,6 +330,9 @@ extern int server_get_unix_fd( HANDLE handle, unsigned int wanted_access, int *u
+                                int *needs_close, enum server_fd_type *type, unsigned int *options );
+ extern int wine_server_receive_fd( obj_handle_t *handle );
+ extern void process_exit_wrapper( int status ) DECLSPEC_NORETURN;
++#ifdef __APPLE__
++extern void server_watch_death(void);
++#endif
+ extern void server_init_process( struct thread_data *data );
+ extern void server_init_process_done(void);
+ extern void server_init_thread( struct thread_data *data );
+@@ -740,4 +807,9 @@ static inline int is_gdt_sel( WORD sel )
  
  #endif  /* defined(__i386__) || defined(__x86_64__) */
  
@@ -7611,6 +7745,53 @@ index 163faff..9497303 100644
  
      return STATUS_SUCCESS;
  }
+diff --git a/dlls/wined3d/cs.c b/dlls/wined3d/cs.c
+index 7374560..1bfd409 100644
+--- a/dlls/wined3d/cs.c
++++ b/dlls/wined3d/cs.c
+@@ -3387,7 +3387,9 @@ static const struct wined3d_device_context_ops wined3d_cs_st_ops =
+ static BOOL wined3d_cs_queue_is_empty(const struct wined3d_cs *cs, const struct wined3d_cs_queue *queue)
+ {
+     wined3d_from_cs(cs);
+-    return *(volatile ULONG *)&queue->head == queue->tail;
++    /* Barrique: acquire, so that the packet data read next is not older than head
++     * (the producer publishes it with WriteRelease; ARM64 may reorder plain loads) */
++    return (ULONG)ReadAcquire((LONG *)&queue->head) == queue->tail;
+ }
+ 
+ static void wined3d_cs_queue_submit(struct wined3d_cs_queue *queue, struct wined3d_cs *cs)
+@@ -3455,7 +3457,7 @@ static void *wined3d_cs_queue_require_space(struct wined3d_cs_queue *queue, size
+ 
+     for (;;)
+     {
+-        ULONG tail = (*(volatile ULONG *)&queue->tail) & WINED3D_CS_QUEUE_MASK;
++        ULONG tail = (ULONG)ReadAcquire((LONG *)&queue->tail) & WINED3D_CS_QUEUE_MASK;
+         ULONG new_pos;
+ 
+         /* Empty. */
+@@ -3500,7 +3502,7 @@ static void wined3d_cs_mt_finish(struct wined3d_device_context *context, enum wi
+         return wined3d_cs_st_finish(context, queue_id);
+ 
+     TRACE_(d3d_perf)("Waiting for queue %u to be empty.\n", queue_id);
+-    while (cs->queue[queue_id].head != *(volatile ULONG *)&cs->queue[queue_id].tail)
++    while (cs->queue[queue_id].head != (ULONG)ReadAcquire((LONG *)&cs->queue[queue_id].tail))
+         wined3d_pause(&spin_count);
+     TRACE_(d3d_perf)("Queue is now empty.\n");
+ }
+diff --git a/dlls/wined3d/wined3d_private.h b/dlls/wined3d/wined3d_private.h
+index dcce9a3..a0077de 100644
+--- a/dlls/wined3d/wined3d_private.h
++++ b/dlls/wined3d/wined3d_private.h
+@@ -3902,7 +3902,8 @@ static inline void wined3d_resource_wait_idle(const struct wined3d_resource *res
+ 
+     for (;;)
+     {
+-        tail = *(volatile ULONG *)&cs->queue[WINED3D_CS_QUEUE_DEFAULT].tail;
++        /* Barrique: acquire, the resource data the CS thread wrote must be visible */
++        tail = (ULONG)ReadAcquire((LONG *)&cs->queue[WINED3D_CS_QUEUE_DEFAULT].tail);
+         if (head == tail) /* Queue empty. */
+             break;
+ 
 diff --git a/dlls/winedmo/Makefile.in b/dlls/winedmo/Makefile.in
 index 9b33d85..c7a563a 100644
 --- a/dlls/winedmo/Makefile.in
@@ -10795,73 +10976,3 @@ index 986cf5d..d6a7683 100644
      else
      {
          reply->handle = get_thread_id( current ) | 1; /* arbitrary token */
-diff --git a/dlls/ntdll/unix/thread.c b/dlls/ntdll/unix/thread.c
-index 11171cc..e7fbffb 100644
---- a/dlls/ntdll/unix/thread.c
-+++ b/dlls/ntdll/unix/thread.c
-@@ -1520,6 +1520,15 @@ NTSTATUS WINAPI PsCreateSystemThread( HANDLE *handle, ACCESS_MASK access, OBJECT
-  */
- void abort_thread( int status )
- {
-+#ifdef __APPLE__
-+    /* Barrique: the process's original thread runs Cocoa's run loop (apple_main_thread)
-+     * and calls into Wine from AppKit callbacks. If it ever has to leave (the
-+     * wineserver went away under a wine_server_call, for example), end the process:
-+     * after a pthread_exit of the main thread libdispatch hands the main queue to
-+     * worker threads, AppKit asserts there (NSMenu off the main thread) and macOS
-+     * shows a crash report for a process that was being killed anyway. */
-+    if (pthread_main_np()) abort_process( status );
-+#endif
-     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
-     if (InterlockedDecrement( &nb_threads ) <= 0) abort_process( status );
-     pthread_exit_wrapper( status );
-@@ -1543,6 +1552,9 @@ static DECLSPEC_NORETURN void exit_thread( int status )
-     static void *prev_data;
-     struct thread_data *data;
- 
-+#ifdef __APPLE__
-+    if (pthread_main_np()) exit_process( status );  /* see abort_thread() */
-+#endif
-     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
- 
-     if (InterlockedDecrement( &nb_threads ) <= 0) exit_process( status );
-@@ -1564,6 +1576,10 @@ static DECLSPEC_NORETURN void exit_thread( int status )
-  */
- void exit_process( int status )
- {
-+#ifdef WINE_HVF
-+    virtual_hvf_flush_shadows();
-+    hvf_print_stats();
-+#endif
-     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
-     process_exit_wrapper( get_unix_exit_code( status ));
- }
-@@ -1689,11 +1705,27 @@ NTSTATUS send_debug_event( struct thread_data *data, EXCEPTION_RECORD *rec,
- NTSTATUS WINAPI NtRaiseException( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL first_chance )
- {
-     struct thread_data *data = get_thread_data();
--    NTSTATUS status = send_debug_event( data, rec, context, first_chance );
-+    NTSTATUS status;
-+#ifdef __aarch64__
-+    /* Barrique: FEX (ARM64EC) moves the PC of an x64 int3 back onto the int3
-+     * before raising it. An x64 debugger expects Rip after the int3, like
-+     * x86-64 Windows and setup_raise_exception() in signal_x86_64.c: show it
-+     * that, and move it back only for the program's own handlers. */
-+    BOOL x64_breakpoint = rec->ExceptionCode == EXCEPTION_BREAKPOINT &&
-+                          context->Pc == (ULONG_PTR)rec->ExceptionAddress &&
-+                          is_emulated_code( context->Pc );
-+
-+    if (x64_breakpoint) context->Pc++;
-+#endif
-+    status = send_debug_event( data, rec, context, first_chance );
- 
-     if (status == DBG_CONTINUE || status == DBG_EXCEPTION_HANDLED)
-         return NtContinue( context, FALSE );
- 
-+#ifdef __aarch64__
-+    if (x64_breakpoint) context->Pc--;
-+#endif
-+
-     if (first_chance) return call_user_exception_dispatcher( data, rec, context );
- 
-     if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
