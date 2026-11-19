@@ -52,6 +52,26 @@ if [[ -d $media/lib ]]; then
     done
 fi
 
+# GnuTLS from Homebrew, with every Homebrew library it needs (nettle, gmp, libtasn1,
+# libidn2, libunistring, p11-kit, libintl): secur32.so (TLS for WinINet, WinHTTP,
+# Steam...) and crypt32.so dlopen it. Homebrew's libintl replaces the media one: it is
+# newer (gnutls needs compatibility version 13, glib 10).
+typeset -A seen
+todo=($src/gnutls/lib/libgnutls.30.dylib)
+while (( ${#todo} )); do
+    f=$todo[1]; shift todo
+    leaf=${f:t}
+    [[ -n ${seen[$leaf]} ]] && continue
+    seen[$leaf]=1
+    install -m 644 ${f:A} $dest/$leaf
+    install_name_tool -id @rpath/$leaf $dest/$leaf 2>/dev/null
+    for dep in ${(f)"$(otool -L $f | tail -n +2 | awk '{print $1}' | grep '^/opt/homebrew/')"}; do
+        install_name_tool -change $dep @loader_path/${dep:t} $dest/$leaf 2>/dev/null
+        todo+=($dep)
+    done
+    (( ${copied[(Ie)$leaf]} )) || copied+=($leaf)
+done
+
 # SDL2 from build-sdl2.sh: winebus.sys's SDL backend for game controllers
 sdl=${SDL2_PREFIX:-$HOME/Work/Personale/wine/deps-sdl2}
 if [[ -f $sdl/lib/libSDL2-2.0.0.dylib ]]; then

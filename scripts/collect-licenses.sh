@@ -48,6 +48,15 @@ lic freetype       /opt/homebrew/Cellar/freetype/2.14.3/LICENSE.TXT
 lic freetype       $D/freetype-2.14.3/docs/FTL.TXT
 lic libpng         /opt/homebrew/Cellar/libpng/1.6.58/LICENSE
 lic gettext-libintl $W/src/COPYING.LIB   # libintl is LGPL 2.1 or later, same text as Wine's
+# GnuTLS and the Homebrew libraries it needs (bundle-deps.sh)
+B=/opt/homebrew/Cellar
+lic gnutls         $B/gnutls/3.8.13_2/COPYING.LESSERv2
+lic nettle         $B/nettle/4.0/COPYING.LESSERv3
+lic gmp            $B/gmp/6.3.0/COPYING.LESSERv3 $B/gmp/6.3.0/COPYING
+lic libtasn1       $B/libtasn1/4.21.0/COPYING.LESSERv2
+lic libidn2        $B/libidn2/2.3.8/COPYING.LESSERv3 $B/libidn2/2.3.8/COPYING.unicode
+lic libunistring   $B/libunistring/1.4.2/COPYING.LIB
+lic p11-kit        $B/p11-kit/0.26.5/COPYING
 lic fonts          $W/deps-fonts/Caladea-OFL.txt $W/deps-fonts/Carlito-OFL.txt $W/deps-fonts/Selawik-LICENSE.txt
 cp $S/../NOTICE.md $dest/
 (( missing )) && exit 1

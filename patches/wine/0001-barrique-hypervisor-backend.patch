@@ -77,6 +77,19 @@ index 38981e4..f0a6f9b 100644
      av_opt_set_int(impl->context, "threads", 0, 0);
      av_opt_set_int(impl->context, "srcw", impl->input_frame.width, 0);
      av_opt_set_int(impl->context, "srch", impl->input_frame.height, 0);
+diff --git a/dlls/crypt32/Makefile.in b/dlls/crypt32/Makefile.in
+index 9a02541..96f8d19 100644
+--- a/dlls/crypt32/Makefile.in
++++ b/dlls/crypt32/Makefile.in
+@@ -4,7 +4,7 @@ UNIXLIB   = crypt32.so
+ IMPORTLIB = crypt32
+ IMPORTS   = user32 advapi32 bcrypt ncrypt
+ DELAYIMPORTS = cryptnet rpcrt4
+-UNIX_LIBS    = $(SECURITY_LIBS)
++UNIX_LIBS    = $(SECURITY_LIBS) -Wl,-rpath,@loader_path/../../deps
+ UNIX_CFLAGS  = $(GNUTLS_CFLAGS)
+ 
+ VER_FILEDESCRIPTION_STR = "Wine CryptoAPI Library"
 diff --git a/dlls/dnsapi/libresolv.c b/dlls/dnsapi/libresolv.c
 index dd9b32d..6eb2acc 100644
 --- a/dlls/dnsapi/libresolv.c
@@ -312,6 +325,112 @@ index a0bc41e..e7f8208 100644
  };
  
  struct text_source_context
+diff --git a/dlls/kernelbase/memory.c b/dlls/kernelbase/memory.c
+index 2ce2dca..17fc297 100644
+--- a/dlls/kernelbase/memory.c
++++ b/dlls/kernelbase/memory.c
+@@ -40,6 +40,24 @@ WINE_DEFAULT_DEBUG_CHANNEL(heap);
+ WINE_DECLARE_DEBUG_CHANNEL(virtual);
+ WINE_DECLARE_DEBUG_CHANNEL(globalmem);
+ 
++#ifdef _WIN64
++/* Barrique: the host cannot map below 4GB, so 64-bit memory at a Windows address
++ * below 4GB lives in a window at 0xe000000000 + address, which the VM also shows at
++ * the Windows address (see ntdll/unix/hvf.c). ntdll answers with the window address,
++ * which Wine's host side can use. When the program itself asked for an address below
++ * 4GB, give it the Windows one, as Windows would. */
++#define LOW_WINDOW_BASE 0xe000000000ull
++static void *low_window_addr( const void *requested, void *ret )
++{
++    if (requested && (ULONG_PTR)requested < 0x100000000ull &&
++        (ULONG_PTR)ret - LOW_WINDOW_BASE < 0x100000000ull)
++        return (void *)((ULONG_PTR)ret - LOW_WINDOW_BASE);
++    return ret;
++}
++#else
++static void *low_window_addr( const void *requested, void *ret ) { return ret; }
++#endif
++
+ static const struct _KUSER_SHARED_DATA *user_shared_data = (struct _KUSER_SHARED_DATA *)0x7ffe0000;
+ 
+ static CRITICAL_SECTION memstatus_section;
+@@ -293,6 +311,7 @@ LPVOID WINAPI DECLSPEC_HOTPATCH MapViewOfFileEx( HANDLE handle, DWORD access, DW
+     LARGE_INTEGER offset;
+     ULONG protect;
+     BOOL exec;
++    const void *requested = addr;
+ 
+     offset.u.LowPart  = offset_low;
+     offset.u.HighPart = offset_high;
+@@ -312,9 +331,9 @@ LPVOID WINAPI DECLSPEC_HOTPATCH MapViewOfFileEx( HANDLE handle, DWORD access, DW
+                                       &count, ViewShare, 0, protect )) < 0)
+     {
+         SetLastError( RtlNtStatusToDosError(status) );
+-        addr = NULL;
++        return NULL;
+     }
+-    return addr;
++    return low_window_addr( requested, addr );
+ }
+ 
+ 
+@@ -344,7 +363,7 @@ LPVOID WINAPI DECLSPEC_HOTPATCH MapViewOfFile3( HANDLE handle, HANDLE process, P
+     {
+         return NULL;
+     }
+-    return addr;
++    return low_window_addr( baseaddr, addr );
+ }
+ 
+ /***********************************************************************
+@@ -433,7 +452,7 @@ LPVOID WINAPI DECLSPEC_HOTPATCH VirtualAllocEx( HANDLE process, void *addr, SIZE
+     LPVOID ret = addr;
+ 
+     if (!set_ntstatus( NtAllocateVirtualMemory( process, &ret, 0, &size, type, protect ))) return NULL;
+-    return ret;
++    return low_window_addr( addr, ret );
+ }
+ 
+ 
+@@ -449,7 +468,7 @@ LPVOID WINAPI DECLSPEC_HOTPATCH VirtualAlloc2( HANDLE process, void *addr, SIZE_
+     if (!process) process = GetCurrentProcess();
+     if (!set_ntstatus( NtAllocateVirtualMemoryEx( process, &ret, &size, type, protect, parameters, count )))
+         return NULL;
+-    return ret;
++    return low_window_addr( addr, ret );
+ }
+ 
+ static BOOL is_exec_prot( DWORD protect )
+@@ -478,7 +497,7 @@ LPVOID WINAPI DECLSPEC_HOTPATCH VirtualAlloc2FromApp( HANDLE process, void *addr
+     if (!process) process = GetCurrentProcess();
+     if (!set_ntstatus( NtAllocateVirtualMemoryEx( process, &ret, &size, type, protect, parameters, count )))
+         return NULL;
+-    return ret;
++    return low_window_addr( addr, ret );
+ }
+ 
+ 
+@@ -499,7 +518,7 @@ LPVOID WINAPI DECLSPEC_HOTPATCH VirtualAllocFromApp( void *addr, SIZE_T size,
+     }
+ 
+     if (!set_ntstatus( NtAllocateVirtualMemory( GetCurrentProcess(), &ret, 0, &size, type, protect ))) return NULL;
+-    return ret;
++    return low_window_addr( addr, ret );
+ }
+ 
+ 
+@@ -599,6 +618,11 @@ SIZE_T WINAPI DECLSPEC_HOTPATCH VirtualQueryEx( HANDLE process, LPCVOID addr,
+ 
+     if (!set_ntstatus( NtQueryVirtualMemory( process, addr, MemoryBasicInformation, info, len, &ret )))
+         return 0;
++    if (ret >= sizeof(*info))
++    {
++        info->BaseAddress = low_window_addr( addr, info->BaseAddress );
++        info->AllocationBase = low_window_addr( addr, info->AllocationBase );
++    }
+     return ret;
+ }
+ 
 diff --git a/dlls/kernelbase/process.c b/dlls/kernelbase/process.c
 index c58e977..7e49a5a 100644
 --- a/dlls/kernelbase/process.c
@@ -908,10 +1027,20 @@ index ee2936e..1bda9a5 100644
  }
  
 diff --git a/dlls/ntdll/unix/file.c b/dlls/ntdll/unix/file.c
-index d99a9a1..b13c9bb 100644
+index d99a9a1..c4cdc49 100644
 --- a/dlls/ntdll/unix/file.c
 +++ b/dlls/ntdll/unix/file.c
-@@ -6108,10 +6108,10 @@ NTSTATUS WINAPI NtReadFileScatter( HANDLE file, HANDLE event, PIO_APC_ROUTINE ap
+@@ -5891,6 +5891,9 @@ NTSTATUS WINAPI NtReadFile( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, vo
+     TRACE( "(%p,%p,%p,%p,%p,%p,0x%08x,%p,%p)\n",
+            handle, event, apc, apc_user, io, buffer, length, offset, key );
+ 
++    /* Barrique: a 64-bit buffer below 4GB is in the low window, see wine_low_window_ptr() */
++    buffer = wine_low_window_ptr( (ULONG_PTR)buffer );
++
+     if (!io) return STATUS_ACCESS_VIOLATION;
+ 
+     status = server_get_unix_fd( handle, FILE_READ_DATA, &unix_handle, &needs_close, &type, &options );
+@@ -6108,10 +6111,10 @@ NTSTATUS WINAPI NtReadFileScatter( HANDLE file, HANDLE event, PIO_APC_ROUTINE ap
      while (length)
      {
          if (offset && offset->QuadPart != FILE_USE_FILE_POINTER_POSITION)
@@ -924,7 +1053,17 @@ index d99a9a1..b13c9bb 100644
  
          if (result == -1)
          {
-@@ -6409,10 +6409,10 @@ NTSTATUS WINAPI NtWriteFileGather( HANDLE file, HANDLE event, PIO_APC_ROUTINE ap
+@@ -6171,6 +6174,9 @@ NTSTATUS WINAPI NtWriteFile( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, v
+     TRACE( "(%p,%p,%p,%p,%p,%p,0x%08x,%p,%p)\n",
+            handle, event, apc, apc_user, io, buffer, length, offset, key );
+ 
++    /* Barrique: a 64-bit buffer below 4GB is in the low window, see wine_low_window_ptr() */
++    buffer = wine_low_window_ptr( (ULONG_PTR)buffer );
++
+     if (!io) return STATUS_ACCESS_VIOLATION;
+ 
+     status = server_get_unix_fd( handle, FILE_WRITE_DATA, &unix_handle, &needs_close, &type, &options );
+@@ -6409,10 +6415,10 @@ NTSTATUS WINAPI NtWriteFileGather( HANDLE file, HANDLE event, PIO_APC_ROUTINE ap
      while (length)
      {
          if (offset && offset->QuadPart != FILE_USE_FILE_POINTER_POSITION)
@@ -2197,10 +2336,10 @@ index dde4b58..f5c3b1c 100644
      init_files();
 diff --git a/dlls/ntdll/unix/msync.c b/dlls/ntdll/unix/msync.c
 new file mode 100644
-index 0000000..ae46bf3
+index 0000000..8f23987
 --- /dev/null
 +++ b/dlls/ntdll/unix/msync.c
-@@ -0,0 +1,1162 @@
+@@ -0,0 +1,1154 @@
 +/*
 + * mach semaphore-based synchronization objects
 + *
@@ -2580,15 +2719,9 @@ index 0000000..ae46bf3
 +    {
 +        if (check_shm_contention( objs_shm, alert_obj_shm, count, tid ))
 +        {
-+            int i;
-+            for (i = 0; i < count; i++)
-+            {
-+                struct event *obj = (struct event *)objs_shm[i];
-+
-+                int refs = __atomic_sub_fetch( &obj->multiple_waiters, 1, __ATOMIC_SEQ_CST);
-+                if (refs < 0)
-+                    __atomic_store_n( &obj->multiple_waiters, 0, __ATOMIC_SEQ_CST);
-+            }
++            /* the registration is already queued: take it back (in queue order),
++             * else the server keeps this thread on the objects' lists */
++            server_remove_wait( msgh_id, objs, objs_shm, alert_obj, alert_obj_shm, count );
 +            return STATUS_PENDING;
 +        }
 +    }
@@ -3047,15 +3180,10 @@ index 0000000..ae46bf3
 +    {
 +        while (1)
 +        {
-+            /* Try to grab anything. */
-+
-+            if (alert_obj)
-+            {
-+                /* We must check this first! The server may set an event that
-+                 * we're waiting on, but we need to return STATUS_USER_APC. */
-+                if (__atomic_load_n( alert_obj_shm, __ATOMIC_SEQ_CST ))
-+                    goto userapc;
-+            }
++            /* Try to grab anything. Objects come before user APCs, as in the
++             * server's check_wait(): an object signaled together with a queued
++             * APC (NtCancelIoFile's cancel object and the I/O APC, for example)
++             * satisfies the wait and the APC waits for the next alertable one. */
 +
 +            for (i = 0; i < count; i++)
 +            {
@@ -3125,6 +3253,9 @@ index 0000000..ae46bf3
 +                    assert(0);
 +                }
 +            }
++
++            if (alert_obj && __atomic_load_n( alert_obj_shm, __ATOMIC_SEQ_CST ))
++                goto userapc;
 +
 +            /* Looks like everything is contended, so wait. */
 +
@@ -4731,6 +4862,21 @@ index 02b6d57..2d0d9ce 100644
 +#endif  /* WINE_HVF */
 +
  #endif  /* __aarch64__ */
+diff --git a/dlls/ntdll/unix/socket.c b/dlls/ntdll/unix/socket.c
+index 9674d0f..2a74b8f 100644
+--- a/dlls/ntdll/unix/socket.c
++++ b/dlls/ntdll/unix/socket.c
+@@ -93,7 +93,9 @@
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(winsock);
+ 
+-#define u64_to_user_ptr(u) ((void *)(uintptr_t)(u))
++/* Barrique: from WoW64 these are 32-bit Windows addresses, which live in the low window
++ * on the host (see wine_low_window_ptr()); 64-bit addresses are left alone */
++#define u64_to_user_ptr(u) wine_low_window_ptr( (ULONG_PTR)(u) )
+ 
+ union unix_sockaddr
+ {
 diff --git a/dlls/ntdll/unix/sync.c b/dlls/ntdll/unix/sync.c
 index a6e4485..a792630 100644
 --- a/dlls/ntdll/unix/sync.c
@@ -7038,6 +7184,18 @@ index 26136a0..7ac16ef 100644
  void *wow64_glMapBuffer( TEB *teb, GLenum target, GLenum access, PFN_glMapBuffer p_glMapBuffer )
  {
      GLbitfield range_access = map_range_flags_from_map_flags( access );
+diff --git a/dlls/secur32/Makefile.in b/dlls/secur32/Makefile.in
+index 5f1c58b..c00a115 100644
+--- a/dlls/secur32/Makefile.in
++++ b/dlls/secur32/Makefile.in
+@@ -4,6 +4,7 @@ UNIXLIB   = secur32.so
+ IMPORTS   = advapi32
+ DELAYIMPORTS = crypt32 ncrypt rpcrt4
+ UNIX_CFLAGS  = $(GNUTLS_CFLAGS)
++UNIX_LIBS    = -Wl,-rpath,@loader_path/../../deps
+ 
+ SOURCES = \
+ 	lsa.c \
 diff --git a/dlls/win32u/Makefile.in b/dlls/win32u/Makefile.in
 index 454fb25..bcec456 100644
 --- a/dlls/win32u/Makefile.in
@@ -9579,10 +9737,10 @@ index d1b0fc3..c13e917 100644
          if (req->machine != current->process->machine)
 diff --git a/server/msync.c b/server/msync.c
 new file mode 100644
-index 0000000..12faceb
+index 0000000..1963fb9
 --- /dev/null
 +++ b/server/msync.c
-@@ -0,0 +1,859 @@
+@@ -0,0 +1,860 @@
 +/*
 + * mach semaphore-based synchronization objects
 + *
@@ -10093,7 +10251,8 @@ index 0000000..12faceb
 +            val = __atomic_load_n( &obj->low, __ATOMIC_SEQ_CST );
 +            if ((is_mutex && (val == 0 || val == ~0 || val == tid)) || (!is_mutex && val != 0))
 +            {
-+                if (i > 1) unregister_wait( &receive_message, tid, i );
++                /* drop the objects already registered (0 .. i-1) */
++                if (i > 0) unregister_wait( &receive_message, tid, i );
 +                wake_tid( tid );
 +                break;
 +            }

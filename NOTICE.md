@@ -34,6 +34,13 @@ libraries in the app (`Contents/Resources/wine/lib/deps`, plain dylibs with
 | GLib | 2.90.1 | LGPL 2.1 or later | https://gitlab.gnome.org/GNOME/glib | `libglib`, `libgio`, `libgobject`, ... |
 | PCRE2 (in GLib) | 10.49 | BSD | https://github.com/PCRE2Project/pcre2 | `libglib-2.0.0.dylib` |
 | gettext libintl | 1.0 (Homebrew) | LGPL 2.1 or later | https://www.gnu.org/software/gettext | `libintl.8.dylib` |
+| GnuTLS (TLS for secur32 and crypt32) | 3.8.13 (Homebrew) | LGPL 2.1 or later | https://gnutls.org | `libgnutls.30.dylib` |
+| Nettle | 4.0 (Homebrew) | LGPL 3 or later (or GPL 2) | https://www.lysator.liu.se/~nisse/nettle | `libnettle.9.dylib`, `libhogweed.7.dylib` |
+| GMP | 6.3.0 (Homebrew) | LGPL 3 or later (or GPL 2) | https://gmplib.org | `libgmp.10.dylib` |
+| libtasn1 | 4.21.0 (Homebrew) | LGPL 2.1 or later | https://www.gnu.org/software/libtasn1 | `libtasn1.6.dylib` |
+| libidn2 | 2.3.8 (Homebrew) | LGPL 3 or later (or GPL 2) | https://www.gnu.org/software/libidn | `libidn2.0.dylib` |
+| libunistring | 1.4.2 (Homebrew) | LGPL 3 or later (or GPL 2) | https://www.gnu.org/software/libunistring | `libunistring.5.dylib` |
+| p11-kit | 0.26.5 (Homebrew) | BSD 3-clause | https://p11-glue.github.io/p11-glue/p11-kit.html | `libp11-kit.0.dylib` |
 | FreeType | 2.14.3 (Homebrew) | FreeType License (FTL) | https://freetype.org | `libfreetype.6.dylib` |
 | libpng | 1.6.58 (Homebrew) | libpng license | http://www.libpng.org | `libpng16.16.dylib` |
 | Wine Mono | 11.3.0 | MIT and others, see source | https://gitlab.winehq.org/mono/wine-mono | `share/wine/mono` |
