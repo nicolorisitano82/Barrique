@@ -57,6 +57,8 @@ Tutto ciò che è aperto, per area, compresi i punti minori. Priorità: **A** bl
 - **C** Appunti (testo, immagini, file) e trascinamento di file dal Finder ai programmi Windows: winemac li supporta, mai provati sotto Barrique.
 
 **Grafica**
+- ✅ **B** Banco di stress 3D (2026-11-19): `tests/av/stress3d` (README lì), 4096 cubi con texture, dati per istanza e texture ricaricati a ogni frame, su OpenGL, D3D9, D3D11 (wined3d e DXMT), D3D12 (vkd3d) e Vulkan (MoltenVK), tre architetture; metriche in JSON (fps, tempi di frame p50/p95/p99, draw/s, triangoli/s, MB/s caricati, CPU, memoria, tempo al primo frame, controllo dell'immagine). Primo giro ARM64: DXMT 2109 fps, Vulkan 564, D3D12 424, OpenGL 41 e D3D9 14 (un draw per cubo: limitati dalla CPU); x86-64 via FEX: DXMT 653, Vulkan 424, D3D12 358; x86: Vulkan 224, D3D12 177. Tutto in `tests/results/stress3d-20261119-2040.jsonl`.
+- **A** D3D11 con wined3d non funziona: sopra l'OpenGL 2.1 di Apple wined3d arriva solo al livello 9_3 e rifiuta gli shader SM4 `level_9_3` (`CreateVertexShader` `E_INVALIDARG`, anche con `gears.c`). wined3d è oggi il backend D3D11 di default del lanciatore, mentre DXMT funziona ed è il più veloce sul banco: da decidere se passare il default a DXMT (ARM64 e x86-64; a 32 bit DXMT non c'è).
 - **B** DXMT: confronto sul banco con wined3d, test d3d11/dxgi con DXMT (oggi si fermano su bug di casi limite di DXMT), buffer negli heap Metal (finestra Metal sperimentale, spenta).
 - **B** D3D9/10/11 con DXVK su MoltenVK, da confrontare con wined3d e DXMT. **[MS]**
 - **B** Banco di prova: campioni DirectDraw e Vulkan diretto, riferimenti, validazione di Metal.
