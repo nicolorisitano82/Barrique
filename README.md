@@ -56,7 +56,8 @@ tools only (bison, meson, ninja, cmake, pkg-config; FreeType/libpng are copied i
 
 Running: `Barrique.app/Contents/MacOS/barrique program.exe` (or `--wine <command>`).
 Data lives in `~/Library/Application Support/Barrique` (the prefix is created on
-first run); `BARRIQUE_D3D=dxmt` selects DXMT for Direct3D 10/11.
+first run). Direct3D 10/11 uses DXMT by default (64-bit programs; 32-bit ones fall
+back to wined3d); `BARRIQUE_D3D=wined3d` selects wined3d.
 
 ## Installing a release
 

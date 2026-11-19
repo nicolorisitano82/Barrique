@@ -35,8 +35,8 @@ Use
 - Your Windows files and settings are in
       ~/Library/Application Support/Barrique
   Deleting that folder resets everything.
-- Direct3D 10/11 uses wined3d by default; to try DXMT, start from Terminal
-  with BARRIQUE_D3D=dxmt.
+- Direct3D 10/11 uses DXMT (Metal) for 64-bit programs and wined3d for
+  32-bit ones; to force wined3d, start from Terminal with BARRIQUE_D3D=wined3d.
 
 Known problems
 --------------

@@ -9,8 +9,9 @@
 #   barrique --wine <wine command...>    any Wine command (winecfg, regedit, wineboot...)
 #
 # Settings (environment, read once per run):
-#   BARRIQUE_D3D=wined3d|dxmt   Direct3D 10/11 backend (default wined3d until the
-#                               phase 5 step 6 bench says otherwise)
+#   BARRIQUE_D3D=dxmt|wined3d   Direct3D 10/11 backend (default dxmt: over Apple's
+#                               GL 2.1 wined3d only reaches level 9_3, tests/av/stress3d;
+#                               32-bit programs have no DXMT and use wined3d anyway)
 #   BARRIQUE_PREFIX=<dir>       another prefix (default <data>/prefix)
 #   BARRIQUE_DATA=<dir>         another data folder (default ~/Library/Application Support/Barrique)
 set -e
@@ -19,7 +20,7 @@ R=$APP/Resources/wine
 DATA=${BARRIQUE_DATA:-$HOME/Library/Application Support/Barrique}
 export WINEPREFIX=${BARRIQUE_PREFIX:-$DATA/prefix}
 export WINE_HVF=1                                   # Windows code runs in the Hypervisor.framework VM
-export BARRIQUE_D3D=${BARRIQUE_D3D:-wined3d}
+export BARRIQUE_D3D=${BARRIQUE_D3D:-dxmt}
 export WINEDEBUG=${WINEDEBUG:--all}
 mkdir -p "$DATA/logs"
 log="$DATA/logs/barrique.log"

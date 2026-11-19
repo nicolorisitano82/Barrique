@@ -716,7 +716,8 @@ static void run_d3d11( struct result *res )
     D3D_FEATURE_LEVEL level;
     ID3D11Buffer *vbs[2];
     UINT strides[2] = { sizeof(struct vertex), sizeof(struct instance) }, offsets[2] = { 0, 0 };
-    const char *backend = getenv( "BARRIQUE_D3D" );
+    /* DXMT has no 32-bit build: 32-bit programs always get wined3d */
+    const char *backend = sizeof(void *) == 4 ? "wined3d" : getenv( "BARRIQUE_D3D" );
     char suffix[64];
     double start = now();
     HRESULT hr;
@@ -1919,7 +1920,7 @@ static void write_json( FILE *f, const struct result *r )
     fprintf( f, ", \"backend\": " );
     if (!strcmp( r->api, "d3d11" ))
     {
-        const char *b = getenv( "BARRIQUE_D3D" );
+        const char *b = sizeof(void *) == 4 ? "wined3d" : getenv( "BARRIQUE_D3D" );
         json_string( f, b && *b ? b : "wined3d" );
     }
     else json_string( f, !strcmp( r->api, "d3d9" ) ? "wined3d" : !strcmp( r->api, "d3d12" ) ? "vkd3d" :
