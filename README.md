@@ -43,8 +43,10 @@ tools only (bison, meson, ninja, cmake, pkg-config; FreeType/libpng are copied i
    links the Hypervisor framework; run `autoreconf` if you don't use the patched
    `configure`.
 3. FEX from `fex/`, cross-built with llvm-mingw for `aarch64-w64-mingw32`
-   (`libwow64fex.dll`) and `arm64ec-w64-mingw32` (`libarm64ecfex.dll`), without
-   LTO and with `-DTUNE_CPU=none`.
+   (`libwow64fex.dll`) and `arm64ec-w64-mingw32` (`libarm64ecfex.dll`) by
+   `scripts/build-fex.sh`: no LTO, `-DTUNE_CPU=none`, and `-DHAS_CLANG_PRESERVE_ALL=0`
+   (clang's `preserve_all` does not hold for ARM64EC: x87 instructions such as
+   `fyl2x` lost x86-64 registers, `tests/pe/x87regs.c`).
 4. `scripts/make-dist.sh` builds `dist/Barrique.app`: Wine installed inside the
    bundle, the libraries in `lib/deps` with `@rpath` names, FEX, DXMT, fonts,
    debug information stripped, every Mach-O signed ad hoc and the loader
