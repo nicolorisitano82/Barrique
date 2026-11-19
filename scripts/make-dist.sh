@@ -65,6 +65,9 @@ print "== app"
 mkdir -p $R/share/barrique
 cp $S/prefix-defaults.reg $R/share/barrique/
 install -m 755 $S/barrique-launcher.sh $APP/Contents/Resources/barrique.sh
+zsh $S/collect-licenses.sh $APP/Contents/Resources/licenses
+cp $S/../LICENSE $S/../COPYING.LIB $S/../resources/fonts/OFL.txt $APP/Contents/Resources/licenses/
+mv $APP/Contents/Resources/licenses/OFL.txt $APP/Contents/Resources/licenses/fonts/Barrique-Caption-OFL.txt
 clang -fobjc-arc -O2 -arch arm64 -mmacosx-version-min=26.0 -framework Cocoa \
     -o $APP/Contents/MacOS/barrique $S/../launcher/main.m
 # icon: resources/icon.svg rendered at every size macOS wants, then iconutil

@@ -56,11 +56,19 @@ Running: `Barrique.app/Contents/MacOS/barrique program.exe` (or `--wine <command
 Data lives in `~/Library/Application Support/Barrique` (the prefix is created on
 first run); `BARRIQUE_D3D=dxmt` selects DXMT for Direct3D 10/11.
 
+## Installing a release
+
+See [docs/README-alpha.txt](docs/README-alpha.txt) (also in the release zip):
+requirements, the Gatekeeper step for an app that is not notarized, known problems.
+Releases are packed by `scripts/make-release.sh <version>` after `make-dist.sh`.
+
 ## Licenses
 
+Barrique is under the LGPL 2.1 or later ([LICENSE](LICENSE), [COPYING.LIB](COPYING.LIB)).
 The Wine changes are under Wine's license, LGPL 2.1 or later. The FEX changes
-are under FEX's license, MIT. Ideas taken from MetalSharp-Wine (AGPL-3.0) are
-reimplemented, no code is copied.
+are under FEX's license, MIT. The Barrique Caption font is under the SIL OFL 1.1.
+Third-party software in the app and its licenses: [NOTICE.md](NOTICE.md).
+Ideas taken from MetalSharp-Wine (AGPL-3.0) are reimplemented, no code is copied.
 
 The FEX project does not accept AI-generated code. The FEX changes here (in
 `fex/` and `patches/fex/`) were written with an AI assistant: they are for

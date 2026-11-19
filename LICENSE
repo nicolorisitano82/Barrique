@@ -1,0 +1,21 @@
+Barrique
+Copyright 2026 The Barrique Authors
+
+Barrique is free software; you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free
+Software Foundation; either version 2.1 of the License, or (at your option)
+any later version. The full text is in COPYING.LIB.
+
+This covers the files of this repository unless a file or folder says
+otherwise:
+
+- patches/wine/: changes to Wine, under Wine's license (LGPL 2.1 or later).
+  They include msync from CrossOver 26.3 (LGPL 2.1 or later, copyright
+  Zebediah Figura and Marc-Aurel Zent).
+- fex/ and patches/fex/: FEX and changes to it, under FEX's license (MIT,
+  fex/LICENSE).
+- The Barrique Caption font (resources/fonts/make-caption-font.py and the font
+  it generates): SIL Open Font License 1.1, resources/fonts/OFL.txt.
+
+Barrique.app also contains third-party software under its own licenses; see
+NOTICE.md.
