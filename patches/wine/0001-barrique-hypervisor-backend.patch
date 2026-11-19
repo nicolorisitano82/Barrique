@@ -939,10 +939,10 @@ index d99a9a1..b13c9bb 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..bd69aca
+index 0000000..ef69819
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,1024 @@
+@@ -0,0 +1,1067 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -1094,6 +1094,11 @@ index 0000000..bd69aca
 +/* diagnostic switches (BARRIQUE_HVF_FAULTAROUND=0, BARRIQUE_HVF_VCPU_RELEASE=0,
 + * BARRIQUE_HVF_LAZY_FP=0): turn one mechanism off to see whether a bug goes away */
 +static BOOL fault_around = TRUE;
++/* BARRIQUE_HVF_TLB_KICK=1: a mapping change makes every vCPU that is running the
++ * guest exit at once, so it flushes its TLB before it touches memory again
++ * (a TLB shootdown); without it a busy vCPU keeps old translations until its next exit */
++static BOOL tlb_kick;
++static void kick_running_vcpus(void);
 +BOOL hvf_lazy_fp_enabled = TRUE;
 +static void destroy_vcpu( void *ptr );
 +
@@ -1418,6 +1423,7 @@ index 0000000..bd69aca
 +    tlb_generation++;
 +    map_generation++;
 +    pthread_mutex_unlock( &hvf_mutex );
++    if (tlb_kick) kick_running_vcpus();
 +}
 +
 +/* pages mapped around a faulting one: memory is mostly touched in sequence, and each
@@ -1537,6 +1543,7 @@ index 0000000..bd69aca
 +    }
 +    hvf_tso = getenv( "WINE_HVF_TSO" ) && atoi( getenv( "WINE_HVF_TSO" ));
 +    if (getenv( "BARRIQUE_HVF_FAULTAROUND" ) && !atoi( getenv( "BARRIQUE_HVF_FAULTAROUND" ))) fault_around = FALSE;
++    if (getenv( "BARRIQUE_HVF_TLB_KICK" ) && atoi( getenv( "BARRIQUE_HVF_TLB_KICK" ))) tlb_kick = TRUE;
 +    if (getenv( "BARRIQUE_HVF_LAZY_FP" ) && !atoi( getenv( "BARRIQUE_HVF_LAZY_FP" ))) hvf_lazy_fp_enabled = FALSE;
 +    /* not "never": a process with more threads than vCPUs needs them back; only when nearly full */
 +    /* =2: the other way round, every wait gives the vCPU back */
@@ -1613,6 +1620,35 @@ index 0000000..bd69aca
 +
 +static LONG vcpu_count;  /* live vCPUs; Hypervisor.framework allows hv_vm_get_max_vcpu_count() */
 +
++/* every live vCPU, for kick_running_vcpus() */
++static pthread_mutex_t vcpu_list_mutex = PTHREAD_MUTEX_INITIALIZER;
++static hv_vcpu_t vcpu_list[512];
++static unsigned int vcpu_list_count;
++
++static void vcpu_list_add( hv_vcpu_t id )
++{
++    pthread_mutex_lock( &vcpu_list_mutex );
++    if (vcpu_list_count < ARRAY_SIZE(vcpu_list)) vcpu_list[vcpu_list_count++] = id;
++    pthread_mutex_unlock( &vcpu_list_mutex );
++}
++
++static void vcpu_list_remove( hv_vcpu_t id )
++{
++    unsigned int i;
++
++    pthread_mutex_lock( &vcpu_list_mutex );
++    for (i = 0; i < vcpu_list_count; i++)
++        if (vcpu_list[i] == id) { vcpu_list[i] = vcpu_list[--vcpu_list_count]; break; }
++    pthread_mutex_unlock( &vcpu_list_mutex );
++}
++
++static void kick_running_vcpus(void)
++{
++    pthread_mutex_lock( &vcpu_list_mutex );
++    if (vcpu_list_count) hv_vcpus_exit( vcpu_list, vcpu_list_count );
++    pthread_mutex_unlock( &vcpu_list_mutex );
++}
++
 +/* a vCPU belongs to its thread: destroy it when the thread exits, or the VM
 + * runs out of them after a few dozen short-lived threads */
 +static void destroy_vcpu( void *ptr )
@@ -1620,6 +1656,7 @@ index 0000000..bd69aca
 +    struct hvf_vcpu *v = ptr;
 +    hv_return_t ret;
 +
++    vcpu_list_remove( v->vcpu );
 +    if ((ret = hv_vcpu_destroy( v->vcpu ))) ERR( "hv_vcpu_destroy failed %x\n", ret );
 +    free( v );
 +    InterlockedDecrement( &vcpu_count );
@@ -1696,6 +1733,7 @@ index 0000000..bd69aca
 +        usleep( 1000 );
 +    }
 +    InterlockedIncrement( &vcpu_count );
++    vcpu_list_add( v->vcpu );
 +    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_MAIR_EL1, 0xff );
 +    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_TCR_EL1,
 +                         16 | (1ULL << 8) | (1ULL << 10) | (3ULL << 12)  /* T0SZ 48 bit, WB, inner shareable */
@@ -1864,13 +1902,18 @@ index 0000000..bd69aca
 +            return;
 +        }
 +
-+        if (v->tlb_seen != tlb_generation)
++        /* the page tables changed: flush before the guest runs again. Only from the
++         * vector table: a vCPU stopped in EL0 (kicked, timer) is first parked on an
++         * eret like for a signal; one stopped on its hvc hasn't reported yet, the
++         * flush waits for the next round */
++        if (v->tlb_seen != tlb_generation && at_safe_point( v ))
 +        {
-+            uint64_t pc;
++            uint64_t gen = tlb_generation, pc, slot;
 +            hv_vcpu_get_reg( v->vcpu, HV_REG_PC, &pc );
-+            if ((pc & 0x7f) == 4)   /* on the plain eret: take the flush path */
-+                hv_vcpu_set_reg( v->vcpu, HV_REG_PC, (pc & ~0x7fULL) + 8 );
-+            v->tlb_seen = tlb_generation;
++            slot = pc & 0x7f;
++            /* +4 plain eret, +20 eret after a flush that may predate the change: flush (again) */
++            if (slot == 4 || slot == 20) hv_vcpu_set_reg( v->vcpu, HV_REG_PC, (pc & ~0x7fULL) + 8 );
++            v->tlb_seen = gen;
 +        }
 +
 +        update_tso( v );

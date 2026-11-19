@@ -55,9 +55,13 @@ EOF
 fi
 if [[ ! -f $stamp || $(<$stamp) != $sum ]]; then
     print "$(date '+%F %T') applying new prefix defaults" >> $log
-    "$wine" regedit /S "$defaults" >> $log 2>&1
-    "$R/bin/wineserver" -w
-    print $sum > $stamp
+    # a failure here must not stop the program from starting; retried next run
+    if "$wine" regedit /S "$defaults" >> $log 2>&1; then
+        "$R/bin/wineserver" -w
+        print $sum > $stamp
+    else
+        print "$(date '+%F %T') prefix defaults not applied, retrying next run" >> $log
+    fi
 fi
 
 if [[ $1 == --wine ]]; then
