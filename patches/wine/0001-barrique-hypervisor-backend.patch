@@ -5071,50 +5071,6 @@ index 83084b8..ec1677d 100644
  #else
  
  static DWORD get_core_id_regs_arm64( struct smbios_wine_id_reg_value_arm64 *regs,
-diff --git a/dlls/ntdll/unix/thread.c b/dlls/ntdll/unix/thread.c
-index 11171cc..e39e6f0 100644
---- a/dlls/ntdll/unix/thread.c
-+++ b/dlls/ntdll/unix/thread.c
-@@ -1564,6 +1564,10 @@ static DECLSPEC_NORETURN void exit_thread( int status )
-  */
- void exit_process( int status )
- {
-+#ifdef WINE_HVF
-+    virtual_hvf_flush_shadows();
-+    hvf_print_stats();
-+#endif
-     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
-     process_exit_wrapper( get_unix_exit_code( status ));
- }
-@@ -1689,11 +1693,27 @@ NTSTATUS send_debug_event( struct thread_data *data, EXCEPTION_RECORD *rec,
- NTSTATUS WINAPI NtRaiseException( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL first_chance )
- {
-     struct thread_data *data = get_thread_data();
--    NTSTATUS status = send_debug_event( data, rec, context, first_chance );
-+    NTSTATUS status;
-+#ifdef __aarch64__
-+    /* Barrique: FEX (ARM64EC) moves the PC of an x64 int3 back onto the int3
-+     * before raising it. An x64 debugger expects Rip after the int3, like
-+     * x86-64 Windows and setup_raise_exception() in signal_x86_64.c: show it
-+     * that, and move it back only for the program's own handlers. */
-+    BOOL x64_breakpoint = rec->ExceptionCode == EXCEPTION_BREAKPOINT &&
-+                          context->Pc == (ULONG_PTR)rec->ExceptionAddress &&
-+                          is_emulated_code( context->Pc );
-+
-+    if (x64_breakpoint) context->Pc++;
-+#endif
-+    status = send_debug_event( data, rec, context, first_chance );
- 
-     if (status == DBG_CONTINUE || status == DBG_EXCEPTION_HANDLED)
-         return NtContinue( context, FALSE );
- 
-+#ifdef __aarch64__
-+    if (x64_breakpoint) context->Pc--;
-+#endif
-+
-     if (first_chance) return call_user_exception_dispatcher( data, rec, context );
- 
-     if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
 index 829db1e..b196d98 100644
 --- a/dlls/ntdll/unix/unix_private.h
@@ -10839,3 +10795,73 @@ index 986cf5d..d6a7683 100644
      else
      {
          reply->handle = get_thread_id( current ) | 1; /* arbitrary token */
+diff --git a/dlls/ntdll/unix/thread.c b/dlls/ntdll/unix/thread.c
+index 11171cc..e7fbffb 100644
+--- a/dlls/ntdll/unix/thread.c
++++ b/dlls/ntdll/unix/thread.c
+@@ -1520,6 +1520,15 @@ NTSTATUS WINAPI PsCreateSystemThread( HANDLE *handle, ACCESS_MASK access, OBJECT
+  */
+ void abort_thread( int status )
+ {
++#ifdef __APPLE__
++    /* Barrique: the process's original thread runs Cocoa's run loop (apple_main_thread)
++     * and calls into Wine from AppKit callbacks. If it ever has to leave (the
++     * wineserver went away under a wine_server_call, for example), end the process:
++     * after a pthread_exit of the main thread libdispatch hands the main queue to
++     * worker threads, AppKit asserts there (NSMenu off the main thread) and macOS
++     * shows a crash report for a process that was being killed anyway. */
++    if (pthread_main_np()) abort_process( status );
++#endif
+     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
+     if (InterlockedDecrement( &nb_threads ) <= 0) abort_process( status );
+     pthread_exit_wrapper( status );
+@@ -1543,6 +1552,9 @@ static DECLSPEC_NORETURN void exit_thread( int status )
+     static void *prev_data;
+     struct thread_data *data;
+ 
++#ifdef __APPLE__
++    if (pthread_main_np()) exit_process( status );  /* see abort_thread() */
++#endif
+     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
+ 
+     if (InterlockedDecrement( &nb_threads ) <= 0) exit_process( status );
+@@ -1564,6 +1576,10 @@ static DECLSPEC_NORETURN void exit_thread( int status )
+  */
+ void exit_process( int status )
+ {
++#ifdef WINE_HVF
++    virtual_hvf_flush_shadows();
++    hvf_print_stats();
++#endif
+     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
+     process_exit_wrapper( get_unix_exit_code( status ));
+ }
+@@ -1689,11 +1705,27 @@ NTSTATUS send_debug_event( struct thread_data *data, EXCEPTION_RECORD *rec,
+ NTSTATUS WINAPI NtRaiseException( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL first_chance )
+ {
+     struct thread_data *data = get_thread_data();
+-    NTSTATUS status = send_debug_event( data, rec, context, first_chance );
++    NTSTATUS status;
++#ifdef __aarch64__
++    /* Barrique: FEX (ARM64EC) moves the PC of an x64 int3 back onto the int3
++     * before raising it. An x64 debugger expects Rip after the int3, like
++     * x86-64 Windows and setup_raise_exception() in signal_x86_64.c: show it
++     * that, and move it back only for the program's own handlers. */
++    BOOL x64_breakpoint = rec->ExceptionCode == EXCEPTION_BREAKPOINT &&
++                          context->Pc == (ULONG_PTR)rec->ExceptionAddress &&
++                          is_emulated_code( context->Pc );
++
++    if (x64_breakpoint) context->Pc++;
++#endif
++    status = send_debug_event( data, rec, context, first_chance );
+ 
+     if (status == DBG_CONTINUE || status == DBG_EXCEPTION_HANDLED)
+         return NtContinue( context, FALSE );
+ 
++#ifdef __aarch64__
++    if (x64_breakpoint) context->Pc--;
++#endif
++
+     if (first_chance) return call_user_exception_dispatcher( data, rec, context );
+ 
+     if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)

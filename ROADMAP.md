@@ -73,6 +73,7 @@ Tutto ciò che è aperto, per area, compresi i punti minori. Priorità: **A** bl
 
 **App e distribuzione**
 - **B** Prova di Barrique su un vero macOS 26 (le funzioni di macOS 27 sono state tolte o protette, fase 6).
+- ✅ **B** Finestra di crash di macOS quando un programma viene chiuso a forza (2026-11-19): se il wineserver sparisce mentre il thread Cocoa (il thread originale del processo, `apple_main_thread`) chiama Wine da un callback di AppKit (attivazione dell'app → `NtUserFindWindowEx`), ntdll faceva `pthread_exit` su quel thread; libdispatch passava allora la coda principale a thread di lavoro, AppKit andava in asserzione (`NSMenu` fuori dal thread principale), `abort`, e il gestore di SIGABRT di Wine crashava su un thread senza dati Wine: crash report di macOS. Ora `abort_thread`/`exit_thread` sul thread principale chiudono il processo (`_exit`/`exit_process`). Riproduttore `tests/pe/winhold.c` (finestra + thread che non chiama mai il server; si uccide solo il wineserver e si attiva la finestra): prima 4 crash report su 4, ora 0.
 - **B** Fase 6b: assistente "da installer a `.app`" (prefix dedicato, icona dall'exe, clone APFS del runtime).
 - **C** Aggiornamento del runtime nelle `.app` create, esportazione di un programma installato.
 
