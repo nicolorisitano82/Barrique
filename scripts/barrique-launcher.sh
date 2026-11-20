@@ -14,6 +14,10 @@
 #                               32-bit programs have no DXMT and use wined3d anyway)
 #   BARRIQUE_PREFIX=<dir>       another prefix (default <data>/prefix)
 #   BARRIQUE_DATA=<dir>         another data folder (default ~/Library/Application Support/Barrique)
+#   FEX_DISKCACHE=0|1           FEX keeps translated x86 code on disk (default 1), in
+#                               the prefix (AppData/Local/fex-emu/DiskCache, 1 GB at most):
+#                               the second time a program or game area runs it is not
+#                               translated again (Firefox x64 36 s -> 27 s, less stutter)
 set -e
 APP=${0:A:h:h}
 R=$APP/Resources/wine
@@ -21,6 +25,7 @@ DATA=${BARRIQUE_DATA:-$HOME/Library/Application Support/Barrique}
 export WINEPREFIX=${BARRIQUE_PREFIX:-$DATA/prefix}
 export WINE_HVF=1                                   # Windows code runs in the Hypervisor.framework VM
 export BARRIQUE_D3D=${BARRIQUE_D3D:-dxmt}
+export FEX_DISKCACHE=${FEX_DISKCACHE:-1}
 export WINEDEBUG=${WINEDEBUG:--all}
 mkdir -p "$DATA/logs"
 log="$DATA/logs/barrique.log"
