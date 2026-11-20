@@ -59,6 +59,35 @@ index afcdd85..32e1727 100644
          dnl If the -no_huge linker option is present (added in Xcode 15.3), use zerofill sections instead of the preloader
          WINE_TRY_CFLAGS([-Wl,-no_huge],
             [wine_use_preloader=no
+diff --git a/dlls/advapi32/security.c b/dlls/advapi32/security.c
+index b6f91af..1ad7ce8 100644
+--- a/dlls/advapi32/security.c
++++ b/dlls/advapi32/security.c
+@@ -3094,6 +3094,24 @@ DWORD WINAPI SetSecurityInfo(HANDLE handle, SE_OBJECT_TYPE ObjectType,
+     case SE_WMIGUID_OBJECT:
+     case SE_REGISTRY_KEY:
+         status = NtSetSecurityObject(handle, SecurityInfo, &sd);
++        /* Barrique: Google Updater creates a key with KEY_WRITE and then sets its DACL
++         * through that handle, which works on Windows. Retry through a duplicate that
++         * asks for the needed rights; the server checks them against the key's
++         * security (the owner always gets WRITE_DAC). */
++        if (status == STATUS_ACCESS_DENIED && ObjectType == SE_REGISTRY_KEY)
++        {
++            ACCESS_MASK access = 0;
++            HANDLE dup;
++
++            if (SecurityInfo & DACL_SECURITY_INFORMATION) access |= WRITE_DAC;
++            if (SecurityInfo & (OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION)) access |= WRITE_OWNER;
++            if (SecurityInfo & SACL_SECURITY_INFORMATION) access |= ACCESS_SYSTEM_SECURITY;
++            if (!NtDuplicateObject( NtCurrentProcess(), handle, NtCurrentProcess(), &dup, access, 0, 0 ))
++            {
++                status = NtSetSecurityObject(dup, SecurityInfo, &sd);
++                NtClose( dup );
++            }
++        }
+         break;
+ 
+     default:
 diff --git a/dlls/colorcnv/color_converter.c b/dlls/colorcnv/color_converter.c
 index 38981e4..f0a6f9b 100644
 --- a/dlls/colorcnv/color_converter.c
@@ -77,6 +106,42 @@ index 38981e4..f0a6f9b 100644
      av_opt_set_int(impl->context, "threads", 0, 0);
      av_opt_set_int(impl->context, "srcw", impl->input_frame.width, 0);
      av_opt_set_int(impl->context, "srch", impl->input_frame.height, 0);
+diff --git a/dlls/combase/rpc.c b/dlls/combase/rpc.c
+index dc33877..72bc8ce 100644
+--- a/dlls/combase/rpc.c
++++ b/dlls/combase/rpc.c
+@@ -424,7 +424,7 @@ static DWORD start_local_service(const WCHAR *name, DWORD num, LPCWSTR *params)
+ static HRESULT create_local_service(REFCLSID rclsid)
+ {
+     HRESULT hr;
+-    WCHAR buf[CHARS_IN_GUID];
++    WCHAR buf[257]; /* service names are up to 256 characters (CHARS_IN_GUID cut longer ones) */
+     HKEY hkey;
+     LONG r;
+     DWORD type, sz;
+@@ -451,12 +451,20 @@ static HRESULT create_local_service(REFCLSID rclsid)
+          *        REG_MULTI_SZ here, but it's a REG_SZ for the services
+          *        that I'm interested in for the moment.
+          */
+-        r = RegQueryValueExW(hkey, L"ServiceParams", NULL, &type, NULL, &sz);
++        /* Windows reads ServiceParameters; ServiceParams kept for older Wine registrations */
++        const WCHAR *params_name = L"ServiceParameters";
++
++        r = RegQueryValueExW(hkey, params_name, NULL, &type, NULL, &sz);
++        if (r != ERROR_SUCCESS)
++        {
++            params_name = L"ServiceParams";
++            r = RegQueryValueExW(hkey, params_name, NULL, &type, NULL, &sz);
++        }
+         if (r == ERROR_SUCCESS && type == REG_SZ && sz)
+         {
+             args[0] = calloc(1, sz);
+             num_args++;
+-            RegQueryValueExW(hkey, L"ServiceParams", NULL, &type, (LPBYTE)args[0], &sz);
++            RegQueryValueExW(hkey, params_name, NULL, &type, (LPBYTE)args[0], &sz);
+         }
+         r = start_local_service(buf, num_args, (LPCWSTR *)args);
+         if (r != ERROR_SUCCESS)
 diff --git a/dlls/crypt32/Makefile.in b/dlls/crypt32/Makefile.in
 index 9a02541..96f8d19 100644
 --- a/dlls/crypt32/Makefile.in
@@ -7563,6 +7628,75 @@ index 26136a0..7ac16ef 100644
  void *wow64_glMapBuffer( TEB *teb, GLenum target, GLenum access, PFN_glMapBuffer p_glMapBuffer )
  {
      GLbitfield range_access = map_range_flags_from_map_flags( access );
+diff --git a/dlls/rpcrt4/ndr_typelib.c b/dlls/rpcrt4/ndr_typelib.c
+index 1006bf1..51790fa 100644
+--- a/dlls/rpcrt4/ndr_typelib.c
++++ b/dlls/rpcrt4/ndr_typelib.c
+@@ -181,6 +181,8 @@ static unsigned int type_memsize(ITypeInfo *typeinfo, TYPEDESC *desc, unsigned i
+     case VT_PTR:
+     case VT_UNKNOWN:
+     case VT_DISPATCH:
++    case VT_LPSTR:
++    case VT_LPWSTR:
+         size = align = sizeof(void *);
+         break;
+     case VT_VARIANT:
+@@ -774,7 +776,8 @@ static size_t write_pointer_tfs(ITypeInfo *typeinfo, unsigned char *str,
+         ref = write_type_tfs(typeinfo, str, len, desc, FALSE, FALSE);
+ 
+         if (onstack) flags |= FC_ALLOCED_ON_STACK;
+-        if (desc->vt == VT_PTR || desc->vt == VT_UNKNOWN || desc->vt == VT_DISPATCH)
++        if (desc->vt == VT_PTR || desc->vt == VT_UNKNOWN || desc->vt == VT_DISPATCH ||
++            desc->vt == VT_LPSTR || desc->vt == VT_LPWSTR)
+             flags |= FC_POINTER_DEREF;
+ 
+         off = *len;
+@@ -806,6 +809,15 @@ static size_t write_type_tfs(ITypeInfo *typeinfo, unsigned char *str,
+         return write_pointer_tfs(typeinfo, str, len, desc->lptdesc, toplevel, onstack);
+     case VT_CARRAY:
+         return write_array_tfs(typeinfo, str, len, desc->lpadesc);
++    case VT_LPSTR:
++    case VT_LPWSTR:
++        /* [string] char / wchar_t pointer, as midl writes it */
++        off = *len;
++        WRITE_CHAR(str, *len, toplevel ? FC_RP : FC_UP);
++        WRITE_CHAR(str, *len, FC_SIMPLE_POINTER);
++        WRITE_CHAR(str, *len, desc->vt == VT_LPWSTR ? FC_C_WSTRING : FC_C_CSTRING);
++        WRITE_CHAR(str, *len, FC_PAD);
++        return off;
+     case VT_USERDEFINED:
+         ITypeInfo_GetRefTypeInfo(typeinfo, desc->hreftype, &refinfo);
+         ITypeInfo_GetTypeAttr(refinfo, &attr);
+@@ -872,6 +884,8 @@ static unsigned int get_stack_size(ITypeInfo *typeinfo, TYPEDESC *desc, unsigned
+     case VT_UNKNOWN:
+     case VT_DISPATCH:
+     case VT_CARRAY:
++    case VT_LPSTR:
++    case VT_LPWSTR:
+         byval = 0;
+         break;
+     case VT_VARIANT:
+@@ -924,6 +938,11 @@ static HRESULT get_param_pointer_info(ITypeInfo *typeinfo, TYPEDESC *tdesc, int
+         if (is_in && is_out)
+             *server_size = sizeof(void *);
+         break;
++    case VT_LPSTR:
++    case VT_LPWSTR:
++        *flags |= MustFree;
++        *server_size = sizeof(void *);
++        break;
+     case VT_PTR:
+         *flags |= MustFree;
+         if (type_pointer_is_iface(typeinfo, tdesc->lptdesc))
+@@ -1016,6 +1035,8 @@ static HRESULT get_param_info(ITypeInfo *typeinfo, TYPEDESC *tdesc, int is_in,
+     case VT_UNKNOWN:
+     case VT_DISPATCH:
+     case VT_CARRAY:
++    case VT_LPSTR:
++    case VT_LPWSTR:
+         *flags |= MustFree;
+         break;
+     case VT_PTR:
 diff --git a/dlls/secur32/Makefile.in b/dlls/secur32/Makefile.in
 index 5f1c58b..c00a115 100644
 --- a/dlls/secur32/Makefile.in
