@@ -40,8 +40,7 @@ Use
 
 Known problems
 --------------
-- Firefox (ARM64 and x64) crashes now and then; its GPU process restarts.
-- Web pages inside x86-64 programs (Wine Gecko) crash; 32-bit ones work.
+- Firefox (ARM64 and x64) sometimes stops responding while a page loads.
 - 32-bit x86 programs get no specific work: some may fail.
 - Some programs hang on their first start and work on the second.
 - Steam is not supported yet.
