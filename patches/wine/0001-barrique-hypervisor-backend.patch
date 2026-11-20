@@ -1226,10 +1226,10 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..af48b08
+index 0000000..1e4dfba
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,1100 @@
+@@ -0,0 +1,1118 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -1456,15 +1456,33 @@ index 0000000..af48b08
 +static BOOL query_page( uint64_t page, vm_region_extended_info_data_t *info, vm_page_info_basic_data_t *page_info,
 +                        mach_vm_address_t *region_start, mach_vm_size_t *region_size )
 +{
-+    mach_msg_type_number_t count = VM_REGION_EXTENDED_INFO_COUNT;
-+    mach_port_t object = MACH_PORT_NULL;
++    vm_region_submap_short_info_data_64_t short_info;
++    mach_msg_type_number_t count;
++    natural_t depth = 0;
 +
-+    *region_start = page;
-+    *region_size = 0;
-+    memset( page_info, 0, sizeof(*page_info) );
-+    if (mach_vm_region( mach_task_self(), region_start, region_size, VM_REGION_EXTENDED_INFO,
-+                        (vm_region_info_t)info, &count, &object ) != KERN_SUCCESS) return FALSE;
++    /* Barrique: VM_REGION_EXTENDED_INFO walks every page of the region to count the
++     * resident ones: on a large VirtualAlloc block each new host page cost a scan of
++     * the whole block (18 us per 4K page first touched, 85% of the vCPU's time,
++     * tests/pe/faultbench.c). The short submap info has the fields used here and
++     * walks nothing. */
++    for (;;)
++    {
++        *region_start = page;
++        *region_size = 0;
++        count = VM_REGION_SUBMAP_SHORT_INFO_COUNT_64;
++        if (mach_vm_region_recurse( mach_task_self(), region_start, region_size, &depth,
++                                    (vm_region_recurse_info_t)&short_info, &count ) != KERN_SUCCESS) return FALSE;
++        if (!short_info.is_submap) break;
++        depth++;
++    }
 +    if (*region_start > page || *region_start + *region_size < page + HOST_PAGE) return FALSE;
++    memset( info, 0, sizeof(*info) );
++    info->protection     = short_info.protection;
++    info->user_tag       = short_info.user_tag;
++    info->external_pager = short_info.external_pager;
++    info->share_mode     = short_info.share_mode;
++    info->shadow_depth   = short_info.shadow_depth;
++    memset( page_info, 0, sizeof(*page_info) );
 +    count = VM_PAGE_INFO_BASIC_COUNT;
 +    return mach_vm_page_info( mach_task_self(), page, VM_PAGE_INFO_BASIC,
 +                              (vm_page_info_t)page_info, &count ) == KERN_SUCCESS;
