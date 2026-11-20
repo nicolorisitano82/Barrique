@@ -79,6 +79,13 @@ if [[ -f $sdl/lib/libSDL2-2.0.0.dylib ]]; then
     copied+=(libSDL2-2.0.0.dylib)
 fi
 
+# libusb from build-libusb.sh: wineusb.sys, Windows USB drivers and programs
+usb=${LIBUSB_PREFIX:-$HOME/Work/Personale/wine/deps-usb}
+if [[ -f $usb/lib/libusb-1.0.0.dylib ]]; then
+    install -m 644 $usb/lib/libusb-1.0.0.dylib $dest/libusb-1.0.0.dylib
+    copied+=(libusb-1.0.0.dylib)
+fi
+
 if [[ -f $vk/lib/libMoltenVK.dylib ]]; then
     install -m 644 $vk/lib/libMoltenVK.dylib $dest/libMoltenVK.dylib
     copied+=(libMoltenVK.dylib)

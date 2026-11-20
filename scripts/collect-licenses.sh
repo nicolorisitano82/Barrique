@@ -37,6 +37,7 @@ for x in SPIRV-Cross SPIRV-Tools Volk Vulkan-Headers cereal; do
     lic moltenvk/$x $D/moltenvk-1.4.2/External/$x/LICENSE*(N[1])
 done
 lic sdl2           $D/SDL2-2.32.10/LICENSE.txt
+lic libusb         $D/libusb-1.0.30/COPYING
 lic ffmpeg         $D/ffmpeg-9.0.2/LICENSE.md $D/ffmpeg-9.0.2/COPYING.LGPLv2.1
 lic glib           $D/glib-2.90.1/COPYING
 lic pcre2          $D/pcre2-10.49/LICENCE.md

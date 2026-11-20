@@ -1078,10 +1078,10 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..c212379
+index 0000000..af48b08
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,1072 @@
+@@ -0,0 +1,1100 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -1131,6 +1131,10 @@ index 0000000..c212379
 +#include "wine/debug.h"
 +
 +WINE_DEFAULT_DEBUG_CHANNEL(hvf);
++
++/* Barrique: a state the VM can't go on from. Always say why (ERR is off with
++ * WINEDEBUG=-all, the default in the app), then abort. */
++#define HVF_FATAL(...) do { fprintf( stderr, "barrique: hvf: fatal: " __VA_ARGS__ ); abort(); } while (0)
 +
 +#define GUEST_PAGE     0x1000ULL
 +#define HOST_PAGE      0x4000ULL
@@ -1223,6 +1227,8 @@ index 0000000..c212379
 +    uint64_t         tlb_seen;
 +    BOOL             at_eret;      /* PC is on an eret in the vector table */
 +    BOOL             tso;          /* ACTLR_EL1 has the TSO bit */
++    uint64_t         perm_ipa;     /* last stage-2 permission fault, see hvf_run() */
++    uint64_t         perm_gen;     /* map_generation at that fault */
 +};
 +
 +static pthread_key_t vcpu_key;
@@ -2032,6 +2038,7 @@ index 0000000..c212379
 +void hvf_run( struct hvf_exit *ex, volatile LONG *pending )
 +{
 +    struct hvf_vcpu *v = get_vcpu();
++    unsigned int unknown_exits = 0;
 +
 +    for (;;)
 +    {
@@ -2063,19 +2070,23 @@ index 0000000..c212379
 +        InterlockedIncrement( &stat_exits );
 +        if (hv_vcpu_run( v->vcpu ))
 +        {
-+            ERR( "hv_vcpu_run failed\n" );
-+            abort();
++            HVF_FATAL( "hv_vcpu_run failed\n" );
 +        }
 +        switch (v->exit->reason)
 +        {
 +        case HV_EXIT_REASON_EXCEPTION:
++            unknown_exits = 0;
 +            break;
 +        case HV_EXIT_REASON_VTIMER_ACTIVATED:
 +        case HV_EXIT_REASON_CANCELED:
 +            continue;
++        case HV_EXIT_REASON_UNKNOWN:
++            /* Barrique: seen once in 30 Firefox x64 runs under load, not documented as
++             * fatal: run the vCPU again; only a vCPU that keeps exiting like this is stuck */
++            if (++unknown_exits < 1000) continue;
++            /* fall through */
 +        default:
-+            ERR( "unexpected exit reason %u\n", v->exit->reason );
-+            abort();
++            HVF_FATAL( "unexpected exit reason %u\n", v->exit->reason );
 +        }
 +
 +        syndrome = v->exit->exception.syndrome;
@@ -2085,29 +2096,46 @@ index 0000000..c212379
 +        {
 +            /* stage-2 fault: the host page isn't (or no longer) mapped in the VM */
 +            uint64_t ipa = v->exit->exception.physical_address, bit = ipa / HOST_PAGE;
-+            BOOL ok;
++            BOOL ok, permission = (syndrome & 0x3c) == 0x0c;   /* DFSC/IFSC 0b0011xx */
 +            sigset_t sigset;
++
++            /* Barrique: the bitmap only means something under hvf_mutex. Read outside it,
++             * a page another vCPU had just mapped again after an invalidation (or that
++             * hvf_invalidate had unmapped but not yet cleared) looked like a permission
++             * fault, and the thread aborted: silently, as WINEDEBUG=-all hid the message,
++             * and Firefox's main thread was gone. */
++            server_enter_uninterrupted_section( &hvf_mutex, &sigset );
 +            if (ipa < IPA_LIMIT && (stage2_bitmap[bit / 64] & (1ULL << (bit % 64))))
 +            {
-+                /* already mapped: a permission fault, retrying would spin forever */
-+                ERR( "stage-2 permission fault at IPA %llx, syndrome %llx\n",
-+                     (unsigned long long)ipa, (unsigned long long)syndrome );
-+                abort();
++                if (!permission) ok = TRUE;   /* mapped again meanwhile: just retry */
++                else if (v->perm_ipa == ipa && v->perm_gen == map_generation) ok = FALSE;
++                else
++                {
++                    /* the mapping may predate a protection change: map it again from
++                     * the host protections; the same fault again with nothing changed
++                     * in between is a real one */
++                    v->perm_ipa = ipa;
++                    v->perm_gen = map_generation;
++                    hv_vm_unmap( bit * HOST_PAGE, HOST_PAGE );
++                    stage2_bitmap[bit / 64] &= ~(1ULL << (bit % 64));
++                    ok = map_stage2( ipa );
++                }
++                server_leave_uninterrupted_section( &hvf_mutex, &sigset );
++                if (ok) continue;
++                HVF_FATAL( "stage-2 permission fault at IPA %llx, syndrome %llx\n",
++                           (unsigned long long)ipa, (unsigned long long)syndrome );
 +            }
-+            server_enter_uninterrupted_section( &hvf_mutex, &sigset );
 +            ok = map_stage2( ipa );
 +            server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +            if (ok) continue;
-+            ERR( "stage-2 fault at IPA %llx with no host memory\n", (unsigned long long)ipa );
-+            abort();
++            HVF_FATAL( "stage-2 fault at IPA %llx with no host memory\n", (unsigned long long)ipa );
 +        }
 +        if (ec != 0x16)
 +        {
 +            uint64_t pc;
 +            hv_vcpu_get_reg( v->vcpu, HV_REG_PC, &pc );
-+            ERR( "unexpected EL2 exception syndrome %llx pc %llx\n", (unsigned long long)syndrome,
-+                 (unsigned long long)pc );
-+            abort();
++            HVF_FATAL( "unexpected EL2 exception syndrome %llx pc %llx\n", (unsigned long long)syndrome,
++                       (unsigned long long)pc );
 +        }
 +
 +        /* hvc from our vector table: the immediate is the vector index */
@@ -4167,19 +4195,20 @@ index c80226f..a787d2f 100644
  extern NTSTATUS apple_spawn_main_thread(void);
  
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
-index 02b6d57..2d0d9ce 100644
+index 02b6d57..7496b85 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
 +++ b/dlls/ntdll/unix/signal_arm64.c
-@@ -29,6 +29,8 @@
+@@ -29,6 +29,9 @@
  #include <assert.h>
  #include <pthread.h>
  #include <signal.h>
 +#include <setjmp.h>
 +#include <dlfcn.h>
++#include <execinfo.h>
  #include <stdlib.h>
  #include <stdarg.h>
  #include <stdio.h>
-@@ -412,6 +414,10 @@ void *get_wow_context( CONTEXT *context )
+@@ -412,6 +415,10 @@ void *get_wow_context( CONTEXT *context )
  }
  
  
@@ -4190,7 +4219,7 @@ index 02b6d57..2d0d9ce 100644
  /***********************************************************************
   *              NtSetContextThread  (NTDLL.@)
   *              ZwSetContextThread  (NTDLL.@)
-@@ -432,6 +438,9 @@ NTSTATUS WINAPI NtSetContextThread( HANDLE handle, const CONTEXT *context )
+@@ -432,6 +439,9 @@ NTSTATUS WINAPI NtSetContextThread( HANDLE handle, const CONTEXT *context )
          ret = set_thread_context( handle, context, &self, IMAGE_FILE_MACHINE_ARM64 );
          if (ret || !self) return ret;
      }
@@ -4200,7 +4229,7 @@ index 02b6d57..2d0d9ce 100644
  
      if (flags & CONTEXT_INTEGER)
      {
-@@ -486,6 +495,10 @@ NTSTATUS WINAPI NtGetContextThread( HANDLE handle, CONTEXT *context )
+@@ -486,6 +496,10 @@ NTSTATUS WINAPI NtGetContextThread( HANDLE handle, CONTEXT *context )
          if (ret || !self) return ret;
      }
      else if (!frame) return STATUS_ACCESS_DENIED;
@@ -4211,7 +4240,7 @@ index 02b6d57..2d0d9ce 100644
  
      if (needed_flags & CONTEXT_INTEGER)
      {
-@@ -783,6 +796,35 @@ NTSTATUS get_thread_wow64_context( HANDLE handle, void *ctx, ULONG size )
+@@ -783,6 +797,35 @@ NTSTATUS get_thread_wow64_context( HANDLE handle, void *ctx, ULONG size )
  /***********************************************************************
   *           setup_raise_exception
   */
@@ -4247,7 +4276,7 @@ index 02b6d57..2d0d9ce 100644
  static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcontext,
                                     EXCEPTION_RECORD *rec, CONTEXT *context )
  {
-@@ -790,6 +832,15 @@ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcont
+@@ -790,6 +833,15 @@ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcont
      struct exc_stack_layout *stack;
      void *stack_ptr = (void *)(SP_sig(sigcontext) & ~15);
  
@@ -4263,7 +4292,7 @@ index 02b6d57..2d0d9ce 100644
      if (!chpe || !chpe->InSimulation)
      {
          NTSTATUS status = send_debug_event( data, rec, context, TRUE );
-@@ -1037,6 +1088,7 @@ __ASM_GLOBAL_FUNC( user_mode_abort_thread,
+@@ -1037,6 +1089,7 @@ __ASM_GLOBAL_FUNC( user_mode_abort_thread,
                     "bl " __ASM_NAME("abort_thread") )
  
  
@@ -4271,7 +4300,7 @@ index 02b6d57..2d0d9ce 100644
  /***********************************************************************
   *           KeUserModeCallback
   */
-@@ -1071,6 +1123,7 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+@@ -1071,6 +1124,7 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
      if (!frame->prev_frame) return STATUS_NO_CALLBACK_ACTIVE;
      user_mode_callback_return( ret_ptr, ret_len, status, data->teb );
  }
@@ -4279,7 +4308,7 @@ index 02b6d57..2d0d9ce 100644
  
  
  /***********************************************************************
-@@ -1078,11 +1131,89 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+@@ -1078,11 +1132,89 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
   *
   * Handle a page fault happening during a system call.
   */
@@ -4369,7 +4398,7 @@ index 02b6d57..2d0d9ce 100644
      if (!is_inside_syscall( data, SP_sig(context) )) return FALSE;
  
      TRACE( "code=%x flags=%x addr=%p pc=%p\n",
-@@ -1150,6 +1281,21 @@ static void segv_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1150,6 +1282,21 @@ static void segv_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      EXCEPTION_RECORD rec = { .ExceptionAddress = (void *)PC_sig(sigcontext) };
      DWORD64 esr = get_fault_esr( sigcontext );
  
@@ -4391,7 +4420,25 @@ index 02b6d57..2d0d9ce 100644
      switch (ESR_ELx_EC(esr))
      {
      case ESR_ELx_EC_IABT_LOW:
-@@ -1392,6 +1538,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1371,6 +1518,17 @@ static void int_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+ static void abrt_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+ {
+     ucontext_t *sigcontext = _sigcontext;
++#ifdef WINE_HVF
++    {
++        /* Barrique: under the VM an abort() on the host side can't become a Windows
++         * exception and only this thread ends, with no crash report: say so, with the
++         * host stack, whatever WINEDEBUG says */
++        void *bt[32];
++        int n = backtrace( bt, ARRAY_SIZE(bt) );
++        fprintf( stderr, "barrique: thread %04x aborted on the host side:\n", (int)GetCurrentThreadId() );
++        backtrace_symbols_fd( bt, n, 2 );
++    }
++#endif
+     struct thread_data *data = get_thread_data();
+     CONTEXT context;
+     EXCEPTION_RECORD rec = { .ExceptionCode = EXCEPTION_WINE_ASSERTION,
+@@ -1392,6 +1550,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      ucontext_t *sigcontext = _sigcontext;
      struct thread_data *data = get_thread_data();
  
@@ -4403,7 +4450,7 @@ index 02b6d57..2d0d9ce 100644
      if (is_inside_syscall( data, SP_sig(sigcontext) )) abort_thread(0);
      user_mode_abort_thread( 0, get_syscall_frame( data ));
  }
-@@ -1440,6 +1591,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1440,6 +1603,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      extern const ULONG_PTR __wine_unix_call_dispatcher_user_stack;
      extern const ULONG_PTR call_user_mode_callback_user_stack_ptr;
  
@@ -4439,7 +4486,7 @@ index 02b6d57..2d0d9ce 100644
      /* if we're in a syscall dispatcher, but not yet on the syscall stack, construct
       * the frame now from the signal context. */
      if ((ULONG_PTR)__wine_syscall_dispatcher <= PC_sig(sigcontext) &&
-@@ -1509,6 +1689,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1509,6 +1701,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      struct syscall_frame *frame = get_syscall_frame( data );
      DWORD i;
  
@@ -4449,7 +4496,7 @@ index 02b6d57..2d0d9ce 100644
      if (!is_inside_syscall( data, SP_sig(sigcontext) )) return;
      if (!frame) return;
  
-@@ -1691,6 +1874,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
+@@ -1691,6 +1886,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
  }
  
  
@@ -4457,7 +4504,7 @@ index 02b6d57..2d0d9ce 100644
  /***********************************************************************
   *           signal_start_thread
   */
-@@ -1728,6 +1912,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
+@@ -1728,6 +1924,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
                     "mov sp, x4\n\t"
                     "bl " __ASM_NAME("init_syscall_frame") "\n\t"
                     "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
@@ -4465,7 +4512,7 @@ index 02b6d57..2d0d9ce 100644
  
  
  /***********************************************************************
-@@ -1966,4 +2151,458 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+@@ -1966,4 +2163,458 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
  __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
                        __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
  
@@ -8952,6 +8999,72 @@ index e025823..5f56d7e 100644
 +    dxmt_free_list = entry;
 +    pthread_mutex_unlock(&dxmt_free_lock);
 +}
+diff --git a/dlls/wineusb.sys/Makefile.in b/dlls/wineusb.sys/Makefile.in
+index 0c6bb77..08cd711 100644
+--- a/dlls/wineusb.sys/Makefile.in
++++ b/dlls/wineusb.sys/Makefile.in
+@@ -1,7 +1,7 @@
+ MODULE    = wineusb.sys
+ UNIXLIB   = wineusb.so
+ IMPORTS   = ntoskrnl
+-UNIX_LIBS    = $(USB_LIBS) $(PTHREAD_LIBS)
++UNIX_LIBS    = $(USB_LIBS) $(PTHREAD_LIBS) -Wl,-rpath,@loader_path/../../deps
+ UNIX_CFLAGS  = $(USB_CFLAGS)
+ 
+ EXTRADLLFLAGS = -Wl,--subsystem,native
+diff --git a/dlls/wineusb.sys/unixlib.c b/dlls/wineusb.sys/unixlib.c
+index 1d6c646..7a0ee2d 100644
+--- a/dlls/wineusb.sys/unixlib.c
++++ b/dlls/wineusb.sys/unixlib.c
+@@ -413,6 +413,37 @@ static struct pipe get_pipe(HANDLE handle)
+     return u.pipe;
+ }
+ 
++#ifdef __APPLE__
++/* Barrique: libusb on macOS only reaches the pipes of an interface it has claimed
++ * (Linux claims implicitly on first use). Claimed when a Windows driver selects
++ * the configuration, not when the device appears, so a device nobody uses in Wine
++ * stays free for macOS and other apps. An interface a macOS driver already owns
++ * can't be claimed (that needs Apple's device-access entitlement). */
++static void claim_interface(libusb_device_handle *handle, int number)
++{
++    int ret = libusb_claim_interface(handle, number);
++
++    if (ret && ret != LIBUSB_ERROR_NOT_FOUND)
++        WARN("Failed to claim interface %d: %s\n", number, libusb_strerror(ret));
++}
++
++static void claim_interfaces(struct unix_device *device, int number)
++{
++    struct libusb_config_descriptor *config;
++    uint8_t i;
++
++    if (device->parent)   /* one interface of a composite device */
++    {
++        claim_interface(device->handle, number);
++        return;
++    }
++    if (libusb_get_active_config_descriptor(libusb_get_device(device->handle), &config)) return;
++    for (i = 0; i < config->bNumInterfaces; ++i)
++        claim_interface(device->handle, config->interface[i].altsetting[0].bInterfaceNumber);
++    libusb_free_config_descriptor(config);
++}
++#endif
++
+ static NTSTATUS usb_submit_urb(void *args)
+ {
+     const struct usb_submit_urb_params *params = args;
+@@ -531,6 +562,10 @@ static NTSTATUS usb_submit_urb(void *args)
+              * we should skip setting that if and only if the configuration is
+              * already active? */
+ 
++#ifdef __APPLE__
++            if (req->ConfigurationDescriptor)
++                claim_interfaces(params->device, req->Interface.InterfaceNumber);
++#endif
+             for (i = 0; i < req->Interface.NumberOfPipes; ++i)
+             {
+                 USBD_PIPE_INFORMATION *pipe = &req->Interface.Pipes[i];
 diff --git a/dlls/winevulkan/make_vulkan b/dlls/winevulkan/make_vulkan
 index 71a921a..fefc998 100755
 --- a/dlls/winevulkan/make_vulkan
@@ -9729,6 +9842,20 @@ index 9288b58..41d44b7 100644
  [Wow64]
  ; Wow6432Node symlinks
  HKLM,Software\Classes\Wow6432Node\AppId,"SymbolicLinkValue",0x60000,"\Registry\Machine\Software\Classes\AppId"
+diff --git a/programs/wineboot/wineboot.c b/programs/wineboot/wineboot.c
+index 7dda9ec..2f8c0e4 100644
+--- a/programs/wineboot/wineboot.c
++++ b/programs/wineboot/wineboot.c
+@@ -1613,6 +1613,9 @@ static void install_root_pnp_devices(void)
+         {
+             if (GetLastError() != ERROR_DEVINST_ALREADY_EXISTS)
+                 WINE_ERR("Failed to create device %s, error %#lx.\n", debugstr_a(root_devices[i].name), GetLastError());
++            /* Barrique: a prefix made by a build without that driver (wineusb.sys
++             * before USB was enabled) has the device but no driver: install it now */
++            else UpdateDriverForPlugAndPlayDevicesA(NULL, root_devices[i].hardware_id, root_devices[i].infpath, 0, NULL);
+             continue;
+         }
+ 
 diff --git a/programs/winedbg/be_arm64.c b/programs/winedbg/be_arm64.c
 index 20e76fd..de29351 100644
 --- a/programs/winedbg/be_arm64.c
@@ -11266,7 +11393,7 @@ index 0b38e23..d393572 100644
  
  /* SIGTERM callback */
 diff --git a/server/thread.c b/server/thread.c
-index 986cf5d..3a1f87f 100644
+index 986cf5d..05a9c86 100644
 --- a/server/thread.c
 +++ b/server/thread.c
 @@ -59,6 +59,7 @@
@@ -11312,7 +11439,7 @@ index 986cf5d..3a1f87f 100644
 +            while (start && process->image[start - 1] != '\\') start--;
 +            for (; start < len; start++) fputc( process->image[start] < 0x80 ? process->image[start] : '?', stderr );
 +        }
-+        if (thread->state == TERMINATED) { fprintf( stderr, " terminated\n" ); continue; }
++        if (thread->state == TERMINATED) { fprintf( stderr, " terminated, exit code %#x\n", thread->exit_code ); continue; }
 +        if (!wait) { fprintf( stderr, " not waiting in the server\n" ); continue; }
 +        fprintf( stderr, " waiting: %s, %d object(s), flags %#x%s\n",
 +                 wait->select == SELECT_WAIT_ALL ? "all" : "any", wait->count, wait->flags,

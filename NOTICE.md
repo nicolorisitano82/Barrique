@@ -29,6 +29,7 @@ libraries in the app (`Contents/Resources/wine/lib/deps`, plain dylibs with
 | MoltenVK | 1.4.2 | Apache 2.0 | https://github.com/KhronosGroup/MoltenVK | `libMoltenVK.dylib` |
 | MoltenVK bundled code: SPIRV-Cross, SPIRV-Tools, Volk, Vulkan-Headers, cereal | as pinned by MoltenVK | Apache 2.0 / MIT / BSD | MoltenVK `ExternalRevisions` | `libMoltenVK.dylib` |
 | SDL2 | 2.32.10 | zlib | https://github.com/libsdl-org/SDL | `libSDL2-2.0.0.dylib` |
+| libusb | 1.0.30 | LGPL 2.1 or later | https://github.com/libusb/libusb | `libusb-1.0.0.dylib` |
 | FFmpeg (LGPL build, no GPL parts) | 9.0.2 | LGPL 2.1 or later | https://ffmpeg.org | `libav*`, `libsw*` |
 | GStreamer, gst-plugins-base/good/bad/ugly, gst-libav | 1.28.9 | LGPL 2.1 or later | https://gstreamer.freedesktop.org | `libgst*`, `gstreamer-1.0/` |
 | GLib | 2.90.1 | LGPL 2.1 or later | https://gitlab.gnome.org/GNOME/glib | `libglib`, `libgio`, `libgobject`, ... |
