@@ -40,10 +40,13 @@ Use
 
 Known problems
 --------------
-- Firefox (ARM64 and x64) sometimes stops responding while a page loads.
+- Firefox x64 crashes now and then; rarely, a Firefox page never starts loading.
 - 32-bit x86 programs get no specific work: some may fail.
 - Some programs hang on their first start and work on the second.
-- Steam is not supported yet.
+- Steam: the client installs, updates and shows its login window; logging in
+  and games are untested.
+- Game controllers and USB devices are supported but untested with real
+  hardware.
 - Only tested on macOS 27 so far; macOS 26 is untested.
 
 Reporting problems
