@@ -2341,10 +2341,10 @@ index dde4b58..f5c3b1c 100644
      init_files();
 diff --git a/dlls/ntdll/unix/msync.c b/dlls/ntdll/unix/msync.c
 new file mode 100644
-index 0000000..ded3411
+index 0000000..fbeb56e
 --- /dev/null
 +++ b/dlls/ntdll/unix/msync.c
-@@ -0,0 +1,1156 @@
+@@ -0,0 +1,1159 @@
 +/*
 + * mach semaphore-based synchronization objects
 + *
@@ -2857,17 +2857,13 @@ index 0000000..ded3411
 +    int offset = (idx * 16) % pagesize;
 +    void *ret;
 +
-+    os_unfair_lock_lock( &shm_addrs_lock );
-+
 +    if (entry >= shm_addrs_size)
 +    {
-+        int new_size = max(shm_addrs_size * 2, entry + 1);
-+
-+        if (!(shm_addrs = realloc( shm_addrs, new_size * sizeof(shm_addrs[0]) )))
-+            ERR("Failed to grow shm_addrs array to size %d.\n", shm_addrs_size);
-+        memset( shm_addrs + shm_addrs_size, 0, (new_size - shm_addrs_size) * sizeof(shm_addrs[0]) );
-+        shm_addrs_size = new_size;
++        ERR("shm index %u out of range\n", idx);
++        return NULL;
 +    }
++
++    os_unfair_lock_lock( &shm_addrs_lock );
 +
 +    if (!shm_addrs[entry])
 +    {
@@ -2892,11 +2888,12 @@ index 0000000..ded3411
 +{
 +    int entry = idx >> (vm_kernel_page_shift - 4);
 +    int offset = (idx << 4) & vm_kernel_page_mask;
++    void *page;
 +
-+    if (entry >= shm_addrs_size || !shm_addrs[entry])
++    if (entry >= shm_addrs_size || !(page = __atomic_load_n( &shm_addrs[entry], __ATOMIC_ACQUIRE )))
 +        return get_shm_slow( idx );
 +
-+    return (void *)((unsigned long)shm_addrs[entry] + offset);
++    return (void *)((unsigned long)page + offset);
 +}
 +
 +void msync_close( int obj )
@@ -2956,8 +2953,14 @@ index 0000000..ded3411
 +
 +    pagesize = (long)vm_kernel_page_size;
 +
-+    shm_addrs = calloc( 128, sizeof(shm_addrs[0]) );
-+    shm_addrs_size = 128;
++    /* Barrique: allocated once for every possible index (28 bits): get_shm() reads it
++     * without the lock, so growing it with realloc() was a use-after-free */
++    shm_addrs_size = (1u << 28) / (pagesize / 16);
++    if (!(shm_addrs = calloc( shm_addrs_size, sizeof(shm_addrs[0]) )))
++    {
++        ERR("Failed to allocate the msync page table\n");
++        exit(1);
++    }
 +
 +    /* Bootstrap mach wineserver communication */
 +
@@ -9913,10 +9916,10 @@ index d1b0fc3..c13e917 100644
          if (req->machine != current->process->machine)
 diff --git a/server/msync.c b/server/msync.c
 new file mode 100644
-index 0000000..672af3c
+index 0000000..17a51c6
 --- /dev/null
 +++ b/server/msync.c
-@@ -0,0 +1,861 @@
+@@ -0,0 +1,857 @@
 +/*
 + * mach semaphore-based synchronization objects
 + *
@@ -10219,7 +10222,7 @@ index 0000000..672af3c
 +    }
 +    else if (message->entry < shm_addrs_size)
 +    {
-+        offset = (memory_object_offset_t)shm_addrs[message->entry];
++        offset = (memory_object_offset_t)__atomic_load_n( &shm_addrs[message->entry], __ATOMIC_ACQUIRE );
 +        entry_size = pagesize;
 +    }
 +    else
@@ -10500,8 +10503,13 @@ index 0000000..672af3c
 +
 +    pagesize = (long)vm_kernel_page_size;
 +
-+    shm_addrs = calloc( 128, sizeof(shm_addrs[0]) );
-+    shm_addrs_size = 128;
++    /* Barrique: one slot per page for every possible index (28 bits), allocated once:
++     * get_shm() runs on the main thread and on the message thread, and growing the
++     * array with realloc() under the other thread's feet was a use-after-free.
++     * 2 MB of address space with 16K pages; untouched slots cost nothing. */
++    shm_addrs_size = (1u << 28) / (pagesize / 16);
++    if (!(shm_addrs = calloc( shm_addrs_size, sizeof(shm_addrs[0]) )))
++        fatal_error( "could not allocate the msync page table\n" );
 +
 +    kr = mach_vm_map( mach_task_self(), (mach_vm_address_t *)&shm_tid_map, shm_tid_size, 0, VM_FLAGS_ANYWHERE,
 +                      MACH_PORT_NULL, 0, FALSE, VM_PROT_DEFAULT, VM_PROT_DEFAULT, VM_INHERIT_SHARE );
@@ -10604,18 +10612,9 @@ index 0000000..672af3c
 +    int offset = (idx * 16) % pagesize;
 +
 +    if (entry >= shm_addrs_size)
-+    {
-+        int new_size = max(shm_addrs_size * 2, entry + 1);
++        fatal_error( "msync: shm index %u out of range\n", idx );
 +
-+        if (!(shm_addrs = realloc( shm_addrs, new_size * sizeof(shm_addrs[0]) )))
-+            fprintf( stderr, "msync: couldn't expand shm_addrs array to size %d\n", entry + 1 );
-+
-+        memset( shm_addrs + shm_addrs_size, 0, (new_size - shm_addrs_size) * sizeof(shm_addrs[0]) );
-+
-+        shm_addrs_size = new_size;
-+    }
-+
-+    if (!shm_addrs[entry])
++    if (!__atomic_load_n( &shm_addrs[entry], __ATOMIC_ACQUIRE ))
 +    {
 +        kern_return_t kr;
 +        mach_vm_address_t address = 0;   /* VM_FLAGS_ANYWHERE searches from here */
@@ -10633,7 +10632,7 @@ index 0000000..672af3c
 +            mach_vm_deallocate( mach_task_self(), address, pagesize ); /* someone beat us to it */
 +    }
 +
-+    return (void *)((unsigned long)shm_addrs[entry] + offset);
++    return (void *)((unsigned long)__atomic_load_n( &shm_addrs[entry], __ATOMIC_ACQUIRE ) + offset);
 +}
 +
 +static unsigned int msync_alloc_shm( int low, int high, enum msync_type type )
