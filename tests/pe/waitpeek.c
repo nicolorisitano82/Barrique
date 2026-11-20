@@ -14,6 +14,9 @@
  *   waitpeek.exe <pid|name> [...]      pids in decimal or 0x hex, or an exe name:
  *                                      every process with that name
  *
+ * With the TEMP code in msync_wait_objs (dlls/ntdll/unix/msync.c) it also shows the
+ * msync waits: objects, their shared-memory value, type, refcount and waiter count.
+ *
  * For each waiting thread: address, size, value it expected, value now, caller.
  * "CHANGED" means the value is no longer the one the thread waits for: if that
  * stays, the wake-up was lost.
@@ -47,7 +50,7 @@ static void peek( DWORD pid )
     {
         HANDLE thread;
         THREAD_BASIC tb;
-        void *wait[4];
+        void *wait[16];
         ULONG64 now = 0;
         SIZE_T got;
         WCHAR *desc = NULL;
@@ -75,6 +78,33 @@ static void peek( DWORD pid )
                     pid, te.th32ThreadID, desc ? desc : L"", wait[0], size, cmp & mask, now & mask,
                     (cmp & mask) != (now & mask) ? " CHANGED" : "", wait[3] );
             for (int i = 0; i < 16; i += 4) printf( " %08lx", *(DWORD *)(around + i) );
+            printf( "\n" );
+        }
+        if (((ULONG64)wait[4] >> 48) == 0x4d53)   /* msync wait, see the TEMP code in msync.c */
+        {
+            ULONG64 info = (ULONG64)wait[4];
+            unsigned int count = info & 0xff;
+            int tidmap = -1;
+
+            waiting++;
+            ReadProcessMemory( process, wait[15], &tidmap, sizeof(tidmap), &got );
+            printf( "pid %04lx tid %04lx %-28ls msync %s%s count %u alert %u tidmap %d:",
+                    pid, te.th32ThreadID, desc ? desc : L"", (info >> 8) & 1 ? "any" : "all",
+                    info & 0x8000 ? " timeout" : "", count, (unsigned int)(info >> 16) & 0xffffffff, tidmap );
+            for (unsigned int i = 0; i < count && i < 7; i++)
+            {
+                DWORD obj[4] = {0};
+                ReadProcessMemory( process, wait[8 + i], obj, sizeof(obj), &got );
+                printf( " [%s%u v=%ld type=%u refs=%u multi=%ld]", i < 2 ? "idx " : "",
+                        i == 0 ? (unsigned int)(ULONG_PTR)wait[5] : i == 1 ? (unsigned int)(ULONG_PTR)wait[6] : 0,
+                        (LONG)obj[0], (unsigned int)(obj[2] & 0xffff), (unsigned int)(obj[2] >> 16), (LONG)obj[3] );
+            }
+            if (wait[7])
+            {
+                DWORD obj[4] = {0};
+                ReadProcessMemory( process, wait[7], obj, sizeof(obj), &got );
+                printf( " alert[v=%ld multi=%ld]", (LONG)obj[0], (LONG)obj[3] );
+            }
             printf( "\n" );
         }
         if (desc) LocalFree( desc );

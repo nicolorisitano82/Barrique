@@ -8418,6 +8418,40 @@ index c15aefe..fb014ca 100644
          });
          [oldView release];
  
+diff --git a/dlls/winemac.drv/image.c b/dlls/winemac.drv/image.c
+index 7fb45f3..9954abd 100644
+--- a/dlls/winemac.drv/image.c
++++ b/dlls/winemac.drv/image.c
+@@ -249,21 +249,24 @@ CFArrayRef create_app_icon_images(void)
+ {
+     struct dispatch_callback_params params = {.callback = app_icon_callback};
+     CFMutableArrayRef images = NULL;
+-    struct app_icon_entry *entries;
++    struct app_icon_entry *ret_entries, entries[64];
+     ULONG ret_len;
+     unsigned count;
+     int i;
+ 
+     TRACE("()\n");
+ 
+-    if (KeUserDispatchCallback(&params, sizeof(params), (void**)&entries, &ret_len) ||
+-        (ret_len % sizeof(*entries)))
++    if (KeUserDispatchCallback(&params, sizeof(params), (void**)&ret_entries, &ret_len) ||
++        (ret_len % sizeof(*ret_entries)))
+     {
+         WARN("incorrect callback result\n");
+         return NULL;
+     }
+-    count = ret_len / sizeof(*entries);
+-    if (!count || !entries) return NULL;
++    count = min(ret_len / sizeof(*ret_entries), ARRAY_SIZE(entries));
++    if (!count || !ret_entries) return NULL;
++    /* Barrique: the result lives on the stack of the finished user callback, which
++     * the calls below reuse: copy it first, else the later (largest) icons are lost. */
++    memcpy(entries, ret_entries, count * sizeof(*entries));
+ 
+     images = CFArrayCreateMutable(NULL, count, &kCFTypeArrayCallBacks);
+     if (!images)
 diff --git a/dlls/winemac.drv/macdrv_cocoa.h b/dlls/winemac.drv/macdrv_cocoa.h
 index dd332b6..1c8d391 100644
 --- a/dlls/winemac.drv/macdrv_cocoa.h
