@@ -8178,6 +8178,154 @@ index 7efe299..176f80f 100644
  	cocoa_event.m \
  	cocoa_main.m \
  	cocoa_opengl.m \
+diff --git a/dlls/winemac.drv/cocoa_app.m b/dlls/winemac.drv/cocoa_app.m
+index 37f7c85..d16a617 100644
+--- a/dlls/winemac.drv/cocoa_app.m
++++ b/dlls/winemac.drv/cocoa_app.m
+@@ -104,6 +104,7 @@ @interface WineApplicationController ()
+ @property (retain, nonatomic) NSImage* applicationIcon;
+ @property (readonly, nonatomic) BOOL inputSourceIsInputMethod;
+ @property (retain, nonatomic) WineWindow* mouseCaptureWindow;
++@property (nonatomic) BOOL relativeMouse;
+ 
+     - (void) setupObservations;
+     - (void) applicationDidBecomeActive:(NSNotification *)notification;
+@@ -969,6 +970,7 @@ - (void) hideCursor
+             clientWantsCursorHidden = TRUE;
+             [self updateCursor:TRUE];
+         }
++        [self updateRelativeMouse];
+     }
+ 
+     - (void) unhideCursor
+@@ -978,6 +980,7 @@ - (void) unhideCursor
+             clientWantsCursorHidden = FALSE;
+             [self updateCursor:FALSE];
+         }
++        [self updateRelativeMouse];
+     }
+ 
+     - (void) setCursor:(NSCursor*)newCursor
+@@ -1145,6 +1148,12 @@ - (void) handleCommandTab
+ 
+     - (BOOL) setCursorPosition:(CGPoint)pos
+     {
++        /* Barrique: in relative mode the Mac cursor is hidden and stands still; the
++           position is Wine's alone. Warping would also make us drop the moves queued
++           behind it, which is what made mouse look lose motion. */
++        if (self.relativeMouse)
++            return TRUE;
++
+         BOOL ret;
+ 
+         if ([windowsBeingDragged count])
+@@ -1210,6 +1219,37 @@ - (void) updateWindowsForCursorClipping
+         }
+     }
+ 
++    /* Barrique: relative mouse mode. A game that hides the cursor and clips it to its
++       window (mouse look) wants mouse deltas, not a cursor. Then, while we are the
++       active app, the Mac cursor is detached from the mouse and stands still inside
++       the clip rect, every move goes to Wine as a delta, and SetCursorPos doesn't
++       warp the Mac cursor (see -setCursorPosition:). Like SDL's relative mode. */
++    - (void) updateRelativeMouse
++    {
++        BOOL want = clientWantsCursorHidden && self.clippingCursor && [NSApp isActive];
++
++        if (want == self.relativeMouse) return;
++        self.relativeMouse = want;
++        if (want)
++        {
++            CGPoint pos = NSPointToCGPoint([self flippedMouseLocation:[NSEvent mouseLocation]]);
++
++            /* keep the still cursor inside the clip rect, so moves keep going to our window */
++            [clipCursorHandler clipCursorLocation:&pos];
++            CGWarpMouseCursorPosition(pos);
++            CGAssociateMouseAndMouseCursorPosition(false);
++            mouseMoveDeltaX = mouseMoveDeltaY = 0;
++            lastSetCursorPositionTime = 0;
++        }
++        else
++        {
++            /* the event-tap clipping keeps the mouse detached while it clips */
++            if (!self.clippingCursor || ![clipCursorHandler isKindOfClass:[WineEventTapClipCursorHandler class]])
++                CGAssociateMouseAndMouseCursorPosition(true);
++            forceNextMouseMoveAbsolute = TRUE;
++        }
++    }
++
+     - (BOOL) startClippingCursor:(CGRect)rect
+     {
+         if (!clipCursorHandler) {
+@@ -1228,6 +1268,7 @@ - (BOOL) startClippingCursor:(CGRect)rect
+         [self setCursorPosition:NSPointToCGPoint([self flippedMouseLocation:[NSEvent mouseLocation]])];
+ 
+         [self updateWindowsForCursorClipping];
++        [self updateRelativeMouse];
+ 
+         return TRUE;
+     }
+@@ -1243,6 +1284,7 @@ - (BOOL) stopClippingCursor
+         lastSetCursorPositionTime = [[NSProcessInfo processInfo] systemUptime];
+ 
+         [self updateWindowsForCursorClipping];
++        [self updateRelativeMouse];
+ 
+         return TRUE;
+     }
+@@ -1362,7 +1404,7 @@ - (void) handleMouseMove:(NSEvent*)anEvent
+             // If we recently warped the cursor (other than in our cursor-clipping
+             // event tap), discard mouse move events until we see an event which is
+             // later than that time.
+-            if (lastSetCursorPositionTime)
++            if (!self.relativeMouse && lastSetCursorPositionTime)
+             {
+                 if ([anEvent timestamp] <= lastSetCursorPositionTime)
+                     return;
+@@ -1371,7 +1413,9 @@ - (void) handleMouseMove:(NSEvent*)anEvent
+                 forceNextMouseMoveAbsolute = TRUE;
+             }
+ 
+-            if (forceNextMouseMoveAbsolute || targetWindow != lastTargetWindow)
++            if (self.relativeMouse)
++                absolute = FALSE;   /* Barrique: only deltas, see -updateRelativeMouse */
++            else if (forceNextMouseMoveAbsolute || targetWindow != lastTargetWindow)
+             {
+                 absolute = TRUE;
+                 forceNextMouseMoveAbsolute = FALSE;
+@@ -1579,6 +1623,7 @@ - (void) handleMouseButton:(NSEvent*)theEvent
+                 event->mouse_button.pressed = pressed;
+                 event->mouse_button.x = floor(pt.x);
+                 event->mouse_button.y = floor(pt.y);
++                event->mouse_button.relative = self.relativeMouse;
+                 event->mouse_button.time_ms = [self ticksForEventTime:[theEvent timestamp]];
+ 
+                 [window.queue postEvent:event];
+@@ -1660,6 +1705,7 @@ - (void) handleScrollWheel:(NSEvent*)theEvent
+                 event = macdrv_create_event(MOUSE_SCROLL, window);
+                 event->mouse_scroll.x = floor(pt.x);
+                 event->mouse_scroll.y = floor(pt.y);
++                event->mouse_scroll.relative = self.relativeMouse;
+                 event->mouse_scroll.time_ms = [self ticksForEventTime:[theEvent timestamp]];
+ 
+                 if (CGEventGetIntegerValueField(cgevent, kCGScrollWheelEventIsContinuous))
+@@ -2232,6 +2278,8 @@ - (void)applicationDidBecomeActive:(NSNotification *)notification
+         // movement deltas are invalidated.  Make sure the next mouse move event
+         // starts over from an absolute baseline.
+         forceNextMouseMoveAbsolute = TRUE;
++
++        [self updateRelativeMouse];
+     }
+ 
+     - (void)applicationDidResignActive:(NSNotification *)notification
+@@ -2251,6 +2299,7 @@ - (void)applicationDidResignActive:(NSNotification *)notification
+         macdrv_release_event(event);
+ 
+         [self releaseMouseCapture];
++        [self updateRelativeMouse];
+     }
+ 
+     - (void) applicationDidUnhide:(NSNotification*)aNotification
 diff --git a/dlls/winemac.drv/cocoa_dxmt.m b/dlls/winemac.drv/cocoa_dxmt.m
 new file mode 100644
 index 0000000..aa0f614
@@ -8456,10 +8604,26 @@ index 7fb45f3..9954abd 100644
      images = CFArrayCreateMutable(NULL, count, &kCFTypeArrayCallBacks);
      if (!images)
 diff --git a/dlls/winemac.drv/macdrv_cocoa.h b/dlls/winemac.drv/macdrv_cocoa.h
-index dd332b6..1c8d391 100644
+index dd332b6..59ac8e9 100644
 --- a/dlls/winemac.drv/macdrv_cocoa.h
 +++ b/dlls/winemac.drv/macdrv_cocoa.h
-@@ -501,6 +501,10 @@ extern void macdrv_order_cocoa_window(WineWindow *window, WineWindow *prev,
+@@ -329,6 +329,7 @@ static inline CGPoint cgpoint_win_from_mac(CGPoint point)
+             bool            pressed;
+             int             x;
+             int             y;
++            bool            relative;   /* Barrique: relative mouse mode, x/y unused */
+             unsigned long   time_ms;
+         }                                           mouse_button;
+         struct {
+@@ -342,6 +343,7 @@ static inline CGPoint cgpoint_win_from_mac(CGPoint point)
+             int             y_scroll;
+             int             x;
+             int             y;
++            bool            relative;   /* Barrique: relative mouse mode, x/y unused */
+             unsigned long   time_ms;
+         }                                           mouse_scroll;
+         struct {
+@@ -501,6 +503,10 @@ extern void macdrv_order_cocoa_window(WineWindow *window, WineWindow *prev,
  extern WineMetalView *macdrv_view_create_metal_view(WineContentView *view, MTLDevice_id device);
  extern CAMetalLayer *macdrv_view_get_metal_layer(WineMetalView *view);
  extern void macdrv_view_release_metal_view(WineMetalView *view);
@@ -8470,6 +8634,50 @@ index dd332b6..1c8d391 100644
  extern WineMetalSwapChain_id macdrv_create_view_swapchain(WineContentView *view);
  extern WineMetalSwapChain_id macdrv_create_offscreen_swapchain(void* hwnd, CGRect bounds);
  extern CAMetalLayer *macdrv_swapchain_get_layer(WineMetalSwapChain_id swapchain);
+diff --git a/dlls/winemac.drv/mouse.c b/dlls/winemac.drv/mouse.c
+index 5963edc..69676ef 100644
+--- a/dlls/winemac.drv/mouse.c
++++ b/dlls/winemac.drv/mouse.c
+@@ -865,9 +865,14 @@ void macdrv_mouse_button(HWND hwnd, const macdrv_event *event)
+         }
+     }
+ 
+-    send_mouse_input(hwnd, event->window, flags | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE,
+-                     event->mouse_button.x, event->mouse_button.y,
+-                     data, FALSE, event->mouse_button.time_ms);
++    /* Barrique: in relative mouse mode the Mac cursor stands still; a click must not
++       move the Windows cursor to where it stands */
++    if (event->mouse_button.relative)
++        send_mouse_input(hwnd, event->window, flags, 0, 0, data, FALSE, event->mouse_button.time_ms);
++    else
++        send_mouse_input(hwnd, event->window, flags | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE,
++                         event->mouse_button.x, event->mouse_button.y,
++                         data, FALSE, event->mouse_button.time_ms);
+ }
+ 
+ 
+@@ -900,17 +905,19 @@ void macdrv_mouse_moved(HWND hwnd, const macdrv_event *event)
+  */
+ void macdrv_mouse_scroll(HWND hwnd, const macdrv_event *event)
+ {
++    UINT move = event->mouse_scroll.relative ? 0 : MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE;
++
+     TRACE("win %p/%p scroll (%d,%d) at (%d,%d) time %lu (%lu ticks ago)\n", hwnd,
+           event->window, event->mouse_scroll.x_scroll, event->mouse_scroll.y_scroll,
+           event->mouse_scroll.x, event->mouse_scroll.y,
+           event->mouse_scroll.time_ms, (NtGetTickCount() - event->mouse_scroll.time_ms));
+ 
+     if (event->mouse_scroll.y_scroll)
+-        send_mouse_input(hwnd, event->window, MOUSEEVENTF_WHEEL | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE,
++        send_mouse_input(hwnd, event->window, MOUSEEVENTF_WHEEL | move,
+                          event->mouse_scroll.x, event->mouse_scroll.y,
+                          event->mouse_scroll.y_scroll, FALSE, event->mouse_scroll.time_ms);
+     if (event->mouse_scroll.x_scroll)
+-        send_mouse_input(hwnd, event->window, MOUSEEVENTF_HWHEEL | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE,
++        send_mouse_input(hwnd, event->window, MOUSEEVENTF_HWHEEL | move,
+                          event->mouse_scroll.x, event->mouse_scroll.y,
+                          event->mouse_scroll.x_scroll, FALSE, event->mouse_scroll.time_ms);
+ }
 diff --git a/dlls/winemac.drv/unixlib.h b/dlls/winemac.drv/unixlib.h
 index dc22da0..f096cf3 100644
 --- a/dlls/winemac.drv/unixlib.h

@@ -23,7 +23,7 @@ Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalshar
 | `Barrique.app` unica (macOS 26+), prefisso in `~/Library/Application Support/Barrique` | ✅ costruita da `scripts/make-dist.sh`, provata con un prefisso nuovo (fase 6) |
 | Firefox ARM64 (sandbox, WebGL su GPU) | ✅ 120 fps, sandbox di Chromium attiva |
 | Firefox x64 (FEX) | 🔧 pagine ok in 5 run su 6 dopo la correzione della sospensione; il processo GPU crasha ancora (fase 5) |
-| Input: tastiera e mouse di base | ✅ attraverso winemac; ⬜ mouse raw, cursore bloccato, controller, metodi di input (vedi sotto) |
+| Input: tastiera e mouse di base | ✅ attraverso winemac; ✅ focus dal Finder e mouse look (cursore nascosto e bloccato, delta relativi); 🔧 controller (SDL2 pronto, non provato); ⬜ delta senza accelerazione, metodi di input (vedi sotto) |
 | Doppio clic sulla `.app`, apertura di un `.exe` dal Finder | ✅ lanciatore nativo, "Apri con" per `.exe`/`.msi`/`.bat`/`.lnk` (fase 6) |
 | Steam | 🔧 fase 8: installer, aggiornamento del client e finestra di login (2026-11-19); login e giochi da provare |
 | msync (sincronizzazione in-process) | 🔧 port da CrossOver 26.3, spento di default (`WINEMSYNC=1`): primitive del server da 27-28 µs a 3,6-4 µs, test di sincronizzazione come senza msync |
@@ -225,8 +225,10 @@ Stato dei passi di [FASE5-AV.md](FASE5-AV.md):
 - ✅ **[MS]** MoltenVK con cache delle pipeline: MoltenVK incluso (passo 5) e serializza `VkPipelineCache`; la persistenza su disco è di vkd3d/DXVK.
 - ✅ **[MS]** FFmpeg (VideoToolbox/AudioToolbox) e GStreamer/gst-libav per `winedmo`, `winegstreamer`, Media Foundation e DirectShow (passo 3 di FASE5-AV).
 - **Input** (stato in "Cosa manca"): tastiera e mouse di base funzionano attraverso winemac; da fare:
-  - ⬜ **[MS]** Controller: winebus con SDL2 + IOHID (XInput e DirectInput).
-  - ⬜ **[MS]** Mouse raw con GCMouse e schermo intero nativo di macOS; cursore bloccato (`ClipCursor`) e nascosto nei giochi.
+  - 🔧 **[MS]** Controller: winebus con SDL2 + IOHID (XInput e DirectInput). SDL2 è nella `.app` e winebus lo carica (`bus_sdl.c`, da `lib/deps`); all'avvio del prefix partono i bus SDL e IOHID (2026-11-20). Non provato con un controller vero (nessuno a disposizione).
+  - ✅ **Focus all'avvio dal Finder** (2026-11-20): da macOS 14 un'app diventa attiva solo se l'app attiva glielo concede. Il Finder attivava il launcher di Barrique, che usciva subito: il programma Windows restava dietro, senza tastiera né mouse, e non diventava nemmeno la finestra in primo piano di Windows (niente raw input). Ora il launcher resta in attesa (al massimo 2 minuti) della notifica con cui Wine chiede il focus (`WineAppWillActivateNotification`, la stessa che i processi Wine si scambiano) e lo cede al programma (`launcher/main.m`). Avviato dal Terminale il programma resta dietro: regola di macOS.
+  - ✅ **Mouse look** (2026-11-20): quando un gioco nasconde il cursore e lo blocca nella finestra, con l'app attiva, winemac passa in modalità relativa come SDL: cursore macOS staccato dal mouse e fermo, ogni movimento va a Wine come delta, `SetCursorPos` non sposta più il cursore macOS e non butta i movimenti in coda, clic e rotella non spostano il cursore Windows (`cocoa_app.m`, `-updateRelativeMouse`). Prima un gioco che ricentra il cursore a ogni movimento perdeva circa il 19% del movimento; ora 500 punti su 500 (`tests/pe/mouselook.c`, eventi sintetici; ARM64 e x64 con FEX). Il raw input (`WM_INPUT`) arriva in pixel fisici (2× sui display Retina, come Windows al 200%). Da fare: delta senza accelerazione di macOS (IOHID o GCMouse), prova con un mouse vero e con giochi veri.
+  - ⬜ **[MS]** Schermo intero nativo di macOS per i giochi.
   - ⬜ Da verificare: tastiera italiana e tasti morti, Cmd/Ctrl, metodi di input (IME), trackpad (scorrimento, zoom), cursore su Retina, appunti e trascinamento dal Finder.
 - 🔧 **[MS]** Font:
   - ✅ Arial, Times New Roman e Courier New: macOS li ha già in `/System/Library/Fonts/Supplemental` e Wine li carica tramite CoreText, Liberation non serve;
