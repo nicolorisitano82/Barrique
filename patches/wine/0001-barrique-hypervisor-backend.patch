@@ -617,6 +617,89 @@ index dcdcb16..6d0c286 100644
                  }
              }
          }
+diff --git a/dlls/mountmgr.sys/diskarb.c b/dlls/mountmgr.sys/diskarb.c
+index 8c81d67..a2ee5e1 100644
+--- a/dlls/mountmgr.sys/diskarb.c
++++ b/dlls/mountmgr.sys/diskarb.c
+@@ -162,6 +162,15 @@ static void appeared_callback( DADiskRef disk, void *context )
+     if ((ref = CFDictionaryGetValue( dict, CFSTR("DAMediaRemovable") )))
+         removable = CFBooleanGetValue( ref );
+ 
++    /* Barrique: an external disk (USB SSD, hard disk) reports fixed media but gets a
++     * drive letter on Windows, as a fixed drive. Internal volumes stay letterless. */
++    if (!removable && type == DEVICE_HARDDISK &&
++        (ref = CFDictionaryGetValue( dict, CFSTR("DADeviceInternal") )) && !CFBooleanGetValue( ref ))
++    {
++        removable = TRUE;
++        type = DEVICE_HARDDISK_VOL;
++    }
++
+     if (!access( device, R_OK ) &&
+         (fd = open( device, O_RDONLY )) >= 0)
+     {
+diff --git a/dlls/mountmgr.sys/unixlib.c b/dlls/mountmgr.sys/unixlib.c
+index e31aadb..f211df6 100644
+--- a/dlls/mountmgr.sys/unixlib.c
++++ b/dlls/mountmgr.sys/unixlib.c
+@@ -24,6 +24,7 @@
+ 
+ #include "config.h"
+ 
++#include <dirent.h>
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <stdarg.h>
+@@ -536,6 +537,50 @@ static NTSTATUS detect_serial_ports( void *args )
+         NULL
+     };
+ 
++#ifdef __APPLE__
++    /* Barrique: USB serial adapters (FTDI, CP210x, CH34x, CDC ACM) show up as
++     * /dev/cu.<name>; give each one a COM port, sorted so the numbering is stable
++     * for the same set of devices. */
++    {
++        static const char *prefixes[] = { "cu.usbserial", "cu.usbmodem", "cu.SLAB_USBtoUART",
++                                          "cu.wchusbserial", "cu.wchusbmodem", NULL };
++        char *found[64], *names = params->names;
++        ULONG size = params->size;
++        unsigned int count = 0, i, j;
++        struct dirent *de;
++        DIR *dir;
++
++        if ((dir = opendir( "/dev" )))
++        {
++            while (count < ARRAY_SIZE(found) && (de = readdir( dir )))
++                for (i = 0; prefixes[i]; i++)
++                    if (!strncmp( de->d_name, prefixes[i], strlen( prefixes[i] )))
++                    {
++                        if (asprintf( &found[count], "/dev/%s", de->d_name ) != -1) count++;
++                        break;
++                    }
++            closedir( dir );
++        }
++        for (i = 1; i < count; i++)
++            for (j = i; j && strcmp( found[j - 1], found[j] ) > 0; j--)
++            {
++                char *tmp = found[j]; found[j] = found[j - 1]; found[j - 1] = tmp;
++            }
++        for (i = 0; i < count; i++)
++        {
++            ULONG len = strlen( found[i] ) + 1;
++            if (len + 1 <= size)
++            {
++                strcpy( names, found[i] );
++                names += len;
++                size -= len;
++            }
++            free( found[i] );
++        }
++        *names = 0;
++        return STATUS_SUCCESS;
++    }
++#endif
+     detect_devices( paths, params->names, params->size );
+     return STATUS_SUCCESS;
+ }
 diff --git a/dlls/mp3dmod/mp3dmod.c b/dlls/mp3dmod/mp3dmod.c
 index e542644..faf6e86 100644
 --- a/dlls/mp3dmod/mp3dmod.c
@@ -4082,6 +4165,109 @@ index 1d10948..19c43ed 100644
      switch (class)
      {
      case ProcessAccessToken:
+diff --git a/dlls/ntdll/unix/serial.c b/dlls/ntdll/unix/serial.c
+index ced0a36..75550ed 100644
+--- a/dlls/ntdll/unix/serial.c
++++ b/dlls/ntdll/unix/serial.c
+@@ -52,6 +52,10 @@
+ # include <sys/strtio.h>
+ #endif
+ 
++#ifdef __APPLE__
++# include <IOKit/serial/ioss.h>
++#endif
++
+ #include "ntstatus.h"
+ #include "windef.h"
+ #include "winternl.h"
+@@ -205,6 +209,11 @@ static NTSTATUS get_baud_rate(int fd, SERIAL_BAUD_RATE* sbr)
+     case B4000000:	sbr->BaudRate = 4000000; break;
+ #endif
+     default:
++#ifdef __APPLE__
++        /* speed_t is the rate itself; IOSSIOSPEED sets any rate */
++        sbr->BaudRate = speed;
++        break;
++#endif
+         ERR("unknown speed %x\n", speed);
+         return STATUS_INVALID_PARAMETER;
+     }
+@@ -491,6 +500,28 @@ static NTSTATUS purge(int fd, DWORD flags)
+     return STATUS_SUCCESS;
+ }
+ 
++#if defined(__APPLE__) && defined(IOSSIOSPEED)
++/* Barrique: tcsetattr rejects a rate set with IOSSIOSPEED (it reads back as the
++ * rate itself); pass a standard one and set the real rate again afterwards */
++static int serial_tcsetattr( int fd, struct termios *port )
++{
++    speed_t speed = cfgetospeed( port );
++    struct termios tmp;
++
++    if (!tcsetattr( fd, TCSANOW, port )) return 0;
++    if (errno != EINVAL) return -1;
++    tmp = *port;
++    cfsetspeed( &tmp, B9600 );
++    if (tcsetattr( fd, TCSANOW, &tmp ) == -1) return -1;
++    return ioctl( fd, IOSSIOSPEED, &speed );
++}
++#elif !defined(HAVE_ASM_TERMBITS_H)
++static int serial_tcsetattr( int fd, struct termios *port )
++{
++    return tcsetattr( fd, TCSANOW, port );
++}
++#endif
++
+ static NTSTATUS set_baud_rate(int fd, const SERIAL_BAUD_RATE* sbr)
+ {
+ #ifdef HAVE_ASM_TERMBITS_H
+@@ -616,6 +647,19 @@ static NTSTATUS set_baud_rate(int fd, const SERIAL_BAUD_RATE* sbr)
+             cfsetospeed( &port, B38400 );
+         }
+         break;
++#elif defined(__APPLE__) && defined(IOSSIOSPEED)
++        {
++            /* Barrique: any rate (USB serial adapters run at 250k, 1M, 3M...);
++             * tcsetattr only takes the standard ones, IOSSIOSPEED the rest */
++            speed_t speed = sbr->BaudRate;
++
++            if (ioctl( fd, IOSSIOSPEED, &speed ) == -1)
++            {
++                ERR("ioctl IOSSIOSPEED %u error '%s'\n", (UINT)sbr->BaudRate, strerror(errno));
++                return errno_to_status( errno );
++            }
++            return STATUS_SUCCESS;
++        }
+ #else     /* Don't have linux/serial.h or lack TIOCSSERIAL */
+         ERR("baudrate %d\n", sbr->BaudRate);
+         return STATUS_NOT_SUPPORTED;
+@@ -716,7 +760,7 @@ static NTSTATUS set_handflow(int fd, const SERIAL_HANDFLOW* shf)
+         return errno_to_status( errno );
+     }
+ #else
+-    if (tcsetattr(fd, TCSANOW, &port) == -1)
++    if (serial_tcsetattr(fd, &port) == -1)
+     {
+         ERR("tcsetattr error '%s'\n", strerror(errno));
+         return errno_to_status( errno );
+@@ -847,7 +891,7 @@ static NTSTATUS set_line_control(int fd, const SERIAL_LINE_CONTROL* slc)
+         return errno_to_status( errno );
+     }
+ #else
+-    if (tcsetattr(fd, TCSANOW, &port) == -1)
++    if (serial_tcsetattr(fd, &port) == -1)
+     {
+         ERR("tcsetattr error '%s'\n", strerror(errno));
+         return errno_to_status( errno );
+@@ -896,7 +940,7 @@ static NTSTATUS set_special_chars(int fd, const SERIAL_CHARS* sc)
+         return errno_to_status( errno );
+     }
+ #else
+-    if (tcsetattr(fd, TCSANOW, &port) == -1)
++    if (serial_tcsetattr(fd, &port) == -1)
+     {
+         ERR("tcsetattr error '%s'\n", strerror(errno));
+         return errno_to_status( errno );
 diff --git a/dlls/ntdll/unix/server.c b/dlls/ntdll/unix/server.c
 index c80226f..a787d2f 100644
 --- a/dlls/ntdll/unix/server.c
