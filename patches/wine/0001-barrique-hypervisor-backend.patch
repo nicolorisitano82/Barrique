@@ -7879,6 +7879,40 @@ index de1a484..c83a235 100644
      switch (type)
      {
      case NtUserScrollBarWndProc:
+diff --git a/dlls/win32u/sysparams.c b/dlls/win32u/sysparams.c
+index c9cc892..0f9fb2e 100644
+--- a/dlls/win32u/sysparams.c
++++ b/dlls/win32u/sysparams.c
+@@ -6095,6 +6095,29 @@ void sysparams_init(void)
+ 
+ #undef IS_OPTION_TRUE
+ 
++    if (!app_compat_flags)
++    {
++        /* Barrique: games installed by Steam see the display in physical pixels,
++         * as if marked HIGHDPIAWARE. DPI-unaware games otherwise get a half-size
++         * screen on Retina (192 DPI) while drawing and going fullscreen at the
++         * real resolution: the mouse could not reach most of Portal's menu. An
++         * AppCompatFlags\Layers entry for the executable (DPIUNAWARE) overrides it. */
++        const WCHAR *path = RtlGetCurrentPeb()->ProcessParameters->ImagePathName.Buffer;
++        static const WCHAR steamappsW[] = {'\\','s','t','e','a','m','a','p','p','s','\\','c','o','m','m','o','n','\\',0};
++        WCHAR lower[MAX_PATH];
++        UINT j;
++
++        for (j = 0; path && path[j] && j < ARRAY_SIZE(lower) - 1; j++) lower[j] = RtlDowncaseUnicodeChar( path[j] );
++        lower[j] = 0;
++        len = j;
++        for (j = 0; j + ARRAY_SIZE(steamappsW) - 1 <= len; j++)
++            if (!memcmp( lower + j, steamappsW, sizeof(steamappsW) - sizeof(WCHAR) )) break;
++        if (j + ARRAY_SIZE(steamappsW) - 1 <= len)
++        {
++            TRACE( "%s is a Steam game, system DPI aware\n", debugstr_w(path) );
++            NtUserSetProcessDpiAwarenessContext( NTUSER_DPI_SYSTEM_AWARE, 0 );
++        }
++    }
+     if (app_compat_flags)
+     {
+         if (strstr( app_compat_flags, "HIGHDPIAWARE" )) NtUserSetProcessDpiAwarenessContext( NTUSER_DPI_SYSTEM_AWARE, 0 );
 diff --git a/dlls/win32u/vulkan.c b/dlls/win32u/vulkan.c
 index 3265d74..8b8b5ea 100644
 --- a/dlls/win32u/vulkan.c
@@ -8134,6 +8168,34 @@ index 3265d74..8b8b5ea 100644
      vulkan_handle = dlopen( SONAME_LIBVULKAN, RTLD_NOW );
      if (!vulkan_handle) ERR( "Failed to load %s\n", SONAME_LIBVULKAN );
  #else
+diff --git a/dlls/win32u/window.c b/dlls/win32u/window.c
+index 4f0610c..a8a27e4 100644
+--- a/dlls/win32u/window.c
++++ b/dlls/win32u/window.c
+@@ -342,8 +342,21 @@ static RECT get_client_surface_rects( HWND toplevel, HWND hwnd, RECT *monitor_re
+     get_window_rects( toplevel, COORDS_PARENT, &rects, dpi );
+     monitor_rects = map_window_rects_virt_to_raw( rects, dpi );
+ 
+-    if (get_present_rect( hwnd, &rect, dpi )) OffsetRect( &rect, -rects.client.left, -rects.client.top );
+-    else if (get_client_rect( hwnd, &rect, dpi )) map_window_points( hwnd, toplevel, (POINT *)&rect, 2, dpi );
++    if (get_present_rect( hwnd, &rect, dpi ))
++    {
++        /* Barrique: a window with a present rect (D3D fullscreen) covers its
++         * monitor, as set_window_pos places it. The present rect is in the
++         * program's coordinates (the back buffer size); scaling it by the DPI
++         * ratio drew a DPI-unaware program at twice the monitor size on a
++         * scaled display (Retina at 192 DPI: Portal's menu off screen). */
++        MONITORINFO info = monitor_info_from_rect( rects.window, dpi );
++
++        OffsetRect( &rect, -rects.client.left, -rects.client.top );
++        *monitor_rect = map_rect_virt_to_raw( info.rcMonitor, dpi );
++        OffsetRect( monitor_rect, -monitor_rect->left, -monitor_rect->top );
++        return rect;
++    }
++    if (get_client_rect( hwnd, &rect, dpi )) map_window_points( hwnd, toplevel, (POINT *)&rect, 2, dpi );
+ 
+     get_win_monitor_dpi( hwnd, &raw_dpi );
+     *monitor_rect = map_dpi_rect( rect, dpi, raw_dpi );
 diff --git a/dlls/winebus.sys/bus_sdl.c b/dlls/winebus.sys/bus_sdl.c
 index 9225efb..900a920 100644
 --- a/dlls/winebus.sys/bus_sdl.c
