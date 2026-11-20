@@ -11,9 +11,11 @@
 #include <winternl.h>
 
 namespace FEX::Windows {
-InvalidationTracker::InvalidationTracker(FEXCore::Context::Context& CTX, const std::unordered_map<DWORD, FEXCore::Core::InternalThreadState*>& Threads)
+InvalidationTracker::InvalidationTracker(FEXCore::Context::Context& CTX, const std::unordered_map<DWORD, FEXCore::Core::InternalThreadState*>& Threads,
+                                         uint64_t (*ToGuest)(uint64_t Address))
   : CTX {CTX}
   , Threads {Threads} {
+  ToGuestAddress = ToGuest;
   FEX_CONFIG_OPT(SMCChecks, SMCCHECKS);
   SMCDetectionDisabled = (SMCChecks == FEXCore::Config::CONFIG_SMC_NONE);
 
@@ -22,11 +24,19 @@ InvalidationTracker::InvalidationTracker(FEXCore::Context::Context& CTX, const s
 
   while (VirtualQuery(reinterpret_cast<LPCVOID>(Address), &Info, sizeof(Info))) {
     uint64_t BaseAddress = reinterpret_cast<uint64_t>(Info.BaseAddress);
+    Address = BaseAddress + Info.RegionSize;
+    if (ToGuestAddress) {
+      // Memory set up before the emulator started (e.g. by another process while this
+      // one was suspended, like Chromium's sandbox thunks) is known to guest code at its
+      // 32-bit address
+      BaseAddress = ToGuestAddress(BaseAddress);
+      if (BaseAddress >= 0x100000000ULL) {
+        continue;
+      }
+    }
     if (Info.State == MEM_COMMIT) {
       HandleMemoryProtectionNotification(BaseAddress, Info.RegionSize, Info.Protect);
     }
-
-    Address = BaseAddress + Info.RegionSize;
   }
 }
 

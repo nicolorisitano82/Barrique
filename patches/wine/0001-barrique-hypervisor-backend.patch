@@ -9571,7 +9571,7 @@ index 68cb706..151cf46 100644
      return status;
  }
 diff --git a/dlls/wow64/process.c b/dlls/wow64/process.c
-index 16ea098..ce82021 100644
+index 16ea098..33e8d1d 100644
 --- a/dlls/wow64/process.c
 +++ b/dlls/wow64/process.c
 @@ -161,6 +161,7 @@ static PS_ATTRIBUTE_LIST *ps_attributes_32to64( PS_ATTRIBUTE_LIST **attr, const
@@ -9582,6 +9582,14 @@ index 16ea098..ce82021 100644
                  path.Length = ret->Attributes[i].Size;
                  path.Buffer = ret->Attributes[i].ValuePtr;
                  InitializeObjectAttributes( &attr, &path, OBJ_CASE_INSENSITIVE, 0, 0 );
+@@ -617,6 +618,7 @@ NTSTATUS WINAPI wow64_NtQueryInformationProcess( UINT *args )
+     case ProcessExecuteFlags:  /* ULONG */
+     case ProcessCookie:  /* ULONG */
+     case ProcessCycleTime:  /* PROCESS_CYCLE_TIME_INFORMATION */
++    case ProcessHandleTable:  /* ULONG array; Chromium's sandbox closes handles with it */
+         /* FIXME: check buffer alignment */
+         return NtQueryInformationProcess( handle, class, ptr, len, retlen );
+ 
 diff --git a/dlls/wow64/sync.c b/dlls/wow64/sync.c
 index ef1287a..c2af84f 100644
 --- a/dlls/wow64/sync.c
@@ -9605,7 +9613,7 @@ index ef1287a..c2af84f 100644
      default:
          filter_out = FALSE;
 diff --git a/dlls/wow64/syscall.c b/dlls/wow64/syscall.c
-index d6fea09..1629edc 100644
+index d6fea09..8133c68 100644
 --- a/dlls/wow64/syscall.c
 +++ b/dlls/wow64/syscall.c
 @@ -1212,6 +1212,9 @@ NTSTATUS WINAPI Wow64SystemServiceEx( UINT num, UINT *args )
@@ -9618,6 +9626,54 @@ index d6fea09..1629edc 100644
      return status;
  }
  
+@@ -1578,6 +1581,8 @@ void WINAPI Wow64ProcessPendingCrossProcessItems(void)
+         return;
+     }
+ 
++    /* Barrique: senders write the address the 64-bit side uses (the 32-bit space
++     * sits in a window above 4GB); the CPU backend expects the 32-bit address */
+     while (entry)
+     {
+         switch (entry->id)
+@@ -1585,32 +1590,32 @@ void WINAPI Wow64ProcessPendingCrossProcessItems(void)
+         case CrossProcessPreVirtualAlloc:
+         case CrossProcessPostVirtualAlloc:
+             if (!pBTCpuNotifyMemoryAlloc) break;
+-            pBTCpuNotifyMemoryAlloc( (void *)entry->addr, entry->size, entry->args[0], entry->args[1],
++            pBTCpuNotifyMemoryAlloc( wow64_guest_ptr( (void *)entry->addr ), entry->size, entry->args[0], entry->args[1],
+                                      entry->id == CrossProcessPostVirtualAlloc, entry->args[2] );
+             break;
+         case CrossProcessPreVirtualFree:
+         case CrossProcessPostVirtualFree:
+             if (!pBTCpuNotifyMemoryFree) break;
+-            pBTCpuNotifyMemoryFree( (void *)entry->addr, entry->size, entry->args[0],
++            pBTCpuNotifyMemoryFree( wow64_guest_ptr( (void *)entry->addr ), entry->size, entry->args[0],
+                                      entry->id == CrossProcessPostVirtualFree, entry->args[1] );
+             break;
+         case CrossProcessPreVirtualProtect:
+         case CrossProcessPostVirtualProtect:
+             if (!pBTCpuNotifyMemoryProtect) break;
+-            pBTCpuNotifyMemoryProtect( (void *)entry->addr, entry->size, entry->args[0],
++            pBTCpuNotifyMemoryProtect( wow64_guest_ptr( (void *)entry->addr ), entry->size, entry->args[0],
+                                        entry->id == CrossProcessPostVirtualProtect, entry->args[1] );
+             break;
+         case CrossProcessFlushCache:
+             if (!pBTCpuFlushInstructionCache2) break;
+-            pBTCpuFlushInstructionCache2( (void *)entry->addr, entry->size );
++            pBTCpuFlushInstructionCache2( wow64_guest_ptr( (void *)entry->addr ), entry->size );
+             break;
+         case CrossProcessFlushCacheHeavy:
+             if (!pBTCpuFlushInstructionCacheHeavy) break;
+-            pBTCpuFlushInstructionCacheHeavy( (void *)entry->addr, entry->size );
++            pBTCpuFlushInstructionCacheHeavy( wow64_guest_ptr( (void *)entry->addr ), entry->size );
+             break;
+         case CrossProcessMemoryWrite:
+             if (!pBTCpuNotifyMemoryDirty) break;
+-            pBTCpuNotifyMemoryDirty( (void *)entry->addr, entry->size );
++            pBTCpuNotifyMemoryDirty( wow64_guest_ptr( (void *)entry->addr ), entry->size );
+             break;
+         }
+         next = entry->next;
 diff --git a/dlls/wow64/virtual.c b/dlls/wow64/virtual.c
 index 605abe1..b675509 100644
 --- a/dlls/wow64/virtual.c

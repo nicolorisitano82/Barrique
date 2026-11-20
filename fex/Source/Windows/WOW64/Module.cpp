@@ -613,8 +613,7 @@ void BTCpuProcessInit() {
   CTX->SetSyscallHandler(SyscallHandler.get());
   CTX->InitCore();
   Context::HandlerConfig.emplace(*CTX);
-  InvalidationTracker.emplace(*CTX, Threads);
-  InvalidationTracker->ToGuestAddress = ToGuestAddress;
+  InvalidationTracker.emplace(*CTX, Threads, ToGuestAddress);
   ImageTracker.emplace(*CTX, false);
 
   auto MainModule = reinterpret_cast<__TEB*>(NtCurrentTeb())->Peb->ImageBaseAddress;

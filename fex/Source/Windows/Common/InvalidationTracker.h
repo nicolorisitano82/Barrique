@@ -22,7 +22,10 @@ namespace FEX::Windows {
  */
 class InvalidationTracker {
 public:
-  InvalidationTracker(FEXCore::Context::Context& CTX, const std::unordered_map<DWORD, FEXCore::Core::InternalThreadState*>& Threads);
+  // ToGuest (WOW64 under a high 32-bit window): converts the addresses of the initial
+  // memory scan, which must be known before it runs
+  InvalidationTracker(FEXCore::Context::Context& CTX, const std::unordered_map<DWORD, FEXCore::Core::InternalThreadState*>& Threads,
+                      uint64_t (*ToGuest)(uint64_t Address) = nullptr);
   void HandleMemoryProtectionNotification(uint64_t Address, uint64_t Size, ULONG Prot);
   void HandleProcessExecuteFlagsChange(ULONG Flags);
   void HandleImageMap(std::string_view Name, uint64_t Address);
