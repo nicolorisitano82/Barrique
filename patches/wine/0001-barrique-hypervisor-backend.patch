@@ -187,10 +187,10 @@ index 3c14125..e9fbd6f 100644
  VER_PRODUCTVERSION = 10,0,14393,0
  
 diff --git a/dlls/dcomp/device.c b/dlls/dcomp/device.c
-index 2744d75..2cba6f2 100644
+index 2744d75..afe87db 100644
 --- a/dlls/dcomp/device.c
 +++ b/dlls/dcomp/device.c
-@@ -15,23 +15,609 @@
+@@ -15,23 +15,613 @@
   * License along with this library; if not, write to the Free Software
   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
   */
@@ -648,6 +648,10 @@ index 2744d75..2cba6f2 100644
 +    *out = NULL;
 +    if (!IsWindow(hwnd)) return E_INVALIDARG;
 +    if (!(target = calloc(1, sizeof(*target)))) return E_OUTOFMEMORY;
++    /* the target shows our child window now; as a layered window (Chromium's
++     * "Intermediate D3D Window") it would show nothing drawn with GDI */
++    if (GetWindowLongW(hwnd, GWL_EXSTYLE) & WS_EX_LAYERED)
++        SetWindowLongW(hwnd, GWL_EXSTYLE, GetWindowLongW(hwnd, GWL_EXSTYLE) & ~WS_EX_LAYERED);
 +    target->IDCompositionTarget_iface.lpVtbl = &target_vtbl;
 +    target->refcount = 1;
 +    target->hwnd = hwnd;
@@ -1037,11 +1041,28 @@ index a0bc41e..e7f8208 100644
  };
  
  struct text_source_context
+diff --git a/dlls/dxgi/dxgi_private.h b/dlls/dxgi/dxgi_private.h
+index 6ecd575..cd32013 100644
+--- a/dlls/dxgi/dxgi_private.h
++++ b/dlls/dxgi/dxgi_private.h
+@@ -186,8 +186,12 @@ struct d3d11_swapchain
+     IDXGIOutput *target;
+     LONG present_count;
+     LONG in_set_fullscreen_state;
++    HWND composition_window;           /* Barrique: see d3d11_swapchain_copy_to_composition_window() */
++    ID3D11Texture2D *composition_staging;
+ };
+ 
++void d3d11_swapchain_set_composition_window(IDXGISwapChain1 *iface, HWND window);
++
+ HRESULT d3d11_swapchain_init(struct d3d11_swapchain *swapchain, struct dxgi_device *device,
+         struct wined3d_swapchain_desc *desc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC *fullscreen_desc);
+ 
 diff --git a/dlls/dxgi/factory.c b/dlls/dxgi/factory.c
-index c6bb47f..f2c1d00 100644
+index c6bb47f..7cd433e 100644
 --- a/dlls/dxgi/factory.c
 +++ b/dlls/dxgi/factory.c
-@@ -387,13 +387,69 @@ static void STDMETHODCALLTYPE dxgi_factory_UnregisterOcclusionStatus(IWineDXGIFa
+@@ -387,13 +387,82 @@ static void STDMETHODCALLTYPE dxgi_factory_UnregisterOcclusionStatus(IWineDXGIFa
      FIXME("iface %p, cookie %#lx stub!\n", iface, cookie);
  }
  
@@ -1081,7 +1102,8 @@ index c6bb47f..f2c1d00 100644
  {
 -    FIXME("iface %p, device %p, desc %p, output %p, swapchain %p stub!\n",
 +    DXGI_SWAP_CHAIN_DESC1 hwnd_desc;
-+    HWND window;
++    IWineDXGIDevice *wine_device;
++    HWND window, visual;
 +    HRESULT hr;
 +
 +    TRACE("iface %p, device %p, desc %p, output %p, swapchain %p.\n",
@@ -1107,12 +1129,225 @@ index c6bb47f..f2c1d00 100644
 +        DestroyWindow(window);
 +        return hr;
 +    }
-+    IDXGISwapChain1_SetPrivateData(*swapchain, &WINE_DXGI_COMPOSITION_HWND, sizeof(window), &window);
-+    TRACE("Created swapchain %p on window %p.\n", *swapchain, window);
++    /* D3D11: render on the hidden window, show copies in another one (see
++     * d3d11_swapchain_copy_to_composition_window()); other devices (D3D12)
++     * show the swapchain window itself */
++    visual = window;
++    if (SUCCEEDED(IUnknown_QueryInterface(device, &IID_IWineDXGIDevice, (void **)&wine_device)))
++    {
++        IWineDXGIDevice_Release(wine_device);
++        if ((visual = create_composition_window(desc->Width, desc->Height)))
++            d3d11_swapchain_set_composition_window(*swapchain, visual);
++        else
++            visual = window;
++    }
++    IDXGISwapChain1_SetPrivateData(*swapchain, &WINE_DXGI_COMPOSITION_HWND, sizeof(visual), &visual);
++    TRACE("Created swapchain %p on window %p, shown in %p.\n", *swapchain, window, visual);
 +    return S_OK;
  }
  
  static UINT STDMETHODCALLTYPE dxgi_factory_GetCreationFlags(IWineDXGIFactory *iface)
+diff --git a/dlls/dxgi/swapchain.c b/dlls/dxgi/swapchain.c
+index 283c18d..702b4fd 100644
+--- a/dlls/dxgi/swapchain.c
++++ b/dlls/dxgi/swapchain.c
+@@ -262,6 +262,10 @@ static ULONG STDMETHODCALLTYPE d3d11_swapchain_Release(IDXGISwapChain4 *iface)
+             IDXGIOutput_Release(swapchain->target);
+         }
+         IWineDXGIFactory_Release(swapchain->factory);
++        if (swapchain->composition_staging)
++            ID3D11Texture2D_Release(swapchain->composition_staging);
++        if (swapchain->composition_window)  /* its thread destroys it */
++            PostMessageW(swapchain->composition_window, WM_CLOSE, 0, 0);
+         wined3d_swapchain_decref(swapchain->wined3d_swapchain);
+         IWineDXGIDevice_Release(device);
+     }
+@@ -323,8 +327,152 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetDevice(IDXGISwapChain4 *ifac
+ 
+ /* IDXGISwapChain1 methods */
+ 
++/* Barrique: a composition swapchain (factory.c) renders on a hidden window of
++ * its own; what it presents is copied with GDI into the window DirectComposition
++ * places in the target (dcomp's Commit). GDI reaches windows of other processes
++ * on macOS (winemac's remote surfaces), OpenGL and Metal client views do not. */
++void d3d11_swapchain_set_composition_window(IDXGISwapChain1 *iface, HWND window)
++{
++    struct d3d11_swapchain *swapchain = d3d11_swapchain_from_IDXGISwapChain4((IDXGISwapChain4 *)iface);
++
++    swapchain->composition_window = window;
++}
++
++static void d3d11_swapchain_copy_to_composition_window(struct d3d11_swapchain *swapchain,
++        const DXGI_PRESENT_PARAMETERS *params)
++{
++    ID3D11Texture2D *buffer, *staging = swapchain->composition_staging;
++    D3D11_TEXTURE2D_DESC desc, staging_desc;
++    D3D11_MAPPED_SUBRESOURCE map;
++    ID3D11DeviceContext *context;
++    ID3D11Device *device;
++    BITMAPINFO info = {{0}};
++    BOOL swizzle;
++    BYTE *bits;
++    HDC dc;
++
++    if (FAILED(IDXGISwapChain4_GetBuffer(&swapchain->IDXGISwapChain4_iface, 0, &IID_ID3D11Texture2D, (void **)&buffer)))
++        return;
++    ID3D11Texture2D_GetDesc(buffer, &desc);
++    switch (desc.Format)
++    {
++        case DXGI_FORMAT_B8G8R8A8_UNORM:
++        case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
++        case DXGI_FORMAT_B8G8R8X8_UNORM:
++            swizzle = FALSE;
++            break;
++        case DXGI_FORMAT_R8G8B8A8_UNORM:
++        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
++            swizzle = TRUE;
++            break;
++        default:
++        {
++            static LONG once;
++            if (!InterlockedExchange(&once, 1)) FIXME("Unhandled composition format %#x.\n", desc.Format);
++            ID3D11Texture2D_Release(buffer);
++            return;
++        }
++    }
++    ID3D11Texture2D_GetDevice(buffer, &device);
++    if (staging)
++    {
++        ID3D11Texture2D_GetDesc(staging, &staging_desc);
++        if (staging_desc.Width != desc.Width || staging_desc.Height != desc.Height || staging_desc.Format != desc.Format)
++        {
++            ID3D11Texture2D_Release(staging);
++            staging = swapchain->composition_staging = NULL;
++        }
++    }
++    if (!staging)
++    {
++        staging_desc = desc;
++        staging_desc.MipLevels = staging_desc.ArraySize = 1;
++        staging_desc.SampleDesc.Count = 1;
++        staging_desc.SampleDesc.Quality = 0;
++        staging_desc.Usage = D3D11_USAGE_STAGING;
++        staging_desc.BindFlags = 0;
++        staging_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
++        staging_desc.MiscFlags = 0;
++        if (FAILED(ID3D11Device_CreateTexture2D(device, &staging_desc, NULL, &staging)))
++        {
++            ID3D11Device_Release(device);
++            ID3D11Texture2D_Release(buffer);
++            return;
++        }
++        swapchain->composition_staging = staging;
++    }
++
++    ID3D11Device_GetImmediateContext(device, &context);
++    ID3D11DeviceContext_CopyResource(context, (ID3D11Resource *)staging, (ID3D11Resource *)buffer);
++    if (SUCCEEDED(ID3D11DeviceContext_Map(context, (ID3D11Resource *)staging, 0, D3D11_MAP_READ, 0, &map)))
++    {
++        bits = map.pData;
++        if (swizzle && (bits = malloc((size_t)map.RowPitch * desc.Height)))
++        {
++            const BYTE *src = map.pData;
++            size_t i;
++            for (i = 0; i < (size_t)map.RowPitch * desc.Height; i += 4)
++            {
++                bits[i] = src[i + 2];
++                bits[i + 1] = src[i + 1];
++                bits[i + 2] = src[i];
++                bits[i + 3] = src[i + 3];
++            }
++        }
++        if (bits)
++        {
++            info.bmiHeader.biSize = sizeof(info.bmiHeader);
++            info.bmiHeader.biWidth = map.RowPitch / 4;
++            info.bmiHeader.biHeight = -(LONG)desc.Height;
++            info.bmiHeader.biPlanes = 1;
++            info.bmiHeader.biBitCount = 32;
++            info.bmiHeader.biCompression = BI_RGB;
++            {
++                /* follow the target window, which Chromium resizes without a new Commit */
++                HWND parent = GetAncestor(swapchain->composition_window, GA_PARENT);
++                RECT parent_rect, rect;
++
++                if (parent && parent != GetDesktopWindow() && GetClientRect(parent, &parent_rect)
++                        && GetWindowRect(swapchain->composition_window, &rect)
++                        && (rect.right - rect.left != parent_rect.right || rect.bottom - rect.top != parent_rect.bottom))
++                    SetWindowPos(swapchain->composition_window, NULL, 0, 0, parent_rect.right, parent_rect.bottom,
++                            SWP_NOZORDER | SWP_NOACTIVATE);
++            }
++            if ((dc = GetDC(swapchain->composition_window)))
++            {
++                /* with dirty rects (Present1), the rest of the buffer may be stale:
++                 * keep what the window already shows there */
++                if (params && params->DirtyRectsCount && params->pDirtyRects)
++                {
++                    UINT i;
++                    for (i = 0; i < params->DirtyRectsCount; ++i)
++                    {
++                        RECT r = params->pDirtyRects[i];
++                        r.left = max(r.left, 0);
++                        r.top = max(r.top, 0);
++                        r.right = min(r.right, (LONG)desc.Width);
++                        r.bottom = min(r.bottom, (LONG)desc.Height);
++                        if (r.left >= r.right || r.top >= r.bottom) continue;
++                        StretchDIBits(dc, r.left, r.top, r.right - r.left, r.bottom - r.top,
++                                r.left, r.top, r.right - r.left, r.bottom - r.top, bits, &info, DIB_RGB_COLORS, SRCCOPY);
++                    }
++                }
++                else
++                    SetDIBitsToDevice(dc, 0, 0, desc.Width, desc.Height, 0, 0, 0, desc.Height, bits, &info, DIB_RGB_COLORS);
++                ReleaseDC(swapchain->composition_window, dc);
++                GdiFlush();
++            }
++            if (bits != map.pData) free(bits);
++        }
++        ID3D11DeviceContext_Unmap(context, (ID3D11Resource *)staging, 0);
++    }
++    ID3D11DeviceContext_Release(context);
++    ID3D11Device_Release(device);
++    ID3D11Texture2D_Release(buffer);
++}
++
+ static HRESULT d3d11_swapchain_present(struct d3d11_swapchain *swapchain,
+-        unsigned int sync_interval, unsigned int flags)
++        unsigned int sync_interval, unsigned int flags, const DXGI_PRESENT_PARAMETERS *params)
+ {
+     HRESULT hr;
+ 
+@@ -344,6 +492,9 @@ static HRESULT d3d11_swapchain_present(struct d3d11_swapchain *swapchain,
+         return S_OK;
+     }
+ 
++    if (swapchain->composition_window)
++        d3d11_swapchain_copy_to_composition_window(swapchain, params);
++
+     hr = wined3d_swapchain_present(swapchain->wined3d_swapchain, NULL, NULL, NULL, sync_interval, 0);
+     if (hr == WINED3DOK_PRESENT_OCCLUDED)
+         return DXGI_STATUS_OCCLUDED;
+@@ -358,7 +509,7 @@ static HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d11_swapchain_Present(IDXGI
+ 
+     TRACE("iface %p, sync_interval %u, flags %#x.\n", iface, sync_interval, flags);
+ 
+-    return d3d11_swapchain_present(swapchain, sync_interval, flags);
++    return d3d11_swapchain_present(swapchain, sync_interval, flags, NULL);
+ }
+ 
+ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetBuffer(IDXGISwapChain4 *iface,
+@@ -751,10 +902,10 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_Present1(IDXGISwapChain4 *iface
+     TRACE("iface %p, sync_interval %u, flags %#x, present_parameters %p.\n",
+             iface, sync_interval, flags, present_parameters);
+ 
+-    if (present_parameters)
++    if (present_parameters && !swapchain->composition_window)
+         FIXME("Ignored present parameters %p.\n", present_parameters);
+ 
+-    return d3d11_swapchain_present(swapchain, sync_interval, flags);
++    return d3d11_swapchain_present(swapchain, sync_interval, flags, present_parameters);
+ }
+ 
+ static BOOL STDMETHODCALLTYPE d3d11_swapchain_IsTemporaryMonoSupported(IDXGISwapChain4 *iface)
 diff --git a/dlls/kernelbase/memory.c b/dlls/kernelbase/memory.c
 index 2ce2dca..17fc297 100644
 --- a/dlls/kernelbase/memory.c
@@ -6420,7 +6655,7 @@ index 829db1e..f3a66cf 100644
 +
  #endif /* __NTDLL_UNIX_PRIVATE_H */
 diff --git a/dlls/ntdll/unix/virtual.c b/dlls/ntdll/unix/virtual.c
-index 84f2a39..dbe1b55 100644
+index 84f2a39..6dc2e5e 100644
 --- a/dlls/ntdll/unix/virtual.c
 +++ b/dlls/ntdll/unix/virtual.c
 @@ -92,6 +92,59 @@
@@ -6691,7 +6926,24 @@ index 84f2a39..dbe1b55 100644
      if (alloc_type & MEM_REPLACE_PLACEHOLDER)
      {
          struct file_view *view;
-@@ -2100,6 +2304,10 @@ static NTSTATUS map_file_into_view( struct file_view *view, int fd, size_t start
+@@ -2074,6 +2278,16 @@ static NTSTATUS map_view( struct file_view **view_ret, void *base, size_t size,
+         {
+             if ((ptr = map_anon_area( host_size, unix_prot, align_mask )) == MAP_FAILED)
+                 return (errno == ENOMEM) ? STATUS_NO_MEMORY : STATUS_INVALID_PARAMETER;
++#ifdef WINE_HVF
++            /* the host may place it above the VM's address space (and the vprot
++             * table), e.g. for V8's 1TB sandbox reservation: search inside instead */
++            if (is_beyond_limit( ptr, size, host_addr_space_limit ))
++            {
++                munmap( ptr, host_size );
++                if (!(ptr = alloc_free_area( start, end, host_size, top_down, unix_prot, align_mask )))
++                    return STATUS_NO_MEMORY;
++            }
++#endif
+             TRACE( "got mem with anon mmap %p-%p\n", ptr, (char *)ptr + size );
+         }
+     }
+@@ -2100,6 +2314,10 @@ static NTSTATUS map_file_into_view( struct file_view *view, int fd, size_t start
      assert( start < view->size );
      assert( start + size <= view->size );
  
@@ -6702,7 +6954,7 @@ index 84f2a39..dbe1b55 100644
      if (vprot & VPROT_WRITE) flags |= MAP_SHARED;
      else if (vprot & VPROT_WRITECOPY) flags |= MAP_PRIVATE;
      else
-@@ -2212,19 +2420,46 @@ static SIZE_T get_committed_size( struct file_view *view, void *base, size_t max
+@@ -2212,19 +2430,46 @@ static SIZE_T get_committed_size( struct file_view *view, void *base, size_t max
   * Decommit some pages of a given view.
   * virtual_mutex must be held by caller.
   */
@@ -6750,7 +7002,7 @@ index 84f2a39..dbe1b55 100644
      if (host_start < host_end) kernel_writewatch_register_range( view, host_start, host_end - host_start );
      return STATUS_SUCCESS;
  }
-@@ -2540,6 +2775,9 @@ BOOL is_emulated_code( ULONG_PTR ptr )
+@@ -2540,6 +2785,9 @@ BOOL is_emulated_code( ULONG_PTR ptr )
      const UINT64 *map = arm64ec_view->base;
      ULONG_PTR page = ptr / page_size;
      if (!is_arm64ec() || ptr >= (ULONG_PTR)user_space_limit) return FALSE;
@@ -6760,7 +7012,7 @@ index 84f2a39..dbe1b55 100644
      return !((map[page / 64] >> (page & 63)) & 1);
  }
  
-@@ -3114,7 +3352,12 @@ static NTSTATUS map_image_view( struct file_view **view_ret, struct pe_image_inf
+@@ -3114,7 +3362,12 @@ static NTSTATUS map_image_view( struct file_view **view_ret, struct pe_image_inf
  
      /* then some appropriate address range */
  
@@ -6773,7 +7025,7 @@ index 84f2a39..dbe1b55 100644
      {
          ULONG_PTR end = min( limit_4g - 1, get_wow_user_space_limit() );
          if (limit_low < end && end < limit_high)
-@@ -3172,6 +3415,19 @@ static NTSTATUS virtual_map_image( HANDLE mapping, void **addr_ptr, SIZE_T *size
+@@ -3172,6 +3425,19 @@ static NTSTATUS virtual_map_image( HANDLE mapping, void **addr_ptr, SIZE_T *size
          SERVER_END_REQ;
      }
  
@@ -6793,7 +7045,7 @@ index 84f2a39..dbe1b55 100644
      server_enter_uninterrupted_section( &virtual_mutex, &sigset );
  
      status = map_image_view( &view, &pe_mapping->image, size, limit_low, limit_high, alloc_type );
-@@ -3376,6 +3632,11 @@ void virtual_init(void)
+@@ -3376,6 +3642,11 @@ void virtual_init(void)
      TRACE( "host page size: %uk\n", (UINT)host_page_size / 1024 );
  #endif
      host_addr_space_limit = get_host_addr_space_limit();
@@ -6805,7 +7057,7 @@ index 84f2a39..dbe1b55 100644
      TRACE( "host addr space limit: %p\n", host_addr_space_limit );
  
      mem_areas = anon_mmap_alloc( mem_areas_size * sizeof(*mem_areas), PROT_READ | PROT_WRITE );
-@@ -3463,6 +3724,14 @@ void virtual_get_system_info( SYSTEM_BASIC_INFORMATION *info, BOOL wow64 )
+@@ -3463,6 +3734,14 @@ void virtual_get_system_info( SYSTEM_BASIC_INFORMATION *info, BOOL wow64 )
      info->NumberOfProcessors      = cpu_count;
      if (wow64) info->HighestUserAddress = (char *)get_wow_user_space_limit() - 1;
      else info->HighestUserAddress = (char *)user_space_limit - 1;
@@ -6820,7 +7072,7 @@ index 84f2a39..dbe1b55 100644
  }
  
  
-@@ -3760,21 +4029,34 @@ static void set_large_address_space(void)
+@@ -3760,21 +4039,34 @@ static void set_large_address_space(void)
          char *end, *start = address_space_start;  /* low 64K */
          address_space_start = (void *)0x110000;
          end = min( address_space_start, main_module );
@@ -6857,7 +7109,7 @@ index 84f2a39..dbe1b55 100644
          }
      }
      else if (!(main_image_info.ImageCharacteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE))
-@@ -3849,8 +4131,15 @@ struct thread_data *virtual_alloc_first_thread_data(void)
+@@ -3849,8 +4141,15 @@ struct thread_data *virtual_alloc_first_thread_data(void)
      size_t size = signal_stack_mask + 1 + kernel_stack_size;
      void *ptr;
  
@@ -6873,7 +7125,7 @@ index 84f2a39..dbe1b55 100644
      if (status)
      {
          ERR( "wine: failed to map the shared user data: %08x\n", status );
-@@ -4286,12 +4575,24 @@ void virtual_map_user_shared_data(void)
+@@ -4286,12 +4585,24 @@ void virtual_map_user_shared_data(void)
          ERR( "failed to open the USD section: %08x\n", status );
          exit(1);
      }
@@ -6898,7 +7150,7 @@ index 84f2a39..dbe1b55 100644
      if (needs_close) close( fd );
      NtClose( section );
  }
-@@ -4535,11 +4836,28 @@ void *virtual_setup_exception( struct thread_data *data, void *stack_ptr, size_t
+@@ -4535,11 +4846,28 @@ void *virtual_setup_exception( struct thread_data *data, void *stack_ptr, size_t
   *
   * Check if the memory range is writable, temporarily disabling write watches if necessary.
   */
@@ -6927,7 +7179,7 @@ index 84f2a39..dbe1b55 100644
      size = ROUND_SIZE( base, size, host_page_mask );
      for (i = 0; i < size; i += host_page_size)
      {
-@@ -4678,6 +4996,47 @@ BOOL virtual_is_valid_code_address( const void *addr, SIZE_T size )
+@@ -4678,6 +5006,47 @@ BOOL virtual_is_valid_code_address( const void *addr, SIZE_T size )
  }
  
  
@@ -6975,7 +7227,7 @@ index 84f2a39..dbe1b55 100644
  /***********************************************************************
   *           virtual_check_buffer_for_read
   *
-@@ -5004,6 +5363,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
+@@ -5004,6 +5373,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
                                     MEM_PHYSICAL | MEM_LARGE_PAGES | MEM_WRITE_WATCH;
      ULONG_PTR limit;
  
@@ -6987,7 +7239,7 @@ index 84f2a39..dbe1b55 100644
      TRACE("%p %p %08lx %x %08x\n", process, *ret, *size_ptr, type, protect );
  
      if (!*size_ptr) return STATUS_INVALID_PARAMETER;
-@@ -5148,6 +5512,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *s
+@@ -5148,6 +5522,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *s
      USHORT machine = 0;
      unsigned int status;
  
@@ -6999,7 +7251,7 @@ index 84f2a39..dbe1b55 100644
      TRACE( "%p %p %08lx %x %08x %p %u\n",
            process, *ret, *size_ptr, type, protect, parameters, count );
  
-@@ -5206,6 +5575,11 @@ NTSTATUS WINAPI NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T *si
+@@ -5206,6 +5585,11 @@ NTSTATUS WINAPI NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T *si
      LPVOID addr = *addr_ptr;
      SIZE_T size = *size_ptr;
  
@@ -7011,7 +7263,7 @@ index 84f2a39..dbe1b55 100644
      TRACE("%p %p %08lx %x\n", process, addr, size, type );
  
      if (process != NtCurrentProcess())
-@@ -5301,6 +5675,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
+@@ -5301,6 +5685,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
      LPVOID addr = *addr_ptr;
      DWORD old;
  
@@ -7023,7 +7275,7 @@ index 84f2a39..dbe1b55 100644
      TRACE("%p %p %08lx %08x\n", process, addr, size, new_prot );
  
      if (!old_prot)
-@@ -5941,6 +6320,11 @@ NTSTATUS WINAPI NtQueryVirtualMemory( HANDLE process, LPCVOID addr,
+@@ -5941,6 +6330,11 @@ NTSTATUS WINAPI NtQueryVirtualMemory( HANDLE process, LPCVOID addr,
  {
      NTSTATUS status;
  
@@ -7035,7 +7287,7 @@ index 84f2a39..dbe1b55 100644
      TRACE("(%p, %p, info_class=%d, %p, %ld, %p)\n",
            process, addr, info_class, buffer, len, res_len);
  
-@@ -6024,6 +6408,11 @@ NTSTATUS WINAPI NtLockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size,
+@@ -6024,6 +6418,11 @@ NTSTATUS WINAPI NtLockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size,
  {
      unsigned int status = STATUS_SUCCESS;
  
@@ -7047,7 +7299,7 @@ index 84f2a39..dbe1b55 100644
      if (process != NtCurrentProcess())
      {
          union apc_call call;
-@@ -6062,6 +6451,11 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
+@@ -6062,6 +6461,11 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
  {
      unsigned int status = STATUS_SUCCESS;
  
@@ -7059,7 +7311,7 @@ index 84f2a39..dbe1b55 100644
      if (process != NtCurrentProcess())
      {
          union apc_call call;
-@@ -6114,10 +6508,18 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
+@@ -6114,10 +6518,18 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
          return STATUS_INVALID_PARAMETER_4;
  
      /* If both addr_ptr and zero_bits are passed, they have match */
@@ -7078,7 +7330,7 @@ index 84f2a39..dbe1b55 100644
  
      if (!is_win64 && !is_wow64())
      {
-@@ -6322,6 +6724,9 @@ done:
+@@ -6322,6 +6734,9 @@ done:
   */
  NTSTATUS WINAPI NtUnmapViewOfSection( HANDLE process, PVOID addr )
  {
@@ -7088,7 +7340,7 @@ index 84f2a39..dbe1b55 100644
      return unmap_view_of_section( process, addr, 0 );
  }
  
-@@ -6333,6 +6738,11 @@ NTSTATUS WINAPI NtUnmapViewOfSectionEx( HANDLE process, PVOID addr, ULONG flags
+@@ -6333,6 +6748,11 @@ NTSTATUS WINAPI NtUnmapViewOfSectionEx( HANDLE process, PVOID addr, ULONG flags
  {
      static const ULONG type_mask = MEM_UNMAP_WITH_TRANSIENT_BOOST | MEM_PRESERVE_PLACEHOLDER;
  
@@ -7100,7 +7352,7 @@ index 84f2a39..dbe1b55 100644
      if (flags & ~type_mask)
      {
          WARN( "Unsupported flags %#x.\n", flags );
-@@ -6473,6 +6883,9 @@ NTSTATUS WINAPI NtFlushVirtualMemory( HANDLE process, LPCVOID *addr_ptr,
+@@ -6473,6 +6893,9 @@ NTSTATUS WINAPI NtFlushVirtualMemory( HANDLE process, LPCVOID *addr_ptr,
      {
          if (!*size_ptr) *size_ptr = view->size;
          *addr_ptr = addr;
@@ -7110,7 +7362,7 @@ index 84f2a39..dbe1b55 100644
  #ifdef MS_ASYNC
          if (msync( ROUND_ADDR( addr, host_page_mask ), ROUND_SIZE( addr, *size_ptr, host_page_mask ), MS_ASYNC ))
              status = STATUS_NOT_MAPPED_DATA;
-@@ -6493,6 +6906,11 @@ NTSTATUS WINAPI NtGetWriteWatch( HANDLE process, ULONG flags, PVOID base, SIZE_T
+@@ -6493,6 +6916,11 @@ NTSTATUS WINAPI NtGetWriteWatch( HANDLE process, ULONG flags, PVOID base, SIZE_T
      NTSTATUS status = STATUS_SUCCESS;
      sigset_t sigset;
  
@@ -7122,7 +7374,7 @@ index 84f2a39..dbe1b55 100644
      size = ROUND_SIZE( base, size, page_mask );
      base = ROUND_ADDR( base, page_mask );
  
-@@ -6551,6 +6969,11 @@ NTSTATUS WINAPI NtResetWriteWatch( HANDLE process, PVOID base, SIZE_T size )
+@@ -6551,6 +6979,11 @@ NTSTATUS WINAPI NtResetWriteWatch( HANDLE process, PVOID base, SIZE_T size )
      NTSTATUS status = STATUS_SUCCESS;
      sigset_t sigset;
  
@@ -7134,7 +7386,7 @@ index 84f2a39..dbe1b55 100644
      size = ROUND_SIZE( base, size, page_mask );
      base = ROUND_ADDR( base, page_mask );
  
-@@ -6579,6 +7002,11 @@ NTSTATUS WINAPI NtReadVirtualMemory( HANDLE process, const void *addr, void *buf
+@@ -6579,6 +7012,11 @@ NTSTATUS WINAPI NtReadVirtualMemory( HANDLE process, const void *addr, void *buf
  {
      unsigned int status;
  
@@ -7146,7 +7398,7 @@ index 84f2a39..dbe1b55 100644
      if (!virtual_check_buffer_for_write( buffer, size ))
      {
          status = STATUS_ACCESS_VIOLATION;
-@@ -6623,6 +7051,11 @@ NTSTATUS WINAPI NtWriteVirtualMemory( HANDLE process, void *addr, const void *bu
+@@ -6623,6 +7061,11 @@ NTSTATUS WINAPI NtWriteVirtualMemory( HANDLE process, void *addr, const void *bu
  {
      unsigned int status;
  
@@ -7158,7 +7410,7 @@ index 84f2a39..dbe1b55 100644
      if (virtual_check_buffer_for_read( buffer, size ))
      {
          SERVER_START_REQ( write_process_memory )
-@@ -6785,6 +7218,9 @@ NTSTATUS WINAPI NtSetInformationVirtualMemory( HANDLE process,
+@@ -6785,6 +7228,9 @@ NTSTATUS WINAPI NtSetInformationVirtualMemory( HANDLE process,
   */
  NTSTATUS WINAPI NtFlushInstructionCache( HANDLE handle, const void *addr, SIZE_T size )
  {
@@ -8560,6 +8812,24 @@ index 454fb25..bcec456 100644
  
  EXTRADLLFLAGS = -nodefaultlibs
  
+diff --git a/dlls/win32u/dce.c b/dlls/win32u/dce.c
+index 67d3dc8..5088283 100644
+--- a/dlls/win32u/dce.c
++++ b/dlls/win32u/dce.c
+@@ -1390,8 +1390,11 @@ HDC WINAPI NtUserGetDCEx( HWND hwnd, HRGN clip_rgn, DWORD flags )
+     dce->hwnd = hwnd;
+     dce->flags = (dce->flags & ~user_flags) | (flags & user_flags);
+ 
+-    /* cross-process invalidation is not supported yet, so always update the vis rgn */
+-    if (!is_current_process_window( hwnd )) update_vis_rgn = TRUE;
++    /* cross-process invalidation is not supported yet, so always update the vis rgn;
++     * Barrique: also for windows inside another process's window, whose ancestors
++     * there can change without telling us (WebView2) */
++    if (!is_current_process_window( hwnd ) || !is_current_process_window( NtUserGetAncestor( hwnd, GA_ROOT ) ))
++        update_vis_rgn = TRUE;
+ 
+     if (set_dce_flags( dce->hdc, DCHF_VALIDATEVISRGN )) update_vis_rgn = TRUE;  /* DC was dirty */
+ 
 diff --git a/dlls/win32u/font.c b/dlls/win32u/font.c
 index 97936e9..fc31490 100644
 --- a/dlls/win32u/font.c
@@ -8661,6 +8931,22 @@ index ce89912..00df57a 100644
      ft_handle = dlopen(SONAME_LIBFREETYPE, RTLD_NOW);
      if(!ft_handle) {
          WINE_MESSAGE(
+diff --git a/dlls/win32u/gdiobj.c b/dlls/win32u/gdiobj.c
+index e861dee..206244e 100644
+--- a/dlls/win32u/gdiobj.c
++++ b/dlls/win32u/gdiobj.c
+@@ -1007,7 +1007,10 @@ BOOL WINAPI NtGdiUnrealizeObject( HGDIOBJ obj )
+  */
+ BOOL WINAPI NtGdiFlush(void)
+ {
+-    return TRUE;  /* FIXME */
++    /* Barrique: push pending output of window surfaces to the screen (used by
++     * dxgi's composition swapchains, whose thread may never wait for messages) */
++    flush_window_surfaces( TRUE );
++    return TRUE;
+ }
+ 
+ 
 diff --git a/dlls/win32u/message.c b/dlls/win32u/message.c
 index de1a484..c83a235 100644
 --- a/dlls/win32u/message.c
@@ -9007,7 +9293,7 @@ index 3265d74..8b8b5ea 100644
      if (!vulkan_handle) ERR( "Failed to load %s\n", SONAME_LIBVULKAN );
  #else
 diff --git a/dlls/win32u/window.c b/dlls/win32u/window.c
-index 4f0610c..a8a27e4 100644
+index 4f0610c..ae6e849 100644
 --- a/dlls/win32u/window.c
 +++ b/dlls/win32u/window.c
 @@ -342,8 +342,21 @@ static RECT get_client_surface_rects( HWND toplevel, HWND hwnd, RECT *monitor_re
@@ -9034,6 +9320,17 @@ index 4f0610c..a8a27e4 100644
  
      get_win_monitor_dpi( hwnd, &raw_dpi );
      *monitor_rect = map_dpi_rect( rect, dpi, raw_dpi );
+@@ -2249,7 +2262,9 @@ static struct window_surface *get_window_surface( HWND hwnd, UINT swp_flags, BOO
+     else monitor_rects = map_window_rects_virt_to_raw( *rects, get_thread_dpi() );
+ 
+     if (!user_driver->pWindowPosChanging( hwnd, swp_flags, shaped, &monitor_rects )) needs_surface = FALSE;
+-    else if (is_child) needs_surface = FALSE;
++    /* Barrique: a child of another process's window can have a surface of its own
++     * (the driver accepted it in WindowPosChanging, see winemac surface.c) */
++    else if (is_child && is_current_process_window( parent )) needs_surface = FALSE;
+     else if (swp_flags & SWP_HIDEWINDOW) needs_surface = FALSE;
+     else if (swp_flags & SWP_SHOWWINDOW) needs_surface = TRUE;
+     else needs_surface = !!(style & WS_VISIBLE);
 diff --git a/dlls/winebus.sys/bus_sdl.c b/dlls/winebus.sys/bus_sdl.c
 index 9225efb..900a920 100644
 --- a/dlls/winebus.sys/bus_sdl.c
@@ -9068,6 +9365,22 @@ index 163faff..9497303 100644
  
      return STATUS_SUCCESS;
  }
+diff --git a/dlls/wined3d/adapter_gl.c b/dlls/wined3d/adapter_gl.c
+index 75c5daf..9d707e4 100644
+--- a/dlls/wined3d/adapter_gl.c
++++ b/dlls/wined3d/adapter_gl.c
+@@ -1249,8 +1249,10 @@ static enum wined3d_feature_level feature_level_from_caps(const struct wined3d_g
+     shader_model = min(shader_model, max(shader_caps->hs_version, 4));
+     shader_model = min(shader_model, max(shader_caps->ds_version, 4));
+ 
++    /* Barrique: Apple's OpenGL 4.1 has no polygon offset clamp (GL 4.6), which
++     * would cap it at feature level 9_3, below what ANGLE (Chromium's GPU
++     * process, WebView2) needs. Only the depth bias clamp is lost without it. */
+     if (gl_info->supported[WINED3D_GL_VERSION_3_2]
+-            && gl_info->supported[ARB_POLYGON_OFFSET_CLAMP]
+             && gl_info->supported[ARB_SAMPLER_OBJECTS])
+     {
+         if (shader_model >= 5
 diff --git a/dlls/wined3d/cs.c b/dlls/wined3d/cs.c
 index 7374560..1bfd409 100644
 --- a/dlls/wined3d/cs.c
@@ -9101,6 +9414,126 @@ index 7374560..1bfd409 100644
          wined3d_pause(&spin_count);
      TRACE_(d3d_perf)("Queue is now empty.\n");
  }
+diff --git a/dlls/wined3d/glsl_shader.c b/dlls/wined3d/glsl_shader.c
+index bcfed6b..d282cc9 100644
+--- a/dlls/wined3d/glsl_shader.c
++++ b/dlls/wined3d/glsl_shader.c
+@@ -2375,6 +2375,42 @@ static void shader_glsl_declare_generic_vertex_attribute(struct wined3d_string_b
+ }
+ 
+ /** Generate the variable & register declarations for the GLSL output target */
++/* Barrique: mix() with a boolean selector on integer and boolean types needs
++ * GLSL 4.50 or EXT_shader_integer_mix, which Apple's OpenGL 4.1 lacks. Emit
++ * equivalent functions so shader model 4 works there. */
++static const char *shader_glsl_mix_name(const struct wined3d_gl_info *gl_info)
++{
++    return gl_info->supported[EXT_SHADER_INTEGER_MIX] ? "mix" : "wined3d_mix";
++}
++
++static void shader_glsl_declare_mix_helpers(struct wined3d_string_buffer *buffer,
++        const struct wined3d_gl_info *gl_info)
++{
++    static const char *const types[][2] =
++    {
++        {"float", "vec"}, {"int", "ivec"}, {"uint", "uvec"}, {"bool", "bvec"},
++    };
++    static const char comp[] = "xyzw";
++    unsigned int i, n, c;
++
++    if (gl_info->supported[EXT_SHADER_INTEGER_MIX] || gl_info->glsl_version < MAKEDWORD_VERSION(1, 30))
++        return;
++
++    for (i = 0; i < ARRAY_SIZE(types); ++i)
++    {
++        shader_addline(buffer, "%s wined3d_mix(%s a, %s b, bool s) { return s ? b : a; }\n",
++                types[i][0], types[i][0], types[i][0]);
++        for (n = 2; n <= 4; ++n)
++        {
++            shader_addline(buffer, "%s%u wined3d_mix(%s%u a, %s%u b, bvec%u s) { return %s%u(",
++                    types[i][1], n, types[i][1], n, types[i][1], n, n, types[i][1], n);
++            for (c = 0; c < n; ++c)
++                shader_addline(buffer, "%ss.%c ? b.%c : a.%c", c ? ", " : "", comp[c], comp[c], comp[c]);
++            shader_addline(buffer, "); }\n");
++        }
++    }
++}
++
+ static void shader_generate_glsl_declarations(const struct wined3d_context_gl *context_gl,
+         struct wined3d_string_buffer *buffer, const struct wined3d_shader *shader,
+         const struct wined3d_shader_reg_maps *reg_maps, const struct shader_glsl_ctx_priv *ctx_priv)
+@@ -2396,6 +2432,8 @@ static void shader_generate_glsl_declarations(const struct wined3d_context_gl *c
+ 
+     prefix = shader_glsl_get_prefix(version->type);
+ 
++    shader_glsl_declare_mix_helpers(buffer, gl_info);
++
+     /* Prototype the subroutines */
+     map = reg_maps->labels;
+     while (map)
+@@ -4517,6 +4555,7 @@ static void shader_glsl_cast(const struct wined3d_shader_instruction *ins,
+ 
+ static void shader_glsl_to_int(const struct wined3d_shader_instruction *ins)
+ {
++    const char *mix = shader_glsl_mix_name(((const struct shader_glsl_ctx_priv *)ins->ctx->backend_data)->gl_info);
+     struct wined3d_string_buffer *buffer = ins->ctx->buffer;
+     struct glsl_src_param src_param;
+     unsigned int mask_size;
+@@ -4527,15 +4566,16 @@ static void shader_glsl_to_int(const struct wined3d_shader_instruction *ins)
+     shader_glsl_add_src_param(ins, &ins->src[0], write_mask, &src_param);
+ 
+     if (mask_size > 1)
+-        shader_addline(buffer, "mix(mix(ivec%u(max(%s, vec%u(-2147483648.0))), ivec%u(0x7fffffff), greaterThanEqual(%s, vec%u(2147483648.0))), ivec%u(0), isnan(%s)));\n",
+-                mask_size, src_param.param_str, mask_size, mask_size, src_param.param_str, mask_size, mask_size, src_param.param_str);
++        shader_addline(buffer, "%s(%s(ivec%u(max(%s, vec%u(-2147483648.0))), ivec%u(0x7fffffff), greaterThanEqual(%s, vec%u(2147483648.0))), ivec%u(0), isnan(%s)));\n",
++                mix, mix, mask_size, src_param.param_str, mask_size, mask_size, src_param.param_str, mask_size, mask_size, src_param.param_str);
+     else
+-        shader_addline(buffer, "mix(mix(int(max(%s, -2147483648.0)), 0x7fffffff, %s >= 2147483648.0), 0, isnan(%s)));\n",
+-                src_param.param_str, src_param.param_str, src_param.param_str);
++        shader_addline(buffer, "%s(%s(int(max(%s, -2147483648.0)), 0x7fffffff, %s >= 2147483648.0), 0, isnan(%s)));\n",
++                mix, mix, src_param.param_str, src_param.param_str, src_param.param_str);
+ }
+ 
+ static void shader_glsl_to_uint(const struct wined3d_shader_instruction *ins)
+ {
++    const char *mix = shader_glsl_mix_name(((const struct shader_glsl_ctx_priv *)ins->ctx->backend_data)->gl_info);
+     struct wined3d_string_buffer *buffer = ins->ctx->buffer;
+     struct glsl_src_param src_param;
+     unsigned int mask_size;
+@@ -4546,11 +4586,11 @@ static void shader_glsl_to_uint(const struct wined3d_shader_instruction *ins)
+     shader_glsl_add_src_param(ins, &ins->src[0], write_mask, &src_param);
+ 
+     if (mask_size > 1)
+-        shader_addline(buffer, "mix(uvec%u(max(%s, vec%u(0.0))), uvec%u(0xffffffffu), greaterThanEqual(%s, vec%u(4294967296.0))));\n",
+-                mask_size, src_param.param_str, mask_size, mask_size, src_param.param_str, mask_size);
++        shader_addline(buffer, "%s(uvec%u(max(%s, vec%u(0.0))), uvec%u(0xffffffffu), greaterThanEqual(%s, vec%u(4294967296.0))));\n",
++                mix, mask_size, src_param.param_str, mask_size, mask_size, src_param.param_str, mask_size);
+     else
+-        shader_addline(buffer, "mix(uint(max(%s, 0.0)), 0xffffffffu, %s >= 4294967296.0));\n",
+-                src_param.param_str, src_param.param_str);
++        shader_addline(buffer, "%s(uint(max(%s, 0.0)), 0xffffffffu, %s >= 4294967296.0));\n",
++                mix, src_param.param_str, src_param.param_str);
+ }
+ 
+ static void shader_glsl_to_float(const struct wined3d_shader_instruction *ins)
+@@ -4886,7 +4926,7 @@ static void shader_glsl_lrp(const struct wined3d_shader_instruction *ins)
+     shader_glsl_add_src_param(ins, &ins->src[1], write_mask, &src1_param);
+     shader_glsl_add_src_param(ins, &ins->src[2], write_mask, &src2_param);
+ 
+-    shader_addline(ins->ctx->buffer, "mix(%s, %s, %s));\n",
++    shader_addline(ins->ctx->buffer, "%s(%s, %s, %s));\n", shader_glsl_mix_name(((const struct shader_glsl_ctx_priv *)ins->ctx->backend_data)->gl_info),
+             src2_param.param_str, src1_param.param_str, src0_param.param_str);
+ }
+ 
+@@ -11332,8 +11372,7 @@ static unsigned int shader_glsl_get_shader_model(const struct wined3d_gl_info *g
+ {
+     BOOL shader_model_4 = gl_info->glsl_version >= MAKEDWORD_VERSION(1, 50)
+             && gl_info->supported[ARB_SHADER_BIT_ENCODING]
+-            && gl_info->supported[ARB_TEXTURE_SWIZZLE]
+-            && gl_info->supported[EXT_SHADER_INTEGER_MIX];
++            && gl_info->supported[ARB_TEXTURE_SWIZZLE]; /* Barrique: integer mix() is emulated */
+ 
+     if (shader_model_4
+             && gl_info->supported[ARB_COMPUTE_SHADER]
 diff --git a/dlls/wined3d/wined3d_private.h b/dlls/wined3d/wined3d_private.h
 index dcce9a3..a0077de 100644
 --- a/dlls/wined3d/wined3d_private.h
@@ -9951,6 +10384,114 @@ index c15aefe..fb014ca 100644
          });
          [oldView release];
  
+diff --git a/dlls/winemac.drv/cocoa_window.m b/dlls/winemac.drv/cocoa_window.m
+index 3447627..d7f2036 100644
+--- a/dlls/winemac.drv/cocoa_window.m
++++ b/dlls/winemac.drv/cocoa_window.m
+@@ -3749,6 +3749,103 @@ - (void) dealloc
+ 
+ @end
+ 
++/* Barrique: the window surface of a child window whose parent belongs to
++ * another process (e.g. a WebView2 browser window inside its host's window).
++ * There is no Cocoa window to draw into here: export a layer tree with
++ * CAContext and let the root window's owner host it with CALayerHost, as
++ * CAContextSwapChain does for Metal. The container covers the host's content
++ * view; the clip layer sits at the child window's place in it. */
++@interface WineRemoteSurface : NSObject
++{
++@public
++    CAContext* context;
++    CALayer* container;
++    CALayer* clip;
++    CALayer* content;
++}
++@end
++
++@implementation WineRemoteSurface
++@end
++
++void* macdrv_create_remote_surface(unsigned int* context_id)
++{
++@autoreleasepool
++{
++    WineRemoteSurface* remote = [[WineRemoteSurface alloc] init];
++
++    *context_id = 0;
++    OnMainThread(^{
++        [CATransaction begin];
++        [CATransaction setDisableActions:YES];
++        remote->container = [[CALayer alloc] init];
++        remote->container.anchorPoint = CGPointZero;
++        remote->container.frame = CGRectMake(0, 0, 1, 1);
++        remote->container.geometryFlipped = YES;  /* Win32 coordinates: origin at the top left */
++        remote->clip = [[CALayer alloc] init];
++        remote->clip.anchorPoint = CGPointZero;
++        remote->clip.masksToBounds = YES;
++        remote->content = [[CALayer alloc] init];
++        remote->content.anchorPoint = CGPointZero;
++        remote->content.contentsGravity = kCAGravityTopLeft;
++        remote->content.contentsScale = retina_on ? 2.0 : 1.0;
++        remote->content.magnificationFilter = kCAFilterNearest;
++        [remote->clip addSublayer:remote->content];
++        [remote->container addSublayer:remote->clip];
++        remote->context = [[CAContext contextWithCGSConnection:CGSMainConnectionID()
++                                                       options:[NSDictionary dictionary]] retain];
++        [remote->context setLayer:remote->container];
++        [CATransaction commit];
++        [CATransaction flush];
++    });
++    if (!remote->context || !(*context_id = [remote->context contextId]))
++    {
++        macdrv_destroy_remote_surface(remote);
++        return NULL;
++    }
++    return remote;
++}
++}
++
++void macdrv_remote_surface_update(void* r, IOSurfaceRef s, CGRect container_rect, CGRect clip_rect, CGRect content_rect)
++{
++@autoreleasepool
++{
++    WineRemoteSurface* remote = r;
++    IOSurface* surface = (IOSurface*)s;
++
++    [surface retain];
++    OnMainThreadAsync(^{
++        [CATransaction begin];
++        [CATransaction setDisableActions:YES];
++        remote->container.frame = cgrect_mac_from_win(container_rect);
++        remote->clip.frame = cgrect_mac_from_win(clip_rect);
++        remote->content.frame = cgrect_mac_from_win(content_rect);
++        remote->content.contents = surface;
++        [CATransaction commit];
++        [CATransaction flush];
++        [surface release];
++    });
++}
++}
++
++void macdrv_destroy_remote_surface(void* r)
++{
++@autoreleasepool
++{
++    WineRemoteSurface* remote = r;
++
++    OnMainThreadAsync(^{
++        [remote->context setLayer:nil];
++        [remote->context release];
++        [remote->content release];
++        [remote->clip release];
++        [remote->container release];
++        [remote release];
++    });
++}
++}
++
+ id<WineMetalSwapChain> macdrv_create_view_swapchain(WineContentView *view)
+ {
+ @autoreleasepool
 diff --git a/dlls/winemac.drv/dllmain.c b/dlls/winemac.drv/dllmain.c
 index bbd528d..9382923 100644
 --- a/dlls/winemac.drv/dllmain.c
@@ -10072,7 +10613,7 @@ index 92bcd2f..114d36c 100644
  extern const char* debugstr_cf(CFTypeRef t);
  
 diff --git a/dlls/winemac.drv/macdrv_cocoa.h b/dlls/winemac.drv/macdrv_cocoa.h
-index dd332b6..b0042fc 100644
+index dd332b6..5950756 100644
 --- a/dlls/winemac.drv/macdrv_cocoa.h
 +++ b/dlls/winemac.drv/macdrv_cocoa.h
 @@ -193,6 +193,7 @@ static inline CGPoint cgpoint_win_from_mac(CGPoint point)
@@ -10099,7 +10640,7 @@ index dd332b6..b0042fc 100644
              unsigned long   time_ms;
          }                                           mouse_scroll;
          struct {
-@@ -501,6 +504,10 @@ extern void macdrv_order_cocoa_window(WineWindow *window, WineWindow *prev,
+@@ -501,8 +504,15 @@ extern void macdrv_order_cocoa_window(WineWindow *window, WineWindow *prev,
  extern WineMetalView *macdrv_view_create_metal_view(WineContentView *view, MTLDevice_id device);
  extern CAMetalLayer *macdrv_view_get_metal_layer(WineMetalView *view);
  extern void macdrv_view_release_metal_view(WineMetalView *view);
@@ -10109,7 +10650,12 @@ index dd332b6..b0042fc 100644
 +extern void macdrv_dxmt_free(void *windows_addr);
  extern WineMetalSwapChain_id macdrv_create_view_swapchain(WineContentView *view);
  extern WineMetalSwapChain_id macdrv_create_offscreen_swapchain(void* hwnd, CGRect bounds);
++extern void* macdrv_create_remote_surface(unsigned int* context_id);
++extern void macdrv_remote_surface_update(void* remote, IOSurfaceRef surface, CGRect container_rect, CGRect clip_rect, CGRect content_rect);
++extern void macdrv_destroy_remote_surface(void* remote);
  extern CAMetalLayer *macdrv_swapchain_get_layer(WineMetalSwapChain_id swapchain);
+ extern void macdrv_destroy_swapchain(WineMetalSwapChain_id swapchain);
+ extern void macdrv_window_create_ca_layer_host_view(WineWindow *window, unsigned int context_id);
 diff --git a/dlls/winemac.drv/macdrv_main.c b/dlls/winemac.drv/macdrv_main.c
 index cc3d3b3..6aab523 100644
 --- a/dlls/winemac.drv/macdrv_main.c
@@ -10189,6 +10735,105 @@ index 5963edc..69676ef 100644
                           event->mouse_scroll.x, event->mouse_scroll.y,
                           event->mouse_scroll.x_scroll, FALSE, event->mouse_scroll.time_ms);
  }
+diff --git a/dlls/winemac.drv/surface.c b/dlls/winemac.drv/surface.c
+index b688052..09ee810 100644
+--- a/dlls/winemac.drv/surface.c
++++ b/dlls/winemac.drv/surface.c
+@@ -48,6 +48,9 @@ struct macdrv_window_surface
+     IOSurfaceRef            front_buffer;
+     IOSurfaceRef            back_buffer;
+     vImage_Buffer           shape_mask;
++    void                   *remote;      /* Barrique: layer exported to the root window's owner */
++    unsigned int            context_id;
++    HWND                    root;
+ };
+ 
+ static struct macdrv_window_surface *get_mac_surface(struct window_surface *surface);
+@@ -118,6 +121,42 @@ static void update_shape(vImage_Buffer *shape_mask, const BITMAPINFO *shape_info
+ /***********************************************************************
+  *              macdrv_surface_flush
+  */
++/* Barrique: where a remote surface goes in its root window's content view, in
++ * raw pixels relative to the top left of that view (the root's visible rect). */
++static void get_remote_surface_rects(struct macdrv_window_surface *surface, RECT *container, RECT *clip, RECT *content)
++{
++    HWND hwnd = surface->header.hwnd;
++    UINT dpi = NtUserGetWinMonitorDpi(hwnd, MDT_RAW_DPI);
++    RECT child, root, win = {0}, vis = {0};
++    int dx = 0, dy = 0;
++
++    NtUserGetWindowRect(hwnd, &child, dpi);
++    NtUserGetWindowRect(surface->root, &root, dpi);
++    /* the visible rect of the root (what its Cocoa content view shows) is only in
++     * the server, in the root's own coordinates: scale its offset to raw pixels */
++    SERVER_START_REQ(get_window_rectangles)
++    {
++        req->handle = wine_server_user_handle(surface->root);
++        req->relative = COORDS_SCREEN;
++        if (!wine_server_call(req))
++        {
++            win = wine_server_get_rect(reply->window);
++            vis = wine_server_get_rect(reply->visible);
++        }
++    }
++    SERVER_END_REQ;
++    if (win.right > win.left && win.bottom > win.top)
++    {
++        dx = (int)((LONGLONG)(vis.left - win.left) * (root.right - root.left) / (win.right - win.left));
++        dy = (int)((LONGLONG)(vis.top - win.top) * (root.bottom - root.top) / (win.bottom - win.top));
++    }
++    SetRect(container, 0, 0, root.right - root.left - dx, root.bottom - root.top - dy);
++    *clip = child;
++    OffsetRect(clip, -(root.left + dx), -(root.top + dy));
++    *content = surface->header.rect;
++    OffsetRect(content, clip->left, clip->top);
++}
++
+ static BOOL macdrv_surface_flush(struct window_surface *window_surface, const RECT *rect, const RECT *dirty,
+                                  const BITMAPINFO *color_info, const void *color_bits, BOOL shape_changed,
+                                  const BITMAPINFO *shape_info, const void *shape_bits)
+@@ -169,6 +208,15 @@ static BOOL macdrv_surface_flush(struct window_surface *window_surface, const RE
+ 
+     surface->back_buffer = surface->front_buffer;
+     surface->front_buffer = io_surface;
++    if (surface->remote)
++    {
++        RECT container, clip, content;
++        get_remote_surface_rects(surface, &container, &clip, &content);
++        TRACE("remote %p clip %s content %s dirty %s\n", window_surface->hwnd, wine_dbgstr_rect(&clip),
++              wine_dbgstr_rect(&content), wine_dbgstr_rect(dirty));
++        macdrv_remote_surface_update(surface->remote, io_surface, cgrect_from_rect(container), cgrect_from_rect(clip), cgrect_from_rect(content));
++        return TRUE;
++    }
+     macdrv_window_set_io_surface(surface->window, io_surface, cgrect_from_rect(*rect), cgrect_from_rect(*dirty));
+ 
+     if (shape_changed) macdrv_window_shape_changed(surface->window, !!shape_bits);
+@@ -197,6 +245,11 @@ static void macdrv_surface_destroy(struct window_surface *window_surface)
+     struct macdrv_window_surface *surface = get_mac_surface(window_surface);
+ 
+     TRACE("freeing %p\n", surface);
++    if (surface->remote)
++    {
++        NtUserPostMessage(surface->root, WM_MACDRV_RELEASE_REMOTE_LAYER, 0, surface->context_id);
++        macdrv_destroy_remote_surface(surface->remote);
++    }
+     free(surface->shape_mask.data);
+     if (surface->back_buffer) CFRelease(surface->back_buffer);
+     if (surface->front_buffer) CFRelease(surface->front_buffer);
+@@ -266,6 +319,13 @@ static struct window_surface *create_surface(HWND hwnd, WineWindow *window, cons
+     {
+         surface = get_mac_surface(window_surface);
+         surface->window = window;
++        if (!window)  /* Barrique: child of another process's window, see get_remote_surface_rects */
++        {
++            surface->root = NtUserGetAncestor(hwnd, GA_ROOT);
++            if ((surface->remote = macdrv_create_remote_surface(&surface->context_id)))
++                NtUserPostMessage(surface->root, WM_MACDRV_CREATE_REMOTE_LAYER, 0, surface->context_id);
++            TRACE("remote surface for %p in %p, context %u\n", hwnd, surface->root, surface->context_id);
++        }
+         surface->front_buffer = io_surface1;
+         surface->back_buffer = io_surface2;
+         if (vImageBuffer_Init(&surface->shape_mask, height, width, 32, kvImageNoFlags))
 diff --git a/dlls/winemac.drv/unixlib.h b/dlls/winemac.drv/unixlib.h
 index dc22da0..652c21a 100644
 --- a/dlls/winemac.drv/unixlib.h
@@ -10213,7 +10858,7 @@ index dc22da0..652c21a 100644
 +#endif
  }
 diff --git a/dlls/winemac.drv/window.c b/dlls/winemac.drv/window.c
-index e025823..cfda348 100644
+index e025823..e1a06bc 100644
 --- a/dlls/winemac.drv/window.c
 +++ b/dlls/winemac.drv/window.c
 @@ -787,12 +787,28 @@ void activate_on_following_focus(void)
@@ -10245,7 +10890,24 @@ index e025823..cfda348 100644
  }
  
  
-@@ -2203,3 +2219,206 @@ void init_win_context(void)
+@@ -1618,6 +1634,16 @@ BOOL macdrv_WindowPosChanging(HWND hwnd, UINT swp_flags, BOOL shaped, const stru
+ 
+     ret = !!data->cocoa_window; /* use default surface if we don't have a window */
+     release_win_data(data);
++    if (!ret)
++    {
++        /* Barrique: a child of another process's window gets its own surface,
++         * shown in that window through a remote layer (see surface.c) */
++        HWND parent = NtUserGetAncestor(hwnd, GA_PARENT);
++        DWORD pid = 0;
++        if (parent && parent != NtUserGetDesktopWindow() && NtUserGetWindowThread(parent, &pid) &&
++            pid != GetCurrentProcessId())
++            ret = TRUE;
++    }
+ 
+     return ret;
+ }
+@@ -2203,3 +2229,206 @@ void init_win_context(void)
      pthread_mutex_init(&win_data_mutex, &attr);
      pthread_mutexattr_destroy(&attr);
  }
