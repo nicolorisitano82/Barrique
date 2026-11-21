@@ -1148,7 +1148,7 @@ index c6bb47f..7cd433e 100644
  
  static UINT STDMETHODCALLTYPE dxgi_factory_GetCreationFlags(IWineDXGIFactory *iface)
 diff --git a/dlls/dxgi/swapchain.c b/dlls/dxgi/swapchain.c
-index 283c18d..702b4fd 100644
+index 283c18d..5762a39 100644
 --- a/dlls/dxgi/swapchain.c
 +++ b/dlls/dxgi/swapchain.c
 @@ -262,6 +262,10 @@ static ULONG STDMETHODCALLTYPE d3d11_swapchain_Release(IDXGISwapChain4 *iface)
@@ -1162,7 +1162,7 @@ index 283c18d..702b4fd 100644
          wined3d_swapchain_decref(swapchain->wined3d_swapchain);
          IWineDXGIDevice_Release(device);
      }
-@@ -323,8 +327,152 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetDevice(IDXGISwapChain4 *ifac
+@@ -323,8 +327,154 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetDevice(IDXGISwapChain4 *ifac
  
  /* IDXGISwapChain1 methods */
  
@@ -1292,8 +1292,10 @@ index 283c18d..702b4fd 100644
 +                        r.right = min(r.right, (LONG)desc.Width);
 +                        r.bottom = min(r.bottom, (LONG)desc.Height);
 +                        if (r.left >= r.right || r.top >= r.bottom) continue;
++                        /* the source origin is the bottom left, also for a top-down DIB */
 +                        StretchDIBits(dc, r.left, r.top, r.right - r.left, r.bottom - r.top,
-+                                r.left, r.top, r.right - r.left, r.bottom - r.top, bits, &info, DIB_RGB_COLORS, SRCCOPY);
++                                r.left, desc.Height - r.bottom, r.right - r.left, r.bottom - r.top,
++                                bits, &info, DIB_RGB_COLORS, SRCCOPY);
 +                    }
 +                }
 +                else
@@ -1316,7 +1318,7 @@ index 283c18d..702b4fd 100644
  {
      HRESULT hr;
  
-@@ -344,6 +492,9 @@ static HRESULT d3d11_swapchain_present(struct d3d11_swapchain *swapchain,
+@@ -344,6 +494,9 @@ static HRESULT d3d11_swapchain_present(struct d3d11_swapchain *swapchain,
          return S_OK;
      }
  
@@ -1326,7 +1328,7 @@ index 283c18d..702b4fd 100644
      hr = wined3d_swapchain_present(swapchain->wined3d_swapchain, NULL, NULL, NULL, sync_interval, 0);
      if (hr == WINED3DOK_PRESENT_OCCLUDED)
          return DXGI_STATUS_OCCLUDED;
-@@ -358,7 +509,7 @@ static HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d11_swapchain_Present(IDXGI
+@@ -358,7 +511,7 @@ static HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d11_swapchain_Present(IDXGI
  
      TRACE("iface %p, sync_interval %u, flags %#x.\n", iface, sync_interval, flags);
  
@@ -1335,7 +1337,7 @@ index 283c18d..702b4fd 100644
  }
  
  static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetBuffer(IDXGISwapChain4 *iface,
-@@ -751,10 +902,10 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_Present1(IDXGISwapChain4 *iface
+@@ -751,10 +904,10 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_Present1(IDXGISwapChain4 *iface
      TRACE("iface %p, sync_interval %u, flags %#x, present_parameters %p.\n",
              iface, sync_interval, flags, present_parameters);
  
