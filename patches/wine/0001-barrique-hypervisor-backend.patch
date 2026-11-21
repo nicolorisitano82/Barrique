@@ -9482,9 +9482,18 @@ index fd46ba3..ec1dfcd 100644
      threading(both),
      uuid(6c34de69-4670-46cd-8cb4-1f2fa1dffb65)
 diff --git a/dlls/winemac.drv/Makefile.in b/dlls/winemac.drv/Makefile.in
-index 7efe299..176f80f 100644
+index 7efe299..14d49f0 100644
 --- a/dlls/winemac.drv/Makefile.in
 +++ b/dlls/winemac.drv/Makefile.in
+@@ -1,7 +1,7 @@
+ MODULE    = winemac.drv
+ UNIXLIB   = winemac.so
+ IMPORTS   = uuid rpcrt4 user32 gdi32 win32u
+-DELAYIMPORTS = ole32 shell32 imm32
++DELAYIMPORTS = ole32 shell32 imm32 version
+ UNIX_LIBS    = \
+ 	-lwin32u \
+ 	-framework Accelerate \
 @@ -23,6 +23,7 @@ SOURCES = \
  	cocoa_clipboard.m \
  	cocoa_cursorclipping.m \
@@ -9494,7 +9503,7 @@ index 7efe299..176f80f 100644
  	cocoa_main.m \
  	cocoa_opengl.m \
 diff --git a/dlls/winemac.drv/cocoa_app.m b/dlls/winemac.drv/cocoa_app.m
-index 37f7c85..d16a617 100644
+index 37f7c85..5dfc724 100644
 --- a/dlls/winemac.drv/cocoa_app.m
 +++ b/dlls/winemac.drv/cocoa_app.m
 @@ -104,6 +104,7 @@ @interface WineApplicationController ()
@@ -9641,6 +9650,64 @@ index 37f7c85..d16a617 100644
      }
  
      - (void) applicationDidUnhide:(NSNotification*)aNotification
+@@ -2595,6 +2644,57 @@ void macdrv_set_application_icon(CFArrayRef images)
+     });
+ }
+ 
++/* Barrique: LaunchServices keeps the name the Dock (and the application switcher)
++ * shows for a running process; for a process outside a bundle it is its executable
++ * name, "wine". The private _LSSetApplicationInformationItem with _kLSDisplayNameKey
++ * changes it, as Chromium does for its helper processes. Looked up at run time: if
++ * a macOS release drops it, the name simply stays. */
++static void set_launch_services_display_name(NSString* name)
++{
++    typedef CFTypeRef (*get_asn_func)(void);
++    typedef OSStatus (*set_item_func)(int, CFTypeRef, CFStringRef, CFStringRef, CFDictionaryRef*);
++    static get_asn_func get_asn;
++    static set_item_func set_item;
++    static CFStringRef display_name_key;
++    static dispatch_once_t once;
++
++    dispatch_once(&once, ^{
++        CFBundleRef bundle = CFBundleGetBundleWithIdentifier(CFSTR("com.apple.LaunchServices"));
++        CFStringRef *key;
++
++        if (!bundle) return;
++        get_asn = (get_asn_func)CFBundleGetFunctionPointerForName(bundle, CFSTR("_LSGetCurrentApplicationASN"));
++        set_item = (set_item_func)CFBundleGetFunctionPointerForName(bundle, CFSTR("_LSSetApplicationInformationItem"));
++        key = (CFStringRef*)CFBundleGetDataPointerForName(bundle, CFSTR("_kLSDisplayNameKey"));
++        if (key) display_name_key = *key;
++    });
++
++    if (get_asn && set_item && display_name_key)
++    {
++        CFTypeRef asn = get_asn();
++        if (asn) set_item(-2 /* kLSDefaultSessionID */, asn, display_name_key, (CFStringRef)name, NULL);
++    }
++}
++
++/***********************************************************************
++ *              macdrv_set_application_name
++ *
++ * Barrique: show the Windows program's name instead of "wine" in the Dock, the
++ * application switcher and the application menu.
++ */
++void macdrv_set_application_name(CFStringRef name)
++{
++    NSString* appName = [(NSString*)name copy];
++
++    OnMainThreadAsync(^{
++        NSMenuItem* item = [[NSApp mainMenu] numberOfItems] ? [[NSApp mainMenu] itemAtIndex:0] : nil;
++
++        set_launch_services_display_name(appName);
++        if ([item submenu]) [[item submenu] setTitle:appName];
++        [appName release];
++    });
++}
++
+ /***********************************************************************
+  *              macdrv_quit_reply
+  */
 diff --git a/dlls/winemac.drv/cocoa_dxmt.m b/dlls/winemac.drv/cocoa_dxmt.m
 new file mode 100644
 index 0000000..aa0f614
@@ -9884,6 +9951,80 @@ index c15aefe..fb014ca 100644
          });
          [oldView release];
  
+diff --git a/dlls/winemac.drv/dllmain.c b/dlls/winemac.drv/dllmain.c
+index bbd528d..9382923 100644
+--- a/dlls/winemac.drv/dllmain.c
++++ b/dlls/winemac.drv/dllmain.c
+@@ -22,6 +22,9 @@
+ #include "ntstatus.h"
+ #include "windef.h"
+ #include "winbase.h"
++#include "winver.h"
++#include <wchar.h>
++#include <stdio.h>
+ #include "ntgdi.h"
+ #include "macdrv_res.h"
+ #include "shellapi.h"
+@@ -369,6 +372,51 @@ cleanup:
+ }
+ 
+ 
++/***********************************************************************
++ *              macdrv_app_name
++ *
++ * Barrique: the name the Dock and the menu bar show for this process instead of
++ * "wine": the program's FileDescription, else its ProductName, else its file
++ * name without the extension.
++ */
++static NTSTATUS WINAPI macdrv_app_name(void *arg, ULONG size)
++{
++    static const WCHAR *keys[] = { L"FileDescription", L"ProductName" };
++    WCHAR path[MAX_PATH], name[128] = {0}, query[64], *p, *value;
++    struct { WORD lang, codepage; } *trans;
++    UINT len, i;
++    DWORD info_size;
++    void *info;
++
++    if (!GetModuleFileNameW(NULL, path, ARRAY_SIZE(path))) return NtCallbackReturn(NULL, 0, 0);
++
++    if ((info_size = GetFileVersionInfoSizeW(path, NULL)) && (info = HeapAlloc(GetProcessHeap(), 0, info_size)))
++    {
++        if (GetFileVersionInfoW(path, 0, info_size, info) &&
++            VerQueryValueW(info, L"\\VarFileInfo\\Translation", (void **)&trans, &len) && len >= sizeof(*trans))
++        {
++            for (i = 0; i < ARRAY_SIZE(keys) && !name[0]; i++)
++            {
++                swprintf(query, ARRAY_SIZE(query), L"\\StringFileInfo\\%04x%04x\\%s", trans->lang, trans->codepage, keys[i]);
++                if (VerQueryValueW(info, query, (void **)&value, &len) && len > 1)
++                    lstrcpynW(name, value, ARRAY_SIZE(name));
++            }
++        }
++        HeapFree(GetProcessHeap(), 0, info);
++    }
++    if (!name[0])
++    {
++        p = wcsrchr(path, '\\');
++        lstrcpynW(name, p ? p + 1 : path, ARRAY_SIZE(name));
++        if ((p = wcsrchr(name, '.')) && !wcsicmp(p, L".exe")) *p = 0;
++    }
++    /* trim spaces some programs leave around their description */
++    for (p = name + wcslen(name); p > name && p[-1] == ' '; p--) p[-1] = 0;
++    TRACE("%s\n", debugstr_w(name));
++    return NtCallbackReturn(name, (wcslen(name) + 1) * sizeof(WCHAR), 0);
++}
++
++
+ static BOOL process_attach(void)
+ {
+     struct init_params params;
+@@ -399,6 +447,7 @@ static BOOL process_attach(void)
+     params.strings = strings;
+     params.app_icon_callback = (UINT_PTR)macdrv_app_icon;
+     params.app_quit_request_callback = (UINT_PTR)macdrv_app_quit_request;
++    params.app_name_callback = (UINT_PTR)macdrv_app_name;
+ 
+     if (MACDRV_CALL(init, &params)) return FALSE;
+ 
 diff --git a/dlls/winemac.drv/image.c b/dlls/winemac.drv/image.c
 index 7fb45f3..9954abd 100644
 --- a/dlls/winemac.drv/image.c
@@ -9918,11 +10059,31 @@ index 7fb45f3..9954abd 100644
  
      images = CFArrayCreateMutable(NULL, count, &kCFTypeArrayCallBacks);
      if (!images)
+diff --git a/dlls/winemac.drv/macdrv.h b/dlls/winemac.drv/macdrv.h
+index 92bcd2f..114d36c 100644
+--- a/dlls/winemac.drv/macdrv.h
++++ b/dlls/winemac.drv/macdrv.h
+@@ -84,6 +84,7 @@
+ 
+ extern UINT64 app_icon_callback;
+ extern UINT64 app_quit_request_callback;
++extern UINT64 app_name_callback;
+ 
+ extern const char* debugstr_cf(CFTypeRef t);
+ 
 diff --git a/dlls/winemac.drv/macdrv_cocoa.h b/dlls/winemac.drv/macdrv_cocoa.h
-index dd332b6..59ac8e9 100644
+index dd332b6..b0042fc 100644
 --- a/dlls/winemac.drv/macdrv_cocoa.h
 +++ b/dlls/winemac.drv/macdrv_cocoa.h
-@@ -329,6 +329,7 @@ static inline CGPoint cgpoint_win_from_mac(CGPoint point)
+@@ -193,6 +193,7 @@ static inline CGPoint cgpoint_win_from_mac(CGPoint point)
+ extern void macdrv_window_rejected_focus(const struct macdrv_event *event);
+ extern void macdrv_beep(void);
+ extern void macdrv_set_application_icon(CFArrayRef images);
++extern void macdrv_set_application_name(CFStringRef name);
+ extern void macdrv_quit_reply(int reply);
+ extern bool macdrv_using_input_method(void);
+ extern void macdrv_set_mouse_capture_window(WineWindow *window);
+@@ -329,6 +330,7 @@ static inline CGPoint cgpoint_win_from_mac(CGPoint point)
              bool            pressed;
              int             x;
              int             y;
@@ -9930,7 +10091,7 @@ index dd332b6..59ac8e9 100644
              unsigned long   time_ms;
          }                                           mouse_button;
          struct {
-@@ -342,6 +343,7 @@ static inline CGPoint cgpoint_win_from_mac(CGPoint point)
+@@ -342,6 +344,7 @@ static inline CGPoint cgpoint_win_from_mac(CGPoint point)
              int             y_scroll;
              int             x;
              int             y;
@@ -9938,7 +10099,7 @@ index dd332b6..59ac8e9 100644
              unsigned long   time_ms;
          }                                           mouse_scroll;
          struct {
-@@ -501,6 +503,10 @@ extern void macdrv_order_cocoa_window(WineWindow *window, WineWindow *prev,
+@@ -501,6 +504,10 @@ extern void macdrv_order_cocoa_window(WineWindow *window, WineWindow *prev,
  extern WineMetalView *macdrv_view_create_metal_view(WineContentView *view, MTLDevice_id device);
  extern CAMetalLayer *macdrv_view_get_metal_layer(WineMetalView *view);
  extern void macdrv_view_release_metal_view(WineMetalView *view);
@@ -9949,6 +10110,41 @@ index dd332b6..59ac8e9 100644
  extern WineMetalSwapChain_id macdrv_create_view_swapchain(WineContentView *view);
  extern WineMetalSwapChain_id macdrv_create_offscreen_swapchain(void* hwnd, CGRect bounds);
  extern CAMetalLayer *macdrv_swapchain_get_layer(WineMetalSwapChain_id swapchain);
+diff --git a/dlls/winemac.drv/macdrv_main.c b/dlls/winemac.drv/macdrv_main.c
+index cc3d3b3..6aab523 100644
+--- a/dlls/winemac.drv/macdrv_main.c
++++ b/dlls/winemac.drv/macdrv_main.c
+@@ -57,6 +57,7 @@ bool enable_app_nap = false;
+ pthread_key_t macdrv_thread_data_key = 0;
+ UINT64 app_icon_callback = 0;
+ UINT64 app_quit_request_callback = 0;
++UINT64 app_name_callback = 0;
+ 
+ CFDictionaryRef localized_strings;
+ 
+@@ -420,6 +421,7 @@ static NTSTATUS macdrv_init(void *arg)
+ 
+     app_icon_callback = params->app_icon_callback;
+     app_quit_request_callback = params->app_quit_request_callback;
++    app_name_callback = params->app_name_callback;
+ 
+     status = SessionGetInfo(callerSecuritySession, NULL, &attributes);
+     if (status != noErr || !(attributes & sessionHasGraphicAccess))
+@@ -611,12 +613,14 @@ static NTSTATUS wow64_init(void *arg)
+         ULONG strings;
+         UINT64 app_icon_callback;
+         UINT64 app_quit_request_callback;
++        UINT64 app_name_callback;
+     } *params32 = arg;
+     struct init_params params;
+ 
+     params.strings = UlongToPtr(params32->strings);
+     params.app_icon_callback = params32->app_icon_callback;
+     params.app_quit_request_callback = params32->app_quit_request_callback;
++    params.app_name_callback = params32->app_name_callback;
+     return macdrv_init(&params);
+ }
+ 
 diff --git a/dlls/winemac.drv/mouse.c b/dlls/winemac.drv/mouse.c
 index 5963edc..69676ef 100644
 --- a/dlls/winemac.drv/mouse.c
@@ -9994,10 +10190,18 @@ index 5963edc..69676ef 100644
                           event->mouse_scroll.x_scroll, FALSE, event->mouse_scroll.time_ms);
  }
 diff --git a/dlls/winemac.drv/unixlib.h b/dlls/winemac.drv/unixlib.h
-index dc22da0..f096cf3 100644
+index dc22da0..652c21a 100644
 --- a/dlls/winemac.drv/unixlib.h
 +++ b/dlls/winemac.drv/unixlib.h
-@@ -73,5 +73,10 @@
+@@ -41,6 +41,7 @@
+     struct localized_string *strings;
+     UINT64 app_icon_callback;
+     UINT64 app_quit_request_callback;
++    UINT64 app_name_callback;
+ };
+ 
+ /* macdrv_quit_result params */
+@@ -73,5 +74,10 @@
  
  static inline void *param_ptr(UINT64 param)
  {
@@ -10009,10 +10213,39 @@ index dc22da0..f096cf3 100644
 +#endif
  }
 diff --git a/dlls/winemac.drv/window.c b/dlls/winemac.drv/window.c
-index e025823..5f56d7e 100644
+index e025823..cfda348 100644
 --- a/dlls/winemac.drv/window.c
 +++ b/dlls/winemac.drv/window.c
-@@ -2203,3 +2203,206 @@ void init_win_context(void)
+@@ -787,12 +787,28 @@ void activate_on_following_focus(void)
+  */
+ static void set_app_icon(void)
+ {
++    struct dispatch_callback_params params = {.callback = app_name_callback};
+     CFArrayRef images = create_app_icon_images();
++    const WCHAR *name;
++    ULONG len;
++
+     if (images)
+     {
+         macdrv_set_application_icon(images);
+         CFRelease(images);
+     }
++
++    /* Barrique: the program's name in the Dock and the menu bar, not "wine" */
++    if (app_name_callback && !KeUserDispatchCallback(&params, sizeof(params), (void **)&name, &len) &&
++        len >= 2 * sizeof(WCHAR) && !(len % sizeof(WCHAR)))
++    {
++        CFStringRef str = CFStringCreateWithCharacters(NULL, (const UniChar *)name, len / sizeof(WCHAR) - 1);
++        if (str)
++        {
++            macdrv_set_application_name(str);
++            CFRelease(str);
++        }
++    }
+ }
+ 
+ 
+@@ -2203,3 +2219,206 @@ void init_win_context(void)
      pthread_mutex_init(&win_data_mutex, &attr);
      pthread_mutexattr_destroy(&attr);
  }
