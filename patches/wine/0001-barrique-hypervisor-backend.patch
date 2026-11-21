@@ -2186,10 +2186,10 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..be152af
+index 0000000..d7250da
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,1146 @@
+@@ -0,0 +1,1162 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -2937,8 +2937,16 @@ index 0000000..be152af
 +    struct hvf_vcpu *v = ptr;
 +    hv_return_t ret;
 +
++    sigset_t old_set;
++
 +    vcpu_list_remove( v->vcpu );
-+    if ((ret = hv_vcpu_destroy( v->vcpu ))) ERR( "hv_vcpu_destroy failed %x\n", ret );
++    /* hv_vcpu_create/destroy hold a Hypervisor.framework lock: a suspend signal
++     * here would block in its handler (virtual_mutex, server) with the lock held,
++     * and every other thread creating or destroying a vCPU would hang with it */
++    pthread_sigmask( SIG_BLOCK, &server_block_set, &old_set );
++    ret = hv_vcpu_destroy( v->vcpu );
++    pthread_sigmask( SIG_SETMASK, &old_set, NULL );
++    if (ret) ERR( "hv_vcpu_destroy failed %x\n", ret );
 +    free( v );
 +    InterlockedDecrement( &vcpu_count );
 +}
@@ -3003,8 +3011,16 @@ index 0000000..be152af
 +    if (v) return v;
 +    v = calloc( 1, sizeof(*v) );
 +    /* all vCPUs taken: threads give theirs back when they block, see hvf_release_vcpu() */
-+    while (hv_vcpu_create( &v->vcpu, &v->exit, NULL ))
++    for (;;)
 +    {
++        sigset_t old_set;
++        hv_return_t ret;
++
++        /* see destroy_vcpu() */
++        pthread_sigmask( SIG_BLOCK, &server_block_set, &old_set );
++        ret = hv_vcpu_create( &v->vcpu, &v->exit, NULL );
++        pthread_sigmask( SIG_SETMASK, &old_set, NULL );
++        if (!ret) break;
 +        if (++tries == 1) WARN( "no vCPU left (%d in use), waiting for one\n", (int)vcpu_count );
 +        if (tries > 30000)  /* 30 seconds */
 +        {
