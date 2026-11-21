@@ -8815,7 +8815,7 @@ index 454fb25..bcec456 100644
  EXTRADLLFLAGS = -nodefaultlibs
  
 diff --git a/dlls/win32u/dce.c b/dlls/win32u/dce.c
-index 67d3dc8..5088283 100644
+index 67d3dc8..5549c7b 100644
 --- a/dlls/win32u/dce.c
 +++ b/dlls/win32u/dce.c
 @@ -1390,8 +1390,11 @@ HDC WINAPI NtUserGetDCEx( HWND hwnd, HRGN clip_rgn, DWORD flags )
@@ -8832,6 +8832,21 @@ index 67d3dc8..5088283 100644
  
      if (set_dce_flags( dce->hdc, DCHF_VALIDATEVISRGN )) update_vis_rgn = TRUE;  /* DC was dirty */
  
+@@ -1797,6 +1800,14 @@ static void update_now( HWND hwnd, UINT rdw_flags )
+         if (!get_update_flags( hwnd, &child, &flags )) break;
+         if (!flags) break;  /* nothing more to do */
+ 
++        /* Barrique: children owned by another process (Chromium/WebView2 browser and GPU
++         * windows) paint from their own queue; waiting on them here can deadlock when
++         * their thread is itself blocked on us. */
++        if (!is_current_process_window( child ))
++        {
++            if (rdw_flags & RDW_NOCHILDREN) break;
++            continue;
++        }
+         send_message( child, WM_PAINT, 0, 0 );
+         if (rdw_flags & RDW_NOCHILDREN) break;
+     }
 diff --git a/dlls/win32u/font.c b/dlls/win32u/font.c
 index 97936e9..fc31490 100644
 --- a/dlls/win32u/font.c
