@@ -176,6 +176,25 @@ index 9a02541..96f8d19 100644
  UNIX_CFLAGS  = $(GNUTLS_CFLAGS)
  
  VER_FILEDESCRIPTION_STR = "Wine CryptoAPI Library"
+diff --git a/dlls/d3d12/d3d12_main.c b/dlls/d3d12/d3d12_main.c
+index 50632fa..d4121b9 100644
+--- a/dlls/d3d12/d3d12_main.c
++++ b/dlls/d3d12/d3d12_main.c
+@@ -282,6 +282,14 @@ static VkPhysicalDevice d3d12_get_vk_physical_device(struct vkd3d_instance *inst
+         }
+     }
+ 
++    /* Barrique: the wined3d OpenGL adapter on macOS has neither the UUIDs nor the PCI
++     * IDs of the MoltenVK device; with a single GPU there is nothing to choose. */
++    if (!vk_physical_device && count == 1)
++    {
++        WARN("Using the only Vulkan physical device.\n");
++        vk_physical_device = vk_physical_devices[0];
++    }
++
+     if (!vk_physical_device)
+         FIXME("Could not find Vulkan physical device for DXGI adapter.\n");
+ 
 diff --git a/dlls/dcomp/Makefile.in b/dlls/dcomp/Makefile.in
 index 3c14125..e9fbd6f 100644
 --- a/dlls/dcomp/Makefile.in
@@ -1042,10 +1061,27 @@ index a0bc41e..e7f8208 100644
  
  struct text_source_context
 diff --git a/dlls/dxgi/dxgi_private.h b/dlls/dxgi/dxgi_private.h
-index 6ecd575..cd32013 100644
+index 6ecd575..2df5b14 100644
 --- a/dlls/dxgi/dxgi_private.h
 +++ b/dlls/dxgi/dxgi_private.h
-@@ -186,8 +186,12 @@ struct d3d11_swapchain
+@@ -21,6 +21,16 @@
+ 
+ #include "wine/debug.h"
+ 
++/* Barrique: overlays and capture tools (Epic Online Services, Steam, Discord...) in
++ * x64 programs hook these methods by patching their first instructions with x64
++ * jumps. In an ARM64EC build that code is ARM64: give them an x64 entry that can be
++ * patched (clang's hybrid_patchable, like Windows' own ARM64X DLLs do). */
++#ifdef __arm64ec__
++#define DXGI_HOOKABLE __attribute__((hybrid_patchable))
++#else
++#define DXGI_HOOKABLE static
++#endif
++
+ #include <assert.h>
+ 
+ #define COBJMACROS
+@@ -186,8 +196,12 @@ struct d3d11_swapchain
      IDXGIOutput *target;
      LONG present_count;
      LONG in_set_fullscreen_state;
@@ -1059,13 +1095,41 @@ index 6ecd575..cd32013 100644
          struct wined3d_swapchain_desc *desc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC *fullscreen_desc);
  
 diff --git a/dlls/dxgi/factory.c b/dlls/dxgi/factory.c
-index c6bb47f..7cd433e 100644
+index c6bb47f..e97ba81 100644
 --- a/dlls/dxgi/factory.c
 +++ b/dlls/dxgi/factory.c
+@@ -203,7 +203,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_GetWindowAssociation(IWineDXGIFact
+     return S_OK;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChain(IWineDXGIFactory *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChain(IWineDXGIFactory *iface,
+         IUnknown *device, DXGI_SWAP_CHAIN_DESC *desc, IDXGISwapChain **swapchain)
+ {
+     struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
+@@ -267,7 +267,7 @@ static BOOL STDMETHODCALLTYPE dxgi_factory_IsWindowedStereoEnabled(IWineDXGIFact
+     return FALSE;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForHwnd(IWineDXGIFactory *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForHwnd(IWineDXGIFactory *iface,
+         IUnknown *device, HWND window, const DXGI_SWAP_CHAIN_DESC1 *desc,
+         const DXGI_SWAP_CHAIN_FULLSCREEN_DESC *fullscreen_desc,
+         IDXGIOutput *output, IDXGISwapChain1 **swapchain)
+@@ -325,7 +325,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForHwnd(IWineDXGIFa
+     return DXGI_ERROR_UNSUPPORTED;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForCoreWindow(IWineDXGIFactory *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForCoreWindow(IWineDXGIFactory *iface,
+         IUnknown *device, IUnknown *window, const DXGI_SWAP_CHAIN_DESC1 *desc,
+         IDXGIOutput *output, IDXGISwapChain1 **swapchain)
+ {
 @@ -387,13 +387,82 @@ static void STDMETHODCALLTYPE dxgi_factory_UnregisterOcclusionStatus(IWineDXGIFa
      FIXME("iface %p, cookie %#lx stub!\n", iface, cookie);
  }
  
+-static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForComposition(IWineDXGIFactory *iface,
 +/* Barrique: the window of a composition swapchain, see dlls/dcomp/device.c */
 +static const GUID WINE_DXGI_COMPOSITION_HWND =
 +    {0xb5d2c3a1, 0x7a4e, 0x4b8f, {0x9c, 0x21, 0x5e, 0x7d, 0x0a, 0x3f, 0x6b, 0x11}};
@@ -1097,7 +1161,7 @@ index c6bb47f..7cd433e 100644
 + * recorded in its private data; dcomp's Commit makes that window a child of the
 + * target window showing the swapchain. Enough for Chromium's Edge flavour
 + * (WebView2), which presents its software output this way. */
- static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForComposition(IWineDXGIFactory *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForComposition(IWineDXGIFactory *iface,
          IUnknown *device, const DXGI_SWAP_CHAIN_DESC1 *desc, IDXGIOutput *output, IDXGISwapChain1 **swapchain)
  {
 -    FIXME("iface %p, device %p, desc %p, output %p, swapchain %p stub!\n",
@@ -1148,9 +1212,18 @@ index c6bb47f..7cd433e 100644
  
  static UINT STDMETHODCALLTYPE dxgi_factory_GetCreationFlags(IWineDXGIFactory *iface)
 diff --git a/dlls/dxgi/swapchain.c b/dlls/dxgi/swapchain.c
-index 283c18d..5762a39 100644
+index 283c18d..4eec2a3 100644
 --- a/dlls/dxgi/swapchain.c
 +++ b/dlls/dxgi/swapchain.c
+@@ -246,7 +246,7 @@ static ULONG STDMETHODCALLTYPE d3d11_swapchain_AddRef(IDXGISwapChain4 *iface)
+     return refcount;
+ }
+ 
+-static ULONG STDMETHODCALLTYPE d3d11_swapchain_Release(IDXGISwapChain4 *iface)
++DXGI_HOOKABLE ULONG STDMETHODCALLTYPE d3d11_swapchain_Release(IDXGISwapChain4 *iface)
+ {
+     struct d3d11_swapchain *swapchain = d3d11_swapchain_from_IDXGISwapChain4(iface);
+     ULONG refcount = InterlockedDecrement(&swapchain->refcount);
 @@ -262,6 +262,10 @@ static ULONG STDMETHODCALLTYPE d3d11_swapchain_Release(IDXGISwapChain4 *iface)
              IDXGIOutput_Release(swapchain->target);
          }
@@ -1328,7 +1401,14 @@ index 283c18d..5762a39 100644
      hr = wined3d_swapchain_present(swapchain->wined3d_swapchain, NULL, NULL, NULL, sync_interval, 0);
      if (hr == WINED3DOK_PRESENT_OCCLUDED)
          return DXGI_STATUS_OCCLUDED;
-@@ -358,7 +511,7 @@ static HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d11_swapchain_Present(IDXGI
+@@ -352,16 +505,16 @@ static HRESULT d3d11_swapchain_present(struct d3d11_swapchain *swapchain,
+     return hr;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d11_swapchain_Present(IDXGISwapChain4 *iface, UINT sync_interval, UINT flags)
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d11_swapchain_Present(IDXGISwapChain4 *iface, UINT sync_interval, UINT flags)
+ {
+     struct d3d11_swapchain *swapchain = d3d11_swapchain_from_IDXGISwapChain4(iface);
  
      TRACE("iface %p, sync_interval %u, flags %#x.\n", iface, sync_interval, flags);
  
@@ -1336,7 +1416,47 @@ index 283c18d..5762a39 100644
 +    return d3d11_swapchain_present(swapchain, sync_interval, flags, NULL);
  }
  
- static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetBuffer(IDXGISwapChain4 *iface,
+-static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetBuffer(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetBuffer(IDXGISwapChain4 *iface,
+         UINT buffer_idx, REFIID riid, void **surface)
+ {
+     struct d3d11_swapchain *swapchain = d3d11_swapchain_from_IDXGISwapChain4(iface);
+@@ -387,7 +540,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetBuffer(IDXGISwapChain4 *ifac
+     return hr;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d11_swapchain_SetFullscreenState(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d11_swapchain_SetFullscreenState(IDXGISwapChain4 *iface,
+         BOOL fullscreen, IDXGIOutput *target)
+ {
+     struct d3d11_swapchain *swapchain = d3d11_swapchain_from_IDXGISwapChain4(iface);
+@@ -548,7 +701,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetDesc(IDXGISwapChain4 *iface,
+ static HRESULT d3d11_swapchain_create_d3d11_textures(struct d3d11_swapchain *swapchain,
+         IWineDXGIDevice *device, struct wined3d_swapchain_desc *desc);
+ 
+-static HRESULT STDMETHODCALLTYPE d3d11_swapchain_ResizeBuffers(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d11_swapchain_ResizeBuffers(IDXGISwapChain4 *iface,
+         UINT buffer_count, UINT width, UINT height, DXGI_FORMAT format, UINT flags)
+ {
+     static const UINT supported_flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
+@@ -603,7 +756,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_ResizeBuffers(IDXGISwapChain4 *
+     return hr;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE d3d11_swapchain_ResizeTarget(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d11_swapchain_ResizeTarget(IDXGISwapChain4 *iface,
+         const DXGI_MODE_DESC *target_mode_desc)
+ {
+     struct d3d11_swapchain *swapchain = d3d11_swapchain_from_IDXGISwapChain4(iface);
+@@ -743,7 +896,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_GetCoreWindow(IDXGISwapChain4 *
+     return DXGI_ERROR_INVALID_CALL;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE d3d11_swapchain_Present1(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d11_swapchain_Present1(IDXGISwapChain4 *iface,
+         UINT sync_interval, UINT flags, const DXGI_PRESENT_PARAMETERS *present_parameters)
+ {
+     struct d3d11_swapchain *swapchain = d3d11_swapchain_from_IDXGISwapChain4(iface);
 @@ -751,10 +904,10 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_Present1(IDXGISwapChain4 *iface
      TRACE("iface %p, sync_interval %u, flags %#x, present_parameters %p.\n",
              iface, sync_interval, flags, present_parameters);
@@ -1350,6 +1470,87 @@ index 283c18d..5762a39 100644
  }
  
  static BOOL STDMETHODCALLTYPE d3d11_swapchain_IsTemporaryMonoSupported(IDXGISwapChain4 *iface)
+@@ -899,7 +1052,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_swapchain_SetColorSpace1(IDXGISwapChain4
+     return E_NOTIMPL;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE d3d11_swapchain_ResizeBuffers1(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d11_swapchain_ResizeBuffers1(IDXGISwapChain4 *iface,
+         UINT buffer_count, UINT width, UINT height, DXGI_FORMAT format, UINT flags,
+         const UINT *node_mask, IUnknown * const *present_queue)
+ {
+@@ -2145,7 +2298,7 @@ static void d3d12_swapchain_destroy(struct d3d12_swapchain *swapchain)
+     wined3d_swapchain_state_destroy(swapchain->state);
+ }
+ 
+-static ULONG STDMETHODCALLTYPE d3d12_swapchain_Release(IDXGISwapChain4 *iface)
++DXGI_HOOKABLE ULONG STDMETHODCALLTYPE d3d12_swapchain_Release(IDXGISwapChain4 *iface)
+ {
+     struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
+     ULONG refcount = InterlockedDecrement(&swapchain->refcount);
+@@ -2417,7 +2570,7 @@ static HRESULT d3d12_swapchain_present(struct d3d12_swapchain *swapchain,
+     return S_OK;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE d3d12_swapchain_Present(IDXGISwapChain4 *iface, UINT sync_interval, UINT flags)
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d12_swapchain_Present(IDXGISwapChain4 *iface, UINT sync_interval, UINT flags)
+ {
+     struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
+ 
+@@ -2426,7 +2579,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_Present(IDXGISwapChain4 *iface,
+     return d3d12_swapchain_present(swapchain, sync_interval, flags);
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE d3d12_swapchain_GetBuffer(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d12_swapchain_GetBuffer(IDXGISwapChain4 *iface,
+         UINT buffer_idx, REFIID iid, void **surface)
+ {
+     struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
+@@ -2444,7 +2597,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_GetBuffer(IDXGISwapChain4 *ifac
+     return ID3D12Resource_QueryInterface(swapchain->buffers[buffer_idx], iid, surface);
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d12_swapchain_SetFullscreenState(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE DECLSPEC_HOTPATCH d3d12_swapchain_SetFullscreenState(IDXGISwapChain4 *iface,
+         BOOL fullscreen, IDXGIOutput *target)
+ {
+     struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
+@@ -2703,7 +2856,7 @@ static HRESULT d3d12_swapchain_resize_buffers(struct d3d12_swapchain *swapchain,
+     return d3d12_swapchain_create_d3d12_resources(swapchain);
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE d3d12_swapchain_ResizeBuffers(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d12_swapchain_ResizeBuffers(IDXGISwapChain4 *iface,
+         UINT buffer_count, UINT width, UINT height, DXGI_FORMAT format, UINT flags)
+ {
+     struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
+@@ -2714,7 +2867,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_ResizeBuffers(IDXGISwapChain4 *
+     return d3d12_swapchain_resize_buffers(swapchain, buffer_count, width, height, format, flags);
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE d3d12_swapchain_ResizeTarget(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d12_swapchain_ResizeTarget(IDXGISwapChain4 *iface,
+         const DXGI_MODE_DESC *target_mode_desc)
+ {
+     struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
+@@ -2850,7 +3003,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_GetCoreWindow(IDXGISwapChain4 *
+     return DXGI_ERROR_INVALID_CALL;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE d3d12_swapchain_Present1(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d12_swapchain_Present1(IDXGISwapChain4 *iface,
+         UINT sync_interval, UINT flags, const DXGI_PRESENT_PARAMETERS *present_parameters)
+ {
+     struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
+@@ -3063,7 +3216,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_SetColorSpace1(IDXGISwapChain4
+     return S_OK;
+ }
+ 
+-static HRESULT STDMETHODCALLTYPE d3d12_swapchain_ResizeBuffers1(IDXGISwapChain4 *iface,
++DXGI_HOOKABLE HRESULT STDMETHODCALLTYPE d3d12_swapchain_ResizeBuffers1(IDXGISwapChain4 *iface,
+         UINT buffer_count, UINT width, UINT height, DXGI_FORMAT format, UINT flags,
+         const UINT *node_mask, IUnknown * const *present_queue)
+ {
 diff --git a/dlls/kernelbase/memory.c b/dlls/kernelbase/memory.c
 index 2ce2dca..17fc297 100644
 --- a/dlls/kernelbase/memory.c
@@ -3353,7 +3554,7 @@ index 0000000..d7250da
 +
 +#endif  /* __APPLE__ && __aarch64__ */
 diff --git a/dlls/ntdll/unix/loader.c b/dlls/ntdll/unix/loader.c
-index dde4b58..a3991cd 100644
+index dde4b58..770e600 100644
 --- a/dlls/ntdll/unix/loader.c
 +++ b/dlls/ntdll/unix/loader.c
 @@ -86,6 +86,7 @@
@@ -3440,7 +3641,86 @@ index dde4b58..a3991cd 100644
      if (!build_dir) dll_paths[count++] = dll_dir;
  
      if (path)
-@@ -1152,6 +1211,37 @@ static NTSTATUS find_builtin_dll( UNICODE_STRING *nt_name, ANSI_STRING *exp_name
+@@ -455,6 +514,68 @@ static void preloader_exec( char **argv )
+     execv( argv[1], argv + 1 );
+ }
+ 
++#if defined(__APPLE__) && defined(__aarch64__)
++/* Barrique: the Dock names a process outside an app bundle after its executable
++ * file, "wine" for every Windows program, and ignores the LaunchServices display
++ * name. Exec the loader through a hard link named after the program instead
++ * (<prefix>/.barrique-names/<program>); the loader finds ntdll.so through
++ * BARRIQUE_WINELOADER (see loader/main.c). */
++const char *barrique_app_name = NULL;  /* set by spawn_child() */
++extern char *get_program_description( const char *unix_name );
++
++/* the description of a program given as a DOS path on the loader's command line,
++ * for the first program, started from the Barrique launcher */
++static char *dos_path_description( const char *cmd )
++{
++    char *path, *p, *ret;
++
++    if (!cmd || !config_dir) return NULL;
++    if (cmd[0] == '/') return get_program_description( cmd );
++    if (!((cmd[0] | 0x20) >= 'a' && (cmd[0] | 0x20) <= 'z' && cmd[1] == ':' && cmd[2] == '\\')) return NULL;
++    if (asprintf( &path, "%s/dosdevices/%c:%s", config_dir, cmd[0] | 0x20, cmd + 2 ) == -1) return NULL;
++    for (p = path; *p; p++) if (*p == '\\') *p = '/';
++    ret = get_program_description( path );
++    free( path );
++    return ret;
++}
++
++static char *named_wineloader( const char *loader, const char *cmd )
++{
++    char name[256], *dir, *path;
++    const char *p, *base;
++    struct stat st_loader, st_link;
++    size_t len = 0;
++
++    if (!barrique_app_name) barrique_app_name = dos_path_description( cmd );
++    if (barrique_app_name) cmd = barrique_app_name;
++    if (!cmd || !config_dir || stat( loader, &st_loader )) return NULL;
++    base = cmd;
++    for (p = cmd; *p; p++) if (*p == '\\' || (*p == '/' && !barrique_app_name)) base = p + 1;
++    for (p = base; *p && len < sizeof(name) - 1; p++)
++        name[len++] = ((unsigned char)*p < 0x20 || *p == ':' || *p == '/') ? '_' : *p;
++    name[len] = 0;
++    if (len > 4 && !strcasecmp( name + len - 4, ".exe" )) name[len -= 4] = 0;
++    if (!len || !strcmp( name, "." ) || !strcmp( name, ".." )) return NULL;
++
++    dir = build_path( config_dir, ".barrique-names" );
++    mkdir( dir, 0755 );
++    path = build_path( dir, name );
++    free( dir );
++    if (stat( path, &st_link ) || st_link.st_ino != st_loader.st_ino || st_link.st_dev != st_loader.st_dev)
++    {
++        unlink( path );
++        if (link( loader, path ) && (errno != EEXIST || stat( path, &st_link ) ||
++                                    st_link.st_ino != st_loader.st_ino || st_link.st_dev != st_loader.st_dev))
++        {
++            free( path );
++            return NULL;
++        }
++    }
++    setenv( "BARRIQUE_WINELOADER", loader, 1 );
++    return path;
++}
++#endif
++
+ /* exec the appropriate wine loader for the specified machine */
+ static NTSTATUS loader_exec( char **argv, WORD machine )
+ {
+@@ -464,6 +585,9 @@ static NTSTATUS loader_exec( char **argv, WORD machine )
+ 
+     if (((argv[1] = get_alternate_wineloader( machine )))) preloader_exec( argv );
+ 
++#if defined(__APPLE__) && defined(__aarch64__)
++    if ((argv[1] = named_wineloader( wineloader, argv[2] ))) preloader_exec( argv );
++#endif
+     argv[1] = strdup( wineloader );
+     preloader_exec( argv );
+     return STATUS_INVALID_IMAGE_FORMAT;
+@@ -1152,6 +1276,37 @@ static NTSTATUS find_builtin_dll( UNICODE_STRING *nt_name, ANSI_STRING *exp_name
  
      TRACE( "looking for %s for file %s\n", debugstr_a(file + pos + 1), debugstr_us(nt_name) );
  
@@ -3478,7 +3758,7 @@ index dde4b58..a3991cd 100644
      if (build_dir)
      {
          /* try as a dll */
-@@ -1177,6 +1267,8 @@ static NTSTATUS find_builtin_dll( UNICODE_STRING *nt_name, ANSI_STRING *exp_name
+@@ -1177,6 +1332,8 @@ static NTSTATUS find_builtin_dll( UNICODE_STRING *nt_name, ANSI_STRING *exp_name
  
      for (i = 0; dll_paths[i]; i++)
      {
@@ -3487,7 +3767,7 @@ index dde4b58..a3991cd 100644
          ptr = file + pos;
          ptr = prepend( ptr, pe_dir, strlen(pe_dir) );
          ptr = prepend( ptr, dll_paths[i], strlen(dll_paths[i]) );
-@@ -1521,6 +1613,64 @@ static const void *get_module_data_dir( HMODULE module, ULONG dir, ULONG *size )
+@@ -1521,6 +1678,64 @@ static const void *get_module_data_dir( HMODULE module, ULONG dir, ULONG *size )
      return get_rva( module, data->VirtualAddress );
  }
  
@@ -3552,7 +3832,7 @@ index dde4b58..a3991cd 100644
  /***********************************************************************
   *           load_ntdll_functions
   */
-@@ -1565,6 +1715,16 @@ static void load_ntdll_functions( HMODULE module )
+@@ -1565,6 +1780,16 @@ static void load_ntdll_functions( HMODULE module )
          *p__wine_unix_call_dispatcher_arm64ec = __wine_unix_call_dispatcher;
      }
      else *p__wine_unix_call_dispatcher = __wine_unix_call_dispatcher;
@@ -3569,7 +3849,7 @@ index dde4b58..a3991cd 100644
  #undef GET_FUNC
  }
  
-@@ -1830,6 +1990,7 @@ static void start_main_thread(void)
+@@ -1830,6 +2055,7 @@ static void start_main_thread(void)
      struct thread_data *data = virtual_alloc_first_thread_data();
  
      server_init_process( data );
@@ -4798,7 +5078,7 @@ index 0000000..43af926
 +
 +#endif /* __APPLE__ */
 diff --git a/dlls/ntdll/unix/process.c b/dlls/ntdll/unix/process.c
-index 1d10948..19c43ed 100644
+index 1d10948..21c0d2b 100644
 --- a/dlls/ntdll/unix/process.c
 +++ b/dlls/ntdll/unix/process.c
 @@ -387,6 +387,72 @@ static void set_stdio_fd( int stdin_fd, int stdout_fd )
@@ -4874,7 +5154,7 @@ index 1d10948..19c43ed 100644
  /***********************************************************************
   *           is_unix_console_handle
   */
-@@ -399,55 +465,77 @@ static BOOL is_unix_console_handle( HANDLE handle )
+@@ -399,55 +465,242 @@ static BOOL is_unix_console_handle( HANDLE handle )
  /***********************************************************************
   *           spawn_process
   */
@@ -4890,64 +5170,216 @@ index 1d10948..19c43ed 100644
 +    BOOL new_session;
 +    char *winedebug;
 +    struct pe_image_info pe_info;
++    char *app_name;
 +};
  
 -    if (wine_server_handle_to_fd( params->hStdInput, FILE_READ_DATA, &stdin_fd, NULL ) &&
 -        isatty(0) && is_unix_console_handle( params->hStdInput ))
 -        stdin_fd = 0;
--
++#if defined(__APPLE__) && defined(__aarch64__)
++/* Barrique: the program's name for the Dock (see named_wineloader() in loader.c):
++ * the FileDescription of its version resource, as the Windows task manager shows. */
++extern const char *barrique_app_name;
+ 
 -    if (wine_server_handle_to_fd( params->hStdOutput, FILE_WRITE_DATA, &stdout_fd, NULL ) &&
 -        isatty(1) && is_unix_console_handle( params->hStdOutput ))
 -        stdout_fd = 1;
-+static void spawn_child( void *arg )
++static BOOL read_at( int fd, UINT64 offset, void *buf, size_t len )
 +{
-+    struct spawn_args *args = arg;
-+    pid_t pid;
++    return pread( fd, buf, len, offset ) == (ssize_t)len;
++}
++
++static BOOL version_key_equal( const WCHAR *a, const WCHAR *b, const BYTE *end )
++{
++    for (; (const BYTE *)(a + 1) <= end && *a && *b; a++, b++)
++    {
++        WCHAR ca = *a, cb = *b;
++        if (ca >= 'a' && ca <= 'z') ca -= 'a' - 'A';
++        if (cb >= 'a' && cb <= 'z') cb -= 'a' - 'A';
++        if (ca != cb) return FALSE;
++    }
++    return (const BYTE *)(a + 1) <= end && !*a && !*b;
++}
++
++static const BYTE *find_version_string( const BYTE *data, size_t size, const WCHAR *key )
++{
++    size_t len, value_len, pos, end;
++    const WCHAR *name;
++
++    if (size < 6) return NULL;
++    len = *(const WORD *)data;
++    if (len < 6 || len > size) return NULL;
++    value_len = ((const WORD *)data)[1];
++    if (((const WORD *)data)[2] == 1) value_len *= sizeof(WCHAR);
++    name = (const WCHAR *)(data + 6);
++    for (pos = 6; pos + 1 < len && *(const WCHAR *)(data + pos); pos += 2);
++    pos = (pos + 2 + 3) & ~3;  /* after the key's terminator, aligned */
++    if (version_key_equal( name, key, data + len ) && value_len >= 2 && pos + value_len <= len) return data + pos;
++    end = len;
++    pos = (pos + value_len + 3) & ~3;
++    while (pos + 6 <= end)
++    {
++        const BYTE *ret;
++        size_t child = *(const WORD *)(data + pos);
++        if (!child) break;
++        if ((ret = find_version_string( data + pos, end - pos, key ))) return ret;
++        pos = (pos + child + 3) & ~3;
++    }
++    return NULL;
++}
  
 -    if (!(pid = fork()))  /* child */
-+    if (!(pid = fork()))  /* grandchild */
++char *get_program_description( const char *unix_name )
++{
++    static const WCHAR file_descriptionW[] = {'F','i','l','e','D','e','s','c','r','i','p','t','i','o','n',0};
++    BYTE hdr[0x400], *data = NULL;
++    UINT32 pe, res_rva = 0, data_rva = 0, data_size = 0, dir_off = 0;
++    UINT16 nb_sections, opt_size, magic, i, level;
++    UINT64 sections, res_file = 0;
++    char *ret = NULL;
++    int fd;
++
++    if (!unix_name || (fd = open( unix_name, O_RDONLY )) == -1) return NULL;
++    if (!read_at( fd, 0, hdr, 0x40 ) || hdr[0] != 'M' || hdr[1] != 'Z') goto done;
++    pe = *(UINT32 *)(hdr + 0x3c);
++    if (!read_at( fd, pe, hdr, 24 + 240 ) || memcmp( hdr, "PE\0\0", 4 )) goto done;
++    nb_sections = *(UINT16 *)(hdr + 6);
++    opt_size = *(UINT16 *)(hdr + 20);
++    magic = *(UINT16 *)(hdr + 24);
++    if (magic == 0x20b && opt_size >= 112 + 3 * 8) res_rva = *(UINT32 *)(hdr + 24 + 112 + 2 * 8);
++    else if (magic == 0x10b && opt_size >= 96 + 3 * 8) res_rva = *(UINT32 *)(hdr + 24 + 96 + 2 * 8);
++    if (!res_rva) goto done;
++    sections = pe + 24 + opt_size;
++
++    /* resource directory: RT_VERSION, then its first name and first language */
++    for (level = 0; level < 4; level++)
      {
 -        if (!(pid = fork()))  /* grandchild */
-+        if (args->new_session)
++        UINT32 rva = level ? dir_off : res_rva, off = 0;
++        BYTE entry[16];
++
++        for (i = 0; i < nb_sections; i++)
++        {
++            BYTE sec[40];
++            UINT32 va, vsize, raw;
++            if (!read_at( fd, sections + i * 40, sec, 40 )) goto done;
++            va = *(UINT32 *)(sec + 12);
++            vsize = max( *(UINT32 *)(sec + 8), *(UINT32 *)(sec + 16) );
++            raw = *(UINT32 *)(sec + 20);
++            if (rva >= va && rva < va + vsize) { off = raw + (rva - va); if (!level) res_file = off; break; }
++        }
++        if (i == nb_sections) goto done;
++        if (level == 3)  /* IMAGE_RESOURCE_DATA_ENTRY */
          {
 -            if ((peb && peb->ProcessParameters &&
 -                 params->ProcessGroupId != peb->ProcessParameters->ProcessGroupId) ||
 -                params->ConsoleHandle == CONSOLE_HANDLE_ALLOC ||
 -                params->ConsoleHandle == CONSOLE_HANDLE_ALLOC_NO_WINDOW ||
 -                params->ConsoleHandle == NULL)
--            {
++            if (!read_at( fd, off, entry, 8 )) goto done;
++            data_rva = *(UINT32 *)entry;
++            data_size = *(UINT32 *)(entry + 4);
++            break;
++        }
++        if (!read_at( fd, off, entry, 16 )) goto done;
++        {
++            UINT16 named = *(UINT16 *)(entry + 12), ids = *(UINT16 *)(entry + 14), j;
++            UINT32 next = 0;
++            for (j = 0; j < named + ids; j++)
+             {
 -                setsid();
 -                set_stdio_fd( -1, -1 );  /* close stdin and stdout */
--            }
++                BYTE e[8];
++                if (!read_at( fd, off + 16 + j * 8, e, 8 )) goto done;
++                if (level == 0 && (j < named || *(UINT32 *)e != 16 /* RT_VERSION */)) continue;
++                next = *(UINT32 *)(e + 4);
++                break;
+             }
 -            else set_stdio_fd( stdin_fd, stdout_fd );
 -
 -            if (stdin_fd != -1 && stdin_fd != 0) close( stdin_fd );
 -            if (stdout_fd != -1 && stdout_fd != 1) close( stdout_fd );
-+            setsid();
-+            set_stdio_fd( -1, -1 );  /* close stdin and stdout */
++            if (!next) goto done;
++            if (level < 2 && !(next & 0x80000000)) goto done;
++            dir_off = res_rva + (next & 0x7fffffff);
 +        }
-+        else set_stdio_fd( args->stdin_fd, args->stdout_fd );
++    }
++    if (!data_rva || !data_size || data_size > 0x10000) goto done;
++    (void)res_file;
  
 -            if (winedebug) putenv( winedebug );
 -            if (unixdir != -1)
--            {
++    for (i = 0; i < nb_sections; i++)
++    {
++        BYTE sec[40];
++        UINT32 va, vsize, raw;
++        if (!read_at( fd, sections + i * 40, sec, 40 )) goto done;
++        va = *(UINT32 *)(sec + 12);
++        vsize = max( *(UINT32 *)(sec + 8), *(UINT32 *)(sec + 16) );
++        raw = *(UINT32 *)(sec + 20);
++        if (data_rva >= va && data_rva < va + vsize)
++        {
++            const WCHAR *str;
++            if (!(data = malloc( data_size )) || !read_at( fd, raw + (data_rva - va), data, data_size )) goto done;
++            if ((str = (const WCHAR *)find_version_string( data, data_size, file_descriptionW )))
+             {
 -                fchdir( unixdir );
 -                close( unixdir );
--            }
++                char buf[256], *p = buf;
++                const WCHAR *end = (const WCHAR *)(data + data_size);
++                for (; str < end && *str && p < buf + sizeof(buf) - 4; str++)
++                {
++                    unsigned int c = *str;
++                    if (c < 0x20) continue;
++                    if (c < 0x80) *p++ = c;
++                    else if (c < 0x800) { *p++ = 0xc0 | (c >> 6); *p++ = 0x80 | (c & 0x3f); }
++                    else if (c < 0xd800 || c >= 0xe000) { *p++ = 0xe0 | (c >> 12); *p++ = 0x80 | ((c >> 6) & 0x3f); *p++ = 0x80 | (c & 0x3f); }
++                }
++                while (p > buf && p[-1] == ' ') p--;
++                *p = 0;
++                for (p = buf; *p == ' '; p++);
++                if (*p) ret = strdup( p );
+             }
 -            argv = build_argv( &params->CommandLine, 2 );
-+        if (args->stdin_fd != -1 && args->stdin_fd != 0) close( args->stdin_fd );
-+        if (args->stdout_fd != -1 && args->stdout_fd != 1) close( args->stdout_fd );
++            break;
++        }
++    }
++done:
++    free( data );
++    close( fd );
++    return ret;
++}
++#endif
++
++static void spawn_child( void *arg )
++{
++    struct spawn_args *args = arg;
++    pid_t pid;
  
 -            exec_wineloader( argv, socketfd, pe_info );
 -            _exit(1);
++    if (!(pid = fork()))  /* grandchild */
++    {
++        if (args->new_session)
++        {
++            setsid();
++            set_stdio_fd( -1, -1 );  /* close stdin and stdout */
+         }
++        else set_stdio_fd( args->stdin_fd, args->stdout_fd );
++
++        if (args->stdin_fd != -1 && args->stdin_fd != 0) close( args->stdin_fd );
++        if (args->stdout_fd != -1 && args->stdout_fd != 1) close( args->stdout_fd );
+ 
+-        _exit(pid == -1);
 +        if (args->winedebug) putenv( args->winedebug );
 +        if (args->unixdir != -1)
 +        {
 +            fchdir( args->unixdir );
 +            close( args->unixdir );
-         }
--
--        _exit(pid == -1);
++        }
++#if defined(__APPLE__) && defined(__aarch64__)
++        barrique_app_name = args->app_name;
++#endif
 +        exec_wineloader( args->argv, args->socketfd, &args->pe_info );
 +        _exit(1);
      }
@@ -4956,7 +5388,8 @@ index 1d10948..19c43ed 100644
 +}
 +
 +static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int socketfd,
-+                               int unixdir, char *winedebug, const struct pe_image_info *pe_info )
++                               int unixdir, char *winedebug, const struct pe_image_info *pe_info,
++                               const char *unix_name )
 +{
 +    NTSTATUS status = STATUS_SUCCESS;
 +    struct spawn_args args;
@@ -4983,14 +5416,20 @@ index 1d10948..19c43ed 100644
 +    args.unixdir = unixdir;
 +    args.winedebug = winedebug;
 +    args.pe_info = *pe_info;
++#if defined(__APPLE__) && defined(__aarch64__)
++    args.app_name = get_program_description( unix_name );
++#else
++    args.app_name = NULL;
++#endif
 +
 +    pid = fork_child( spawn_child, &args, sizeof(args) );
 +
 +    free( args.argv );
++    free( args.app_name );
      if (pid != -1)
      {
          /* reap child */
-@@ -458,8 +546,8 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
+@@ -458,8 +711,8 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
      }
      else status = STATUS_NO_MEMORY;
  
@@ -5001,13 +5440,13 @@ index 1d10948..19c43ed 100644
      return status;
  }
  
-@@ -467,13 +555,43 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
+@@ -467,13 +720,43 @@ static NTSTATUS spawn_process( const RTL_USER_PROCESS_PARAMETERS *params, int so
  /***********************************************************************
   *           __wine_unix_spawnvp
   */
 -NTSTATUS WINAPI __wine_unix_spawnvp( char * const argv[], int wait )
 +struct spawnvp_args
- {
++{
 +    char **argv;
 +    int fd[2];
 +    int wait;
@@ -5034,7 +5473,7 @@ index 1d10948..19c43ed 100644
 +}
 +
 +NTSTATUS WINAPI __wine_unix_spawnvp( char * const win_argv[], int wait )
-+{
+ {
 +    struct spawnvp_args args;
      pid_t pid, wret;
      int fd[2], status, err;
@@ -5047,7 +5486,7 @@ index 1d10948..19c43ed 100644
  #endif
      {
          if (pipe(fd) == -1) return STATUS_TOO_MANY_OPENED_FILES;
-@@ -481,22 +599,28 @@ NTSTATUS WINAPI __wine_unix_spawnvp( char * const argv[], int wait )
+@@ -481,22 +764,28 @@ NTSTATUS WINAPI __wine_unix_spawnvp( char * const argv[], int wait )
          fcntl( fd[1], F_SETFD, FD_CLOEXEC );
      }
  
@@ -5089,7 +5528,7 @@ index 1d10948..19c43ed 100644
      close( fd[1] );
  
      if (pid != -1)
-@@ -513,6 +637,7 @@ NTSTATUS WINAPI __wine_unix_spawnvp( char * const argv[], int wait )
+@@ -513,6 +802,7 @@ NTSTATUS WINAPI __wine_unix_spawnvp( char * const argv[], int wait )
      else err = errno_to_status( errno );
  
      close( fd[0] );
@@ -5097,7 +5536,7 @@ index 1d10948..19c43ed 100644
      return err;
  }
  
-@@ -560,16 +685,74 @@ NTSTATUS wow64_wine_spawnvp( void *args )
+@@ -560,16 +850,74 @@ NTSTATUS wow64_wine_spawnvp( void *args )
   *
   * Fork and exec a new Unix binary, checking for errors.
   */
@@ -5175,7 +5614,7 @@ index 1d10948..19c43ed 100644
  #endif
      {
          if (pipe(fd) == -1) return STATUS_TOO_MANY_OPENED_FILES;
-@@ -577,65 +760,31 @@ static NTSTATUS fork_and_exec( OBJECT_ATTRIBUTES *attr, const char *unix_name, i
+@@ -577,65 +925,31 @@ static NTSTATUS fork_and_exec( OBJECT_ATTRIBUTES *attr, const char *unix_name, i
          fcntl( fd[1], F_SETFD, FD_CLOEXEC );
      }
  
@@ -5262,7 +5701,7 @@ index 1d10948..19c43ed 100644
  
      if (pid != -1)
      {
-@@ -649,8 +798,8 @@ static NTSTATUS fork_and_exec( OBJECT_ATTRIBUTES *attr, const char *unix_name, i
+@@ -649,8 +963,8 @@ static NTSTATUS fork_and_exec( OBJECT_ATTRIBUTES *attr, const char *unix_name, i
      else status = STATUS_NO_MEMORY;
  
      close( fd[0] );
@@ -5273,7 +5712,16 @@ index 1d10948..19c43ed 100644
      return status;
  }
  
-@@ -1668,6 +1817,18 @@ NTSTATUS WINAPI NtSetInformationProcess( HANDLE handle, PROCESSINFOCLASS class,
+@@ -884,7 +1198,7 @@ NTSTATUS WINAPI NtCreateUserProcess( HANDLE *process_handle_ptr, HANDLE *thread_
+ 
+     /* create the child process */
+ 
+-    if ((status = spawn_process( params, socketfd[0], unixdir, winedebug, &pe_info ))) goto done;
++    if ((status = spawn_process( params, socketfd[0], unixdir, winedebug, &pe_info, unix_name ))) goto done;
+ 
+     close( socketfd[0] );
+     socketfd[0] = -1;
+@@ -1668,6 +1982,18 @@ NTSTATUS WINAPI NtSetInformationProcess( HANDLE handle, PROCESSINFOCLASS class,
  {
      unsigned int ret = STATUS_SUCCESS;
  
@@ -6673,7 +7121,7 @@ index 829db1e..f3a66cf 100644
 +
  #endif /* __NTDLL_UNIX_PRIVATE_H */
 diff --git a/dlls/ntdll/unix/virtual.c b/dlls/ntdll/unix/virtual.c
-index 84f2a39..6dc2e5e 100644
+index 84f2a39..70566e9 100644
 --- a/dlls/ntdll/unix/virtual.c
 +++ b/dlls/ntdll/unix/virtual.c
 @@ -92,6 +92,59 @@
@@ -7075,7 +7523,17 @@ index 84f2a39..6dc2e5e 100644
      TRACE( "host addr space limit: %p\n", host_addr_space_limit );
  
      mem_areas = anon_mmap_alloc( mem_areas_size * sizeof(*mem_areas), PROT_READ | PROT_WRITE );
-@@ -3463,6 +3734,14 @@ void virtual_get_system_info( SYSTEM_BASIC_INFORMATION *info, BOOL wow64 )
+@@ -3396,7 +3667,9 @@ void virtual_init(void)
+ 
+         if (addr < high_range.start) low_range.end = max( (char *)low_range.end, (char *)addr + size );
+     }
++#ifndef WINE_HVF  /* the HVF loader only reserves the range of x64 executables, see loader/main.c */
+     else
++#endif
+     {
+         reserve_area( low_range.start, low_range.end );
+         if (!is_win64) reserve_area( high_range.start, high_range.end );
+@@ -3463,6 +3736,14 @@ void virtual_get_system_info( SYSTEM_BASIC_INFORMATION *info, BOOL wow64 )
      info->NumberOfProcessors      = cpu_count;
      if (wow64) info->HighestUserAddress = (char *)get_wow_user_space_limit() - 1;
      else info->HighestUserAddress = (char *)user_space_limit - 1;
@@ -7090,7 +7548,7 @@ index 84f2a39..6dc2e5e 100644
  }
  
  
-@@ -3760,21 +4039,34 @@ static void set_large_address_space(void)
+@@ -3760,21 +4041,34 @@ static void set_large_address_space(void)
          char *end, *start = address_space_start;  /* low 64K */
          address_space_start = (void *)0x110000;
          end = min( address_space_start, main_module );
@@ -7127,7 +7585,7 @@ index 84f2a39..6dc2e5e 100644
          }
      }
      else if (!(main_image_info.ImageCharacteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE))
-@@ -3849,8 +4141,15 @@ struct thread_data *virtual_alloc_first_thread_data(void)
+@@ -3849,8 +4143,15 @@ struct thread_data *virtual_alloc_first_thread_data(void)
      size_t size = signal_stack_mask + 1 + kernel_stack_size;
      void *ptr;
  
@@ -7143,7 +7601,7 @@ index 84f2a39..6dc2e5e 100644
      if (status)
      {
          ERR( "wine: failed to map the shared user data: %08x\n", status );
-@@ -4286,12 +4585,24 @@ void virtual_map_user_shared_data(void)
+@@ -4286,12 +4587,24 @@ void virtual_map_user_shared_data(void)
          ERR( "failed to open the USD section: %08x\n", status );
          exit(1);
      }
@@ -7168,7 +7626,7 @@ index 84f2a39..6dc2e5e 100644
      if (needs_close) close( fd );
      NtClose( section );
  }
-@@ -4535,11 +4846,28 @@ void *virtual_setup_exception( struct thread_data *data, void *stack_ptr, size_t
+@@ -4535,11 +4848,28 @@ void *virtual_setup_exception( struct thread_data *data, void *stack_ptr, size_t
   *
   * Check if the memory range is writable, temporarily disabling write watches if necessary.
   */
@@ -7197,7 +7655,7 @@ index 84f2a39..6dc2e5e 100644
      size = ROUND_SIZE( base, size, host_page_mask );
      for (i = 0; i < size; i += host_page_size)
      {
-@@ -4678,6 +5006,47 @@ BOOL virtual_is_valid_code_address( const void *addr, SIZE_T size )
+@@ -4678,6 +5008,47 @@ BOOL virtual_is_valid_code_address( const void *addr, SIZE_T size )
  }
  
  
@@ -7245,7 +7703,7 @@ index 84f2a39..6dc2e5e 100644
  /***********************************************************************
   *           virtual_check_buffer_for_read
   *
-@@ -5004,6 +5373,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
+@@ -5004,6 +5375,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
                                     MEM_PHYSICAL | MEM_LARGE_PAGES | MEM_WRITE_WATCH;
      ULONG_PTR limit;
  
@@ -7257,7 +7715,7 @@ index 84f2a39..6dc2e5e 100644
      TRACE("%p %p %08lx %x %08x\n", process, *ret, *size_ptr, type, protect );
  
      if (!*size_ptr) return STATUS_INVALID_PARAMETER;
-@@ -5148,6 +5522,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *s
+@@ -5148,6 +5524,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *s
      USHORT machine = 0;
      unsigned int status;
  
@@ -7269,7 +7727,7 @@ index 84f2a39..6dc2e5e 100644
      TRACE( "%p %p %08lx %x %08x %p %u\n",
            process, *ret, *size_ptr, type, protect, parameters, count );
  
-@@ -5206,6 +5585,11 @@ NTSTATUS WINAPI NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T *si
+@@ -5206,6 +5587,11 @@ NTSTATUS WINAPI NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T *si
      LPVOID addr = *addr_ptr;
      SIZE_T size = *size_ptr;
  
@@ -7281,7 +7739,7 @@ index 84f2a39..6dc2e5e 100644
      TRACE("%p %p %08lx %x\n", process, addr, size, type );
  
      if (process != NtCurrentProcess())
-@@ -5301,6 +5685,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
+@@ -5301,6 +5687,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
      LPVOID addr = *addr_ptr;
      DWORD old;
  
@@ -7293,7 +7751,7 @@ index 84f2a39..6dc2e5e 100644
      TRACE("%p %p %08lx %08x\n", process, addr, size, new_prot );
  
      if (!old_prot)
-@@ -5941,6 +6330,11 @@ NTSTATUS WINAPI NtQueryVirtualMemory( HANDLE process, LPCVOID addr,
+@@ -5941,6 +6332,11 @@ NTSTATUS WINAPI NtQueryVirtualMemory( HANDLE process, LPCVOID addr,
  {
      NTSTATUS status;
  
@@ -7305,7 +7763,7 @@ index 84f2a39..6dc2e5e 100644
      TRACE("(%p, %p, info_class=%d, %p, %ld, %p)\n",
            process, addr, info_class, buffer, len, res_len);
  
-@@ -6024,6 +6418,11 @@ NTSTATUS WINAPI NtLockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size,
+@@ -6024,6 +6420,11 @@ NTSTATUS WINAPI NtLockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size,
  {
      unsigned int status = STATUS_SUCCESS;
  
@@ -7317,7 +7775,7 @@ index 84f2a39..6dc2e5e 100644
      if (process != NtCurrentProcess())
      {
          union apc_call call;
-@@ -6062,6 +6461,11 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
+@@ -6062,6 +6463,11 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
  {
      unsigned int status = STATUS_SUCCESS;
  
@@ -7329,7 +7787,7 @@ index 84f2a39..6dc2e5e 100644
      if (process != NtCurrentProcess())
      {
          union apc_call call;
-@@ -6114,10 +6518,18 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
+@@ -6114,10 +6520,18 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
          return STATUS_INVALID_PARAMETER_4;
  
      /* If both addr_ptr and zero_bits are passed, they have match */
@@ -7348,7 +7806,7 @@ index 84f2a39..6dc2e5e 100644
  
      if (!is_win64 && !is_wow64())
      {
-@@ -6322,6 +6734,9 @@ done:
+@@ -6322,6 +6736,9 @@ done:
   */
  NTSTATUS WINAPI NtUnmapViewOfSection( HANDLE process, PVOID addr )
  {
@@ -7358,7 +7816,7 @@ index 84f2a39..6dc2e5e 100644
      return unmap_view_of_section( process, addr, 0 );
  }
  
-@@ -6333,6 +6748,11 @@ NTSTATUS WINAPI NtUnmapViewOfSectionEx( HANDLE process, PVOID addr, ULONG flags
+@@ -6333,6 +6750,11 @@ NTSTATUS WINAPI NtUnmapViewOfSectionEx( HANDLE process, PVOID addr, ULONG flags
  {
      static const ULONG type_mask = MEM_UNMAP_WITH_TRANSIENT_BOOST | MEM_PRESERVE_PLACEHOLDER;
  
@@ -7370,7 +7828,7 @@ index 84f2a39..6dc2e5e 100644
      if (flags & ~type_mask)
      {
          WARN( "Unsupported flags %#x.\n", flags );
-@@ -6473,6 +6893,9 @@ NTSTATUS WINAPI NtFlushVirtualMemory( HANDLE process, LPCVOID *addr_ptr,
+@@ -6473,6 +6895,9 @@ NTSTATUS WINAPI NtFlushVirtualMemory( HANDLE process, LPCVOID *addr_ptr,
      {
          if (!*size_ptr) *size_ptr = view->size;
          *addr_ptr = addr;
@@ -7380,7 +7838,7 @@ index 84f2a39..6dc2e5e 100644
  #ifdef MS_ASYNC
          if (msync( ROUND_ADDR( addr, host_page_mask ), ROUND_SIZE( addr, *size_ptr, host_page_mask ), MS_ASYNC ))
              status = STATUS_NOT_MAPPED_DATA;
-@@ -6493,6 +6916,11 @@ NTSTATUS WINAPI NtGetWriteWatch( HANDLE process, ULONG flags, PVOID base, SIZE_T
+@@ -6493,6 +6918,11 @@ NTSTATUS WINAPI NtGetWriteWatch( HANDLE process, ULONG flags, PVOID base, SIZE_T
      NTSTATUS status = STATUS_SUCCESS;
      sigset_t sigset;
  
@@ -7392,7 +7850,7 @@ index 84f2a39..6dc2e5e 100644
      size = ROUND_SIZE( base, size, page_mask );
      base = ROUND_ADDR( base, page_mask );
  
-@@ -6551,6 +6979,11 @@ NTSTATUS WINAPI NtResetWriteWatch( HANDLE process, PVOID base, SIZE_T size )
+@@ -6551,6 +6981,11 @@ NTSTATUS WINAPI NtResetWriteWatch( HANDLE process, PVOID base, SIZE_T size )
      NTSTATUS status = STATUS_SUCCESS;
      sigset_t sigset;
  
@@ -7404,7 +7862,7 @@ index 84f2a39..6dc2e5e 100644
      size = ROUND_SIZE( base, size, page_mask );
      base = ROUND_ADDR( base, page_mask );
  
-@@ -6579,6 +7012,11 @@ NTSTATUS WINAPI NtReadVirtualMemory( HANDLE process, const void *addr, void *buf
+@@ -6579,6 +7014,11 @@ NTSTATUS WINAPI NtReadVirtualMemory( HANDLE process, const void *addr, void *buf
  {
      unsigned int status;
  
@@ -7416,7 +7874,7 @@ index 84f2a39..6dc2e5e 100644
      if (!virtual_check_buffer_for_write( buffer, size ))
      {
          status = STATUS_ACCESS_VIOLATION;
-@@ -6623,6 +7061,11 @@ NTSTATUS WINAPI NtWriteVirtualMemory( HANDLE process, void *addr, const void *bu
+@@ -6623,6 +7063,11 @@ NTSTATUS WINAPI NtWriteVirtualMemory( HANDLE process, void *addr, const void *bu
  {
      unsigned int status;
  
@@ -7428,7 +7886,7 @@ index 84f2a39..6dc2e5e 100644
      if (virtual_check_buffer_for_read( buffer, size ))
      {
          SERVER_START_REQ( write_process_memory )
-@@ -6785,6 +7228,9 @@ NTSTATUS WINAPI NtSetInformationVirtualMemory( HANDLE process,
+@@ -6785,6 +7230,9 @@ NTSTATUS WINAPI NtSetInformationVirtualMemory( HANDLE process,
   */
  NTSTATUS WINAPI NtFlushInstructionCache( HANDLE handle, const void *addr, SIZE_T size )
  {
@@ -7438,6 +7896,34 @@ index 84f2a39..6dc2e5e 100644
  #if defined(__x86_64__) || defined(__i386__)
      /* no-op */
  #elif defined(HAVE___CLEAR_CACHE)
+diff --git a/dlls/ole32/ole2.c b/dlls/ole32/ole2.c
+index c18a46a..b5aa4ec 100644
+--- a/dlls/ole32/ole2.c
++++ b/dlls/ole32/ole2.c
+@@ -631,6 +631,7 @@ HRESULT WINAPI RevokeDragDrop(HWND hwnd)
+   IStream *stream;
+   IDropTarget *drop_target;
+   HRESULT hr;
++  DWORD pid = 0;
+ 
+   TRACE("(%p)\n", hwnd);
+ 
+@@ -640,6 +641,15 @@ HRESULT WINAPI RevokeDragDrop(HWND hwnd)
+     return DRAGDROP_E_INVALIDHWND;
+   }
+ 
++  /* like RegisterDragDrop: the drop target pointer in the window property is only
++   * valid in the process that owns the window (WebView2 hosts revoke the browser's) */
++  GetWindowThreadProcessId(hwnd, &pid);
++  if (pid != GetCurrentProcessId())
++  {
++    FIXME("revoke for another process windows is disabled\n");
++    return DRAGDROP_E_INVALIDHWND;
++  }
++
+   /* no registration data */
+   if (!(map = get_droptarget_handle(hwnd)))
+     return DRAGDROP_E_NOTREGISTERED;
 diff --git a/dlls/opengl32/make_opengl b/dlls/opengl32/make_opengl
 index aae6f1e..d4e5f17 100755
 --- a/dlls/opengl32/make_opengl
@@ -11978,6 +12464,102 @@ index 4b684fc..5730fcc 100644
  #elif (defined(__aarch64__) || defined(__arm64ec__)) && defined(__GNUC__)
  register struct _TEB *__wine_current_teb __asm__("x18");
  static FORCEINLINE struct _TEB * WINAPI NtCurrentTeb(void)
+diff --git a/loader/main.c b/loader/main.c
+index 71ba308..a539b41 100644
+--- a/loader/main.c
++++ b/loader/main.c
+@@ -70,6 +70,81 @@ static void init_reserved_areas(void)
+     }
+ }
+ 
++#elif defined(__APPLE__) && defined(__aarch64__)
++
++#include <mach/mach.h>
++#include <mach/mach_vm.h>
++
++/* Barrique (Hypervisor.framework): above 4GB Windows addresses are host addresses,
++ * and arm64 executables are always PIE, so no zerofill section can keep the host
++ * out of the range where x64 executables without relocations are linked
++ * (0x140000000). Reserve what is still free of it before anything else runs;
++ * ntdll marks it as reserved areas. Up to 0x180000000, where the dyld shared
++ * cache starts. */
++static struct wine_preload_info preload_info[9];
++
++/* Zero-fill space right after the loader image, so that the kernel lays it out over
++ * 0x140000000 (the loader is mapped just above the 4GB page zero) and nothing else
++ * can land there before main() runs; init_reserved_areas() hands it to ntdll. */
++static char wine_exe_reserve[0x7c000000] __attribute__((aligned(0x4000)));
++
++const __attribute((visibility("default"))) struct wine_preload_info *wine_main_preload_info = preload_info;
++
++static void init_reserved_areas(void)
++{
++    mach_vm_address_t address = 0x140000000, end = 0x180000000;
++    mach_vm_address_t resv = (mach_vm_address_t)wine_exe_reserve;
++    mach_vm_address_t resv_end = resv + sizeof(wine_exe_reserve);
++    unsigned int count = 0;
++
++    /* give the zero-fill space back as reserved address space */
++    if (resv < 0x100000000) resv = 0x100000000;
++    if (resv < resv_end && !mach_vm_map( mach_task_self(), &resv, resv_end - resv, 0,
++                                         VM_FLAGS_FIXED | VM_FLAGS_OVERWRITE, MEMORY_OBJECT_NULL, 0, 0,
++                                         VM_PROT_NONE, VM_PROT_ALL, VM_INHERIT_COPY ))
++    {
++        preload_info[count].addr = (void *)resv;
++        preload_info[count].size = resv_end - resv;
++        count++;
++        if (address < resv_end && resv <= address) address = resv_end;
++    }
++
++    /* ntdll wants reserved areas on the 64K allocation granularity */
++    for (unsigned int i = 0; i < count; i++)
++    {
++        mach_vm_address_t start = ((mach_vm_address_t)preload_info[i].addr + 0xffff) & ~0xffffULL;
++        mach_vm_address_t stop = ((mach_vm_address_t)preload_info[i].addr + preload_info[i].size) & ~0xffffULL;
++        preload_info[i].addr = (void *)start;
++        preload_info[i].size = stop > start ? stop - start : 0;
++    }
++    while (address < end && count < sizeof(preload_info) / sizeof(preload_info[0]) - 1)
++    {
++        mach_vm_address_t region = address, hole = address;
++        mach_vm_size_t size = 0;
++        vm_region_basic_info_data_64_t info;
++        mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;
++        mach_port_t object = MACH_PORT_NULL;
++
++        if (mach_vm_region( mach_task_self(), &region, &size, VM_REGION_BASIC_INFO_64,
++                            (vm_region_info_t)&info, &info_count, &object ) != KERN_SUCCESS)
++            region = end;
++        if (region > end) region = end;
++        hole = (hole + 0xffff) & ~0xffffULL;
++        if (region > hole && (region - hole) >= 0x10000)
++        {
++            mach_vm_size_t len = (region - hole) & ~0xffffULL;
++            if (!mach_vm_map( mach_task_self(), &hole, len, 0, VM_FLAGS_FIXED, MEMORY_OBJECT_NULL,
++                              0, 0, VM_PROT_NONE, VM_PROT_ALL, VM_INHERIT_COPY ))
++            {
++                preload_info[count].addr = (void *)hole;
++                preload_info[count].size = len;
++                count++;
++            }
++        }
++        address = region + size;
++    }
++}
++
+ #else
+ 
+ /* the preloader will set this variable */
+@@ -174,7 +249,8 @@ int main( int argc, char *argv[] )
+     init_reserved_areas();
+ 
+     if ((handle = try_dlopen( get_self_exe() )) ||
+-        (handle = try_dlopen( argv[0] )))
++        (handle = try_dlopen( argv[0] )) ||
++        (handle = try_dlopen( getenv( "BARRIQUE_WINELOADER" ) )))  /* Barrique: run through a named link */
+     {
+         void (*init_func)(int, char **) = dlsym( handle, "__wine_main" );
+         if (init_func) init_func( argc, argv );
 diff --git a/loader/wine.inf.in b/loader/wine.inf.in
 index 9288b58..41d44b7 100644
 --- a/loader/wine.inf.in
