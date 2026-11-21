@@ -43,10 +43,12 @@ Known problems
 - Firefox x64 crashes now and then; rarely, a Firefox page never starts loading.
 - 32-bit x86 programs get no specific work: some may fail.
 - Some programs hang on their first start and work on the second.
-- Steam: the client installs, updates and shows its login window; logging in
-  and games are untested.
+- Steam: login, library and games work (tested: Muck, Portal, Tomb Raider);
+  the first start after logging in takes about a minute.
+- Games with kernel anti-cheat (Fortnite, Valorant...) cannot work.
+- Epic Games Launcher installs, but its window does not appear yet.
 - Game controllers and USB devices are supported but untested with real
-  hardware.
+  hardware (a USB disk and a USB serial RFID reader were tested).
 - Only tested on macOS 27 so far; macOS 26 is untested.
 
 Reporting problems
