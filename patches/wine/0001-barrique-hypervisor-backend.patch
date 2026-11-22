@@ -2335,6 +2335,33 @@ index ee2936e..1bda9a5 100644
      return syscall_NtUnmapViewOfSectionEx( process, addr, flags );
  }
  
+diff --git a/dlls/ntdll/time.c b/dlls/ntdll/time.c
+index 5a96a1e..e1053af 100644
+--- a/dlls/ntdll/time.c
++++ b/dlls/ntdll/time.c
+@@ -381,6 +381,22 @@ LONGLONG WINAPI RtlGetSystemTimePrecise( void )
+  */
+ BOOL WINAPI DECLSPEC_HOTPATCH RtlQueryPerformanceCounter( LARGE_INTEGER *counter )
+ {
++#if defined(__aarch64__) || defined(__arm64ec__)
++    /* Barrique: under Hypervisor.framework every syscall leaves the VM; the server
++     * publishes the bias from the ARM counter (see set_user_shared_data_time()) */
++    if (user_shared_data->QpcFrequency == TICKSPERSEC)
++    {
++        ULONGLONG ticks, freq;
++
++        __asm__ __volatile__( "isb; mrs %0, cntvct_el0" : "=r" (ticks) );
++        __asm__ __volatile__( "mrs %0, cntfrq_el0" : "=r" (freq) );
++        if (freq)
++        {
++            counter->QuadPart = (ULONGLONG)((unsigned __int128)ticks * TICKSPERSEC / freq) + user_shared_data->QpcBias;
++            return TRUE;
++        }
++    }
++#endif
+     NtQueryPerformanceCounter( counter, NULL );
+     return TRUE;
+ }
 diff --git a/dlls/ntdll/unix/file.c b/dlls/ntdll/unix/file.c
 index d99a9a1..c4cdc49 100644
 --- a/dlls/ntdll/unix/file.c
@@ -2387,10 +2414,10 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..d7250da
+index 0000000..7969540
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,1162 @@
+@@ -0,0 +1,1277 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -2419,6 +2446,7 @@ index 0000000..d7250da
 +#if defined(__APPLE__) && defined(__aarch64__)
 +
 +#include <assert.h>
++#include <fcntl.h>
 +#include <pthread.h>
 +#include <stdarg.h>
 +#include <stdio.h>
@@ -2522,8 +2550,9 @@ index 0000000..d7250da
 +static pthread_mutex_t hvf_mutex = PTHREAD_MUTEX_INITIALIZER;
 +static _Atomic uint64_t tlb_generation;
 +/* exits from the VM, by reason (WINE_HVF_STATS=1 prints them when the process exits) */
-+static LONG stat_exits, stat_syscalls, stat_unix_calls, stat_page_fills, stat_other;
++static LONG stat_exits, stat_syscalls, stat_unix_calls, stat_page_fills, stat_other, stat_vcpu_creates;
 +static double stat_start;
++static void start_profiler(void);
 +static double stat_now(void);
 +/* svc #N is a Windows syscall (BARRIQUE_SVC_STUBS=0: an exception, as before) */
 +BOOL hvf_svc_syscalls = TRUE;
@@ -2551,6 +2580,7 @@ index 0000000..d7250da
 + * keeps its vCPU through a wait if it entered the wait below the threshold, so
 + * blocked threads never hold more than that and the rest stays available. */
 +static LONG vcpu_release_threshold = 32;
++static LONG vcpu_hard_threshold = 56;
 +/* diagnostic switches (BARRIQUE_HVF_FAULTAROUND=0, BARRIQUE_HVF_VCPU_RELEASE=0,
 + * BARRIQUE_HVF_LAZY_FP=0): turn one mechanism off to see whether a bug goes away */
 +static BOOL fault_around = TRUE;
@@ -3015,11 +3045,15 @@ index 0000000..d7250da
 +    hvf_unix_call_stub = guest_code + (hvf_guest_unix_call_stub - hvf_guest_start);
 +
 +    stat_start = stat_now();
++    start_profiler();
 +    pthread_key_create( &vcpu_key, destroy_vcpu );
 +    {
 +        uint32_t max_vcpus = 0;
 +        if (!hv_vm_get_max_vcpu_count( &max_vcpus ) && max_vcpus >= 16)
++        {
 +            vcpu_release_threshold = max_vcpus / 2;
++            vcpu_hard_threshold = max_vcpus - 8;
++        }
 +        TRACE( "%u vCPUs at most, released by blocking threads from %d\n", max_vcpus, (int)vcpu_release_threshold );
 +    }
 +    hvf_tso = getenv( "WINE_HVF_TSO" ) && atoi( getenv( "WINE_HVF_TSO" ));
@@ -3131,6 +3165,82 @@ index 0000000..d7250da
 +    pthread_mutex_unlock( &vcpu_list_mutex );
 +}
 +
++/* Barrique: with WINE_HVF_PROFILE=<dir>, a thread stops the running vCPUs every
++ * 2ms and the guest PCs are written to <dir>/hvfprof-<pid>.bin (64-bit values),
++ * with exit counts on stderr every 5s; map them to modules with +loaddll. */
++#define PROF_SIZE (1 << 20)
++static uint64_t *prof_pcs;
++LONG *hvf_syscall_hist;  /* [table << 12 | id], counted by the syscall dispatcher when profiling */
++extern const char *ntdll_syscall_name( unsigned int id );
++static LONG prof_count;
++
++static void *prof_thread( void *arg )
++{
++    int fd = (int)(intptr_t)arg;
++    LONG written = 0, last_exits = 0, last_sys = 0, last_fills = 0, last_creates = 0;
++    unsigned int ticks = 0;
++
++    for (;;)
++    {
++        usleep( 2000 );
++        kick_running_vcpus();
++        if (++ticks % 2500) continue;
++        while (written < prof_count)
++        {
++            LONG n = min( prof_count - written, PROF_SIZE - written % PROF_SIZE );
++            if (write( fd, prof_pcs + written % PROF_SIZE, n * sizeof(*prof_pcs) ) <= 0) break;
++            written += n;
++        }
++        fprintf( stderr, "hvf prof %04x: %d exits/s, %d syscalls/s, %d page fills/s, %d vCPU creates/s, %d vCPUs, %d samples\n",
++                 (int)GetCurrentProcessId(), (int)(stat_exits - last_exits) / 5,
++                 (int)(stat_syscalls - last_sys) / 5, (int)(stat_page_fills - last_fills) / 5,
++                 (int)(stat_vcpu_creates - last_creates) / 5, (int)vcpu_count, (int)prof_count );
++        last_creates = stat_vcpu_creates;
++        if (hvf_syscall_hist)
++        {
++            static LONG last[4 << 12];
++            unsigned int i, j, top[8] = {0};
++            LONG delta[8] = {0};
++            for (i = 0; i < 4 << 12; i++)
++            {
++                LONG d = hvf_syscall_hist[i] - last[i];
++                last[i] = hvf_syscall_hist[i];
++                for (j = 0; j < 8; j++)
++                    if (d > delta[j])
++                    {
++                        memmove( delta + j + 1, delta + j, (7 - j) * sizeof(*delta) );
++                        memmove( top + j + 1, top + j, (7 - j) * sizeof(*top) );
++                        delta[j] = d; top[j] = i;
++                        break;
++                    }
++            }
++            for (j = 0; j < 8 && delta[j]; j++)
++                fprintf( stderr, "hvf prof %04x:   %s%s %d/s\n", (int)GetCurrentProcessId(),
++                         top[j] >> 12 ? "win32u:" : "", top[j] >> 12 ? "" : ntdll_syscall_name( top[j] ),
++                         (int)delta[j] / 5 );
++        }
++        last_exits = stat_exits;
++        last_sys = stat_syscalls;
++        last_fills = stat_page_fills;
++    }
++    return NULL;
++}
++
++static void start_profiler(void)
++{
++    const char *dir = getenv( "WINE_HVF_PROFILE" );
++    char path[1024];
++    pthread_t thread;
++    int fd;
++
++    if (!dir || !*dir) return;
++    snprintf( path, sizeof(path), "%s/hvfprof-%d.bin", dir, (int)getpid() );
++    if ((fd = open( path, O_WRONLY | O_CREAT | O_TRUNC, 0644 )) == -1) return;
++    if (!(prof_pcs = calloc( PROF_SIZE, sizeof(*prof_pcs) ))) return;
++    hvf_syscall_hist = calloc( 4 << 12, sizeof(*hvf_syscall_hist) );
++    if (!pthread_create( &thread, NULL, prof_thread, (void *)(intptr_t)fd )) pthread_detach( thread );
++}
++
 +/* a vCPU belongs to its thread: destroy it when the thread exits, or the VM
 + * runs out of them after a few dozen short-lived threads */
 +static void destroy_vcpu( void *ptr )
@@ -3231,6 +3341,7 @@ index 0000000..d7250da
 +        usleep( 1000 );
 +    }
 +    InterlockedIncrement( &vcpu_count );
++    InterlockedIncrement( &stat_vcpu_creates );
 +    vcpu_list_add( v->vcpu );
 +    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_MAIR_EL1, 0xff );
 +    hv_vcpu_set_sys_reg( v->vcpu, HV_SYS_REG_TCR_EL1,
@@ -3260,9 +3371,33 @@ index 0000000..d7250da
 + * about to block in a syscall gives its vCPU back; the guest state lives in the
 + * syscall frame meanwhile, and a new vCPU is set up when the guest resumes.
 + */
++/* Barrique: giving the vCPU back on every wait made busy programs (Unreal Engine
++ * games, 100+ threads) spend as much time creating and destroying vCPUs as running
++ * guest code. A thread keeps its vCPU while its waits are short; it gives it back
++ * when its previous wait was long, or always when the VM is nearly out of vCPUs. */
++static __thread BOOL last_wait_long = TRUE;
++static __thread struct timespec wait_start;
++
 +BOOL hvf_vcpu_should_release(void)
 +{
-+    return vcpu_count >= vcpu_release_threshold && pthread_getspecific( vcpu_key );
++    if (!pthread_getspecific( vcpu_key )) return FALSE;
++    if (vcpu_count >= vcpu_hard_threshold) return TRUE;
++    return vcpu_count >= vcpu_release_threshold && last_wait_long;
++}
++
++void hvf_wait_begin(void)
++{
++    clock_gettime( CLOCK_MONOTONIC, &wait_start );
++}
++
++void hvf_wait_end(void)
++{
++    struct timespec now;
++    long long ns;
++
++    clock_gettime( CLOCK_MONOTONIC, &now );
++    ns = (now.tv_sec - wait_start.tv_sec) * 1000000000LL + (now.tv_nsec - wait_start.tv_nsec);
++    last_wait_long = ns > 2000000;  /* 2ms */
 +}
 +
 +void hvf_release_vcpu(void)
@@ -3448,8 +3583,15 @@ index 0000000..d7250da
 +        case HV_EXIT_REASON_EXCEPTION:
 +            unknown_exits = 0;
 +            break;
-+        case HV_EXIT_REASON_VTIMER_ACTIVATED:
 +        case HV_EXIT_REASON_CANCELED:
++            if (prof_pcs)
++            {
++                uint64_t pc;
++                hv_vcpu_get_reg( v->vcpu, HV_REG_PC, &pc );
++                prof_pcs[(InterlockedIncrement( &prof_count ) - 1) % PROF_SIZE] = pc;
++            }
++            continue;
++        case HV_EXIT_REASON_VTIMER_ACTIVATED:
 +            continue;
 +        case HV_EXIT_REASON_UNKNOWN:
 +            /* Barrique: seen once in 30 Firefox x64 runs under load, not documented as
@@ -5956,7 +6098,7 @@ index c80226f..a787d2f 100644
  extern NTSTATUS apple_spawn_main_thread(void);
  
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
-index 02b6d57..929abac 100644
+index 02b6d57..e56e454 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
 +++ b/dlls/ntdll/unix/signal_arm64.c
 @@ -29,6 +29,9 @@
@@ -6276,7 +6418,7 @@ index 02b6d57..929abac 100644
  
  
  /***********************************************************************
-@@ -1966,4 +2166,461 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+@@ -1966,4 +2166,480 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
  __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
                        __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
  
@@ -6384,6 +6526,10 @@ index 02b6d57..929abac 100644
 +        WARN( "bad syscall %#llx\n", (unsigned long long)regs->x[8] );
 +        return STATUS_INVALID_SYSTEM_SERVICE;
 +    }
++    {
++        extern LONG *hvf_syscall_hist;
++        if (hvf_syscall_hist) InterlockedIncrement( &hvf_syscall_hist[((regs->x[8] >> 12) & 3) << 12 | id] );
++    }
 +    if (table->ArgumentTable[id] > 64) nstack = (table->ArgumentTable[id] - 64) / 8;
 +    if (nstack > 12) nstack = 12;
 +    memset( args, 0, sizeof(args) );
@@ -6392,10 +6538,25 @@ index 02b6d57..929abac 100644
 +
 +    func = (syscall_func)table->ServiceTable[id];
 +    /* a thread that is going to wait doesn't need its vCPU meanwhile */
-+    if (table == get_teb_data( data )->syscall_table && is_wait_syscall( func ) && hvf_vcpu_should_release())
++    if (table == get_teb_data( data )->syscall_table && is_wait_syscall( func ))
 +    {
-+        hvf_sync_fp();  /* the FP state goes away with the vCPU */
-+        hvf_release_vcpu();
++        NTSTATUS status;
++        int idx = wait_syscall_timeout_arg( func );
++        const LARGE_INTEGER *timeout = idx >= 0 ? (const LARGE_INTEGER *)args[idx] : NULL;
++        /* a zero or short timeout (spin loops calling Sleep(0) or polling a handle) gets
++         * the thread running again right away: creating a new vCPU would cost more */
++        BOOL short_wait = timeout && timeout->QuadPart <= 0 && timeout->QuadPart > -20000;
++
++        if (!short_wait && hvf_vcpu_should_release())
++        {
++            hvf_sync_fp();  /* the FP state goes away with the vCPU */
++            hvf_release_vcpu();
++        }
++        hvf_wait_begin();
++        status = func( args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9],
++                       args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19] );
++        hvf_wait_end();
++        return status;
 +    }
 +    return func( args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9],
 +                 args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19] );
@@ -6871,15 +7032,29 @@ index a6e4485..a792630 100644
          }
          SERVER_END_REQ;
 diff --git a/dlls/ntdll/unix/syscall.c b/dlls/ntdll/unix/syscall.c
-index dea2cbb..fb1f4e3 100644
+index dea2cbb..978ec95 100644
 --- a/dlls/ntdll/unix/syscall.c
 +++ b/dlls/ntdll/unix/syscall.c
-@@ -248,6 +248,22 @@ SYSTEM_SERVICE_TABLE KeServiceDescriptorTable[4] =
+@@ -248,6 +248,36 @@ SYSTEM_SERVICE_TABLE KeServiceDescriptorTable[4] =
      { (ULONG_PTR *)syscalls, NULL, ARRAY_SIZE(syscalls), syscall_args }
  };
  
 +#ifdef WINE_HVF
 +/* does the table entry block the thread? The names may stand for wrappers here, see above */
++/* Barrique: index of the timeout argument of a wait syscall, -1 if none */
++int wait_syscall_timeout_arg( const void *func )
++{
++    if (func == (const void *)NtWaitForSingleObject) return 2;
++    if (func == (const void *)NtWaitForMultipleObjects) return 4;
++    if (func == (const void *)NtSignalAndWaitForSingleObject) return 3;
++    if (func == (const void *)NtDelayExecution) return 1;
++    if (func == (const void *)NtRemoveIoCompletion) return 4;
++    if (func == (const void *)NtRemoveIoCompletionEx) return 4;
++    if (func == (const void *)NtWaitForAlertByThreadId) return 1;
++    if (func == (const void *)NtWaitForKeyedEvent) return 3;
++    return -1;
++}
++
 +BOOL is_wait_syscall( const void *func )
 +{
 +    return func == (const void *)NtWaitForSingleObject ||
@@ -6897,6 +7072,19 @@ index dea2cbb..fb1f4e3 100644
  static const char *ntsyscall_names[] =
  {
  #define SYSCALL_ENTRY(id,name,args) #name,
+@@ -255,6 +285,12 @@ static const char *ntsyscall_names[] =
+ #undef SYSCALL_ENTRY
+ };
+ 
++/* Barrique: syscall name for the HVF profiler */
++const char *ntdll_syscall_name( unsigned int id )
++{
++    return id < ARRAY_SIZE(ntsyscall_names) ? ntsyscall_names[id] : "?";
++}
++
+ static const char **syscall_names[4] = { ntsyscall_names };
+ static const char **usercall_names;
+ 
 diff --git a/dlls/ntdll/unix/system.c b/dlls/ntdll/unix/system.c
 index 83084b8..ec1677d 100644
 --- a/dlls/ntdll/unix/system.c
@@ -7018,10 +7206,10 @@ index 11171cc..e7fbffb 100644
  
      if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..f3a66cf 100644
+index 829db1e..ebaf1cb 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
-@@ -138,6 +138,70 @@ static inline struct thread_data *get_thread_data(void)
+@@ -138,6 +138,73 @@ static inline struct thread_data *get_thread_data(void)
      return pthread_getspecific( thread_data_key );
  }
  
@@ -7072,8 +7260,11 @@ index 829db1e..f3a66cf 100644
 +extern void hvf_release_vcpu(void);
 +extern void hvf_print_stats(void);
 +extern BOOL hvf_vcpu_should_release(void);
++extern void hvf_wait_begin(void);
++extern void hvf_wait_end(void);
 +extern void hvf_set_tso( BOOL enable );
 +extern BOOL is_wait_syscall( const void *func );
++extern int wait_syscall_timeout_arg( const void *func );
 +extern int virtual_hvf_get_prot( const void *addr );
 +extern void virtual_hvf_get_prots( const void *addr, unsigned int count, int *prots );
 +extern void virtual_hvf_flush_shadows(void);
@@ -7092,7 +7283,7 @@ index 829db1e..f3a66cf 100644
  /* thread private data, stored in NtCurrentTeb()->GdiTebBatch */
  struct teb_data
  {
-@@ -223,6 +287,7 @@ extern ULONG64 mitigation_options[2];
+@@ -223,6 +290,7 @@ extern ULONG64 mitigation_options[2];
  extern int main_argc;
  extern char **main_argv;
  extern WCHAR **main_wargv;
@@ -7100,7 +7291,7 @@ index 829db1e..f3a66cf 100644
  extern const WCHAR system_dir[];
  extern unsigned int supported_machines_count;
  extern USHORT supported_machines[8];
-@@ -266,6 +331,9 @@ extern int server_get_unix_fd( HANDLE handle, unsigned int wanted_access, int *u
+@@ -266,6 +334,9 @@ extern int server_get_unix_fd( HANDLE handle, unsigned int wanted_access, int *u
                                 int *needs_close, enum server_fd_type *type, unsigned int *options );
  extern int wine_server_receive_fd( obj_handle_t *handle );
  extern void process_exit_wrapper( int status ) DECLSPEC_NORETURN;
@@ -7110,7 +7301,7 @@ index 829db1e..f3a66cf 100644
  extern void server_init_process( struct thread_data *data );
  extern void server_init_process_done(void);
  extern void server_init_thread( struct thread_data *data );
-@@ -740,4 +808,9 @@ static inline int is_gdt_sel( WORD sel )
+@@ -740,4 +811,9 @@ static inline int is_gdt_sel( WORD sel )
  
  #endif  /* defined(__i386__) || defined(__x86_64__) */
  
@@ -12705,6 +12896,42 @@ index ebecb2e..746ac48 100644
                  if (thread->suspend)
                  {
                      delay_event( debug_obj, event );
+diff --git a/server/fd.c b/server/fd.c
+index 7384cf0..54f980d 100644
+--- a/server/fd.c
++++ b/server/fd.c
+@@ -102,6 +102,9 @@
+ #include "request.h"
+ 
+ #include "winternl.h"
++#if defined(__APPLE__) && defined(__aarch64__)
++#include <mach/mach_time.h>
++#endif
+ #include "winioctl.h"
+ #include "ddk/ntifs.h"
+ #include "ddk/wdm.h"
+@@ -355,6 +358,21 @@ static void set_user_shared_data_time(void)
+     atomic_store_ulong(&user_shared_data->InterruptTime.LowPart, monotonic_time);
+     atomic_store_long(&user_shared_data->InterruptTime.High1Time, monotonic_time >> 32);
+ 
++#if defined(__APPLE__) && defined(__aarch64__)
++    {
++        /* Barrique: Windows code in the VM reads the performance counter from the
++         * ARM counter (CNTVCT_EL0, mach_absolute_time) without a syscall; QPC counts
++         * like mach_continuous_time, so publish the time slept as the bias (100ns). */
++        static mach_timebase_info_data_t timebase;
++        uint64_t abs, cont;
++
++        if (!timebase.denom) mach_timebase_info( &timebase );
++        abs = mach_absolute_time();
++        cont = mach_continuous_time();
++        user_shared_data->QpcBias = (cont - abs) * timebase.numer / timebase.denom / 100;
++        user_shared_data->QpcFrequency = TICKS_PER_SEC;
++    }
++#endif
+     atomic_store_long(&user_shared_data->TickCount.High2Time, tick_count >> 32);
+     atomic_store_ulong(&user_shared_data->TickCount.LowPart, tick_count);
+     atomic_store_long(&user_shared_data->TickCount.High1Time, tick_count >> 32);
 diff --git a/server/inproc_sync.c b/server/inproc_sync.c
 index 522d9a4..430890f 100644
 --- a/server/inproc_sync.c

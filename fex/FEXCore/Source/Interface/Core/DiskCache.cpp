@@ -178,8 +178,10 @@ namespace DiskCache {
     File::File::FileHandleType CacheFileHandle = CacheFOZ.GetHandle();
     if (FileMapper && CacheFileHandle != (File::File::FileHandleType)-1) {
       CacheFileMapping = reinterpret_cast<uint8_t*>(FileMapper(CacheFileHandle, ReadOnly ? CacheFOZ.Size() : BIG_MAPPING_SIZE));
-      CacheFileSize = CacheFOZ.Size();
     }
+    // Barrique: the size limit (DiskCacheMaxFileSize) needs the size even without a
+    // file mapping (the Windows builds have no FileMapper): it never stopped growing.
+    CacheFileSize = CacheFOZ.Size();
 
     this->ReadOnly = ReadOnly;
     return true;
@@ -319,10 +321,8 @@ namespace DiskCache {
     CacheFOZ.Unlock();
     IndexFOZ.Unlock();
 
-    // publish new file size for memory-mapped reads
-    if (CacheFileMapping) {
-      CacheFileSize = BlobOffset + Blob.size();
-    }
+    // publish new file size for memory-mapped reads and the size limit
+    CacheFileSize = BlobOffset + Blob.size();
 
     return true;
   }

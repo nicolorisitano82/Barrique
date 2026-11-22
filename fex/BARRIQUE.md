@@ -26,6 +26,11 @@ The diff against upstream is also kept as `../patches/fex/0001-barrique-wow64-lo
   x86 code no longer has one processor too many (FEXCore already stores the
   count, not count - 1, in CPUID 01.EBX[23:16]).
 
+- `FEXCore/Source/Interface/Core/DiskCache.cpp`: the cache file size used for the
+  `DiskCacheMaxFileSize` limit was only set when the file was memory-mapped, which
+  the Windows builds never do, so the cache grew without bound (13 GB for one game).
+  It is now read on open and updated after every store.
+
 ## Not for upstream
 
 The FEX project does not accept AI-generated code (see `CLAUDE.md` and
