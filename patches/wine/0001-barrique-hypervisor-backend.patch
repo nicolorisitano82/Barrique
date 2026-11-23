@@ -2414,10 +2414,10 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..7969540
+index 0000000..80795fa
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,1277 @@
+@@ -0,0 +1,1386 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -2550,7 +2550,7 @@ index 0000000..7969540
 +static pthread_mutex_t hvf_mutex = PTHREAD_MUTEX_INITIALIZER;
 +static _Atomic uint64_t tlb_generation;
 +/* exits from the VM, by reason (WINE_HVF_STATS=1 prints them when the process exits) */
-+static LONG stat_exits, stat_syscalls, stat_unix_calls, stat_page_fills, stat_other, stat_vcpu_creates;
++static LONG stat_exits, stat_syscalls, stat_unix_calls, stat_page_fills, stat_other, stat_vcpu_creates, stat_reclaims;
 +static double stat_start;
 +static void start_profiler(void);
 +static double stat_now(void);
@@ -2560,6 +2560,7 @@ index 0000000..7969540
 +
 +struct hvf_vcpu
 +{
++    struct hvf_vcpu *next_dead;  /* see hvf_reclaim_vcpu() */
 +    hv_vcpu_t        vcpu;
 +    hv_vcpu_exit_t  *exit;
 +    uint64_t         tlb_seen;
@@ -2581,6 +2582,10 @@ index 0000000..7969540
 + * blocked threads never hold more than that and the rest stays available. */
 +static LONG vcpu_release_threshold = 32;
 +static LONG vcpu_hard_threshold = 56;
++static BOOL release_after_long_wait;
++static struct hvf_vcpu * volatile dead_vcpus;  /* destroyed by hvf_reclaim_vcpu(), freed later */
++static BOOL reclaim_one_vcpu(void);
++static void free_dead_vcpus(void);
 +/* diagnostic switches (BARRIQUE_HVF_FAULTAROUND=0, BARRIQUE_HVF_VCPU_RELEASE=0,
 + * BARRIQUE_HVF_LAZY_FP=0): turn one mechanism off to see whether a bug goes away */
 +static BOOL fault_around = TRUE;
@@ -3052,7 +3057,7 @@ index 0000000..7969540
 +        if (!hv_vm_get_max_vcpu_count( &max_vcpus ) && max_vcpus >= 16)
 +        {
 +            vcpu_release_threshold = max_vcpus / 2;
-+            vcpu_hard_threshold = max_vcpus - 8;
++            vcpu_hard_threshold = max_vcpus - 2;  /* the rest comes back through hvf_reclaim_vcpu() */
 +        }
 +        TRACE( "%u vCPUs at most, released by blocking threads from %d\n", max_vcpus, (int)vcpu_release_threshold );
 +    }
@@ -3062,6 +3067,8 @@ index 0000000..7969540
 +    if (getenv( "BARRIQUE_HVF_LAZY_FP" ) && !atoi( getenv( "BARRIQUE_HVF_LAZY_FP" ))) hvf_lazy_fp_enabled = FALSE;
 +    /* not "never": a process with more threads than vCPUs needs them back; only when nearly full */
 +    /* =2: the other way round, every wait gives the vCPU back */
++    if (getenv( "BARRIQUE_HVF_VCPU_RELEASE" ) && atoi( getenv( "BARRIQUE_HVF_VCPU_RELEASE" )) == 1)
++        release_after_long_wait = TRUE;
 +    if (getenv( "BARRIQUE_HVF_VCPU_RELEASE" ) && atoi( getenv( "BARRIQUE_HVF_VCPU_RELEASE" )) == 2)
 +        vcpu_release_threshold = 0;
 +    if (getenv( "BARRIQUE_HVF_VCPU_RELEASE" ) && !atoi( getenv( "BARRIQUE_HVF_VCPU_RELEASE" )))
@@ -3177,7 +3184,7 @@ index 0000000..7969540
 +static void *prof_thread( void *arg )
 +{
 +    int fd = (int)(intptr_t)arg;
-+    LONG written = 0, last_exits = 0, last_sys = 0, last_fills = 0, last_creates = 0;
++    LONG written = 0, last_exits = 0, last_sys = 0, last_fills = 0, last_creates = 0, last_reclaims = 0;
 +    unsigned int ticks = 0;
 +
 +    for (;;)
@@ -3191,11 +3198,13 @@ index 0000000..7969540
 +            if (write( fd, prof_pcs + written % PROF_SIZE, n * sizeof(*prof_pcs) ) <= 0) break;
 +            written += n;
 +        }
-+        fprintf( stderr, "hvf prof %04x: %d exits/s, %d syscalls/s, %d page fills/s, %d vCPU creates/s, %d vCPUs, %d samples\n",
++        fprintf( stderr, "hvf prof %04x: %d exits/s, %d syscalls/s, %d page fills/s, %d vCPU creates/s, %d reclaims/s, %d vCPUs, %d samples\n",
 +                 (int)GetCurrentProcessId(), (int)(stat_exits - last_exits) / 5,
 +                 (int)(stat_syscalls - last_sys) / 5, (int)(stat_page_fills - last_fills) / 5,
-+                 (int)(stat_vcpu_creates - last_creates) / 5, (int)vcpu_count, (int)prof_count );
++                 (int)(stat_vcpu_creates - last_creates) / 5, (int)(stat_reclaims - last_reclaims) / 5,
++                 (int)vcpu_count, (int)prof_count );
 +        last_creates = stat_vcpu_creates;
++        last_reclaims = stat_reclaims;
 +        if (hvf_syscall_hist)
 +        {
 +            static LONG last[4 << 12];
@@ -3320,6 +3329,7 @@ index 0000000..7969540
 +    unsigned int tries = 0;
 +
 +    if (v) return v;
++    if (dead_vcpus) free_dead_vcpus();
 +    v = calloc( 1, sizeof(*v) );
 +    /* all vCPUs taken: threads give theirs back when they block, see hvf_release_vcpu() */
 +    for (;;)
@@ -3332,6 +3342,8 @@ index 0000000..7969540
 +        ret = hv_vcpu_create( &v->vcpu, &v->exit, NULL );
 +        pthread_sigmask( SIG_SETMASK, &old_set, NULL );
 +        if (!ret) break;
++        if (!(tries % 20)) reclaim_one_vcpu();  /* every 20ms, see hvf_reclaim_vcpu() */
++        else if (!tries) reclaim_one_vcpu();
 +        if (++tries == 1) WARN( "no vCPU left (%d in use), waiting for one\n", (int)vcpu_count );
 +        if (tries > 30000)  /* 30 seconds */
 +        {
@@ -3373,21 +3385,57 @@ index 0000000..7969540
 + */
 +/* Barrique: giving the vCPU back on every wait made busy programs (Unreal Engine
 + * games, 100+ threads) spend as much time creating and destroying vCPUs as running
-+ * guest code. A thread keeps its vCPU while its waits are short; it gives it back
-+ * when its previous wait was long, or always when the VM is nearly out of vCPUs. */
++ * guest code. A thread keeps its vCPU while it waits, unless its previous wait was
++ * long. When a thread needs a vCPU and the VM has none left, the thread that has been
++ * waiting the longest with one is interrupted (HVF_RECLAIM_SIGNAL) and gives it back:
++ * only the thread that created a vCPU can destroy it. */
 +static __thread BOOL last_wait_long = TRUE;
 +static __thread struct timespec wait_start;
 +
++#define PARK_SLOTS 2048
++struct park_slot
++{
++    pthread_t thread;
++    volatile LONG state;  /* 0: running or no vCPU, 1: waiting with a vCPU, 2: asked to give it back */
++    double since;
++};
++static struct park_slot park_slots[PARK_SLOTS];
++static LONG park_slot_count;
++static __thread int park_index = -1;
++
++static struct park_slot *my_park_slot(void)
++{
++    if (park_index == -1)
++    {
++        LONG i = InterlockedIncrement( &park_slot_count ) - 1;
++        if (i >= PARK_SLOTS) { park_index = -2; return NULL; }
++        park_slots[i].thread = pthread_self();
++        park_index = i;
++    }
++    return park_index >= 0 ? &park_slots[park_index] : NULL;
++}
++
 +BOOL hvf_vcpu_should_release(void)
 +{
++    /* a waiting thread keeps its vCPU: get_vcpu() takes it back through
++     * hvf_reclaim_vcpu() when another thread needs one, so only threads that
++     * cannot be reclaimed (no park slot) give it back when the VM is about full.
++     * BARRIQUE_HVF_VCPU_RELEASE=1 restores giving it back after long waits */
 +    if (!pthread_getspecific( vcpu_key )) return FALSE;
-+    if (vcpu_count >= vcpu_hard_threshold) return TRUE;
-+    return vcpu_count >= vcpu_release_threshold && last_wait_long;
++    if (vcpu_count >= vcpu_hard_threshold && !my_park_slot()) return TRUE;
++    return release_after_long_wait && vcpu_count >= vcpu_release_threshold && last_wait_long;
 +}
 +
 +void hvf_wait_begin(void)
 +{
++    struct park_slot *slot;
++
 +    clock_gettime( CLOCK_MONOTONIC, &wait_start );
++    if (pthread_getspecific( vcpu_key ) && (slot = my_park_slot()))
++    {
++        slot->since = wait_start.tv_sec + wait_start.tv_nsec / 1e9;
++        __atomic_store_n( &slot->state, 1, __ATOMIC_SEQ_CST );
++    }
 +}
 +
 +void hvf_wait_end(void)
@@ -3395,9 +3443,70 @@ index 0000000..7969540
 +    struct timespec now;
 +    long long ns;
 +
++    if (park_index >= 0) __atomic_store_n( &park_slots[park_index].state, 0, __ATOMIC_SEQ_CST );
 +    clock_gettime( CLOCK_MONOTONIC, &now );
 +    ns = (now.tv_sec - wait_start.tv_sec) * 1000000000LL + (now.tv_nsec - wait_start.tv_nsec);
 +    last_wait_long = ns > 2000000;  /* 2ms */
++}
++
++/* signal handler side: TRUE if this thread was asked for its vCPU (the caller saves
++ * the FP state, then calls hvf_reclaim_vcpu()) */
++BOOL hvf_reclaim_requested(void)
++{
++    return park_index >= 0 && __atomic_load_n( &park_slots[park_index].state, __ATOMIC_SEQ_CST ) == 2;
++}
++
++void hvf_reclaim_vcpu(void)
++{
++    struct hvf_vcpu *v = pthread_getspecific( vcpu_key );
++    sigset_t old_set;
++    unsigned int i;
++
++    if (v && !pthread_mutex_trylock( &vcpu_list_mutex ))
++    {
++        for (i = 0; i < vcpu_list_count; i++)
++            if (vcpu_list[i] == v->vcpu) { vcpu_list[i] = vcpu_list[--vcpu_list_count]; break; }
++        pthread_mutex_unlock( &vcpu_list_mutex );
++        pthread_setspecific( vcpu_key, NULL );
++        pthread_sigmask( SIG_BLOCK, &server_block_set, &old_set );
++        hv_vcpu_destroy( v->vcpu );
++        pthread_sigmask( SIG_SETMASK, &old_set, NULL );
++        InterlockedDecrement( &vcpu_count );
++        InterlockedIncrement( &stat_reclaims );
++        /* no free() in a signal handler */
++        do v->next_dead = dead_vcpus;
++        while (__sync_val_compare_and_swap( &dead_vcpus, v->next_dead, v ) != v->next_dead);
++    }
++    __atomic_store_n( &park_slots[park_index].state, 0, __ATOMIC_SEQ_CST );
++}
++
++/* ask the thread that has waited longest with a vCPU to give it back */
++static BOOL reclaim_one_vcpu(void)
++{
++    double oldest = 0;
++    int i, best = -1, count = min( park_slot_count, PARK_SLOTS );
++
++    for (i = 0; i < count; i++)
++    {
++        if (i == park_index || __atomic_load_n( &park_slots[i].state, __ATOMIC_SEQ_CST ) != 1) continue;
++        if (best == -1 || park_slots[i].since < oldest) { best = i; oldest = park_slots[i].since; }
++    }
++    if (best == -1) return FALSE;
++    if (!__sync_bool_compare_and_swap( &park_slots[best].state, 1, 2 )) return FALSE;
++    pthread_kill( park_slots[best].thread, HVF_RECLAIM_SIGNAL );
++    return TRUE;
++}
++
++static void free_dead_vcpus(void)
++{
++    struct hvf_vcpu *v = __sync_lock_test_and_set( &dead_vcpus, NULL );
++
++    while (v)
++    {
++        struct hvf_vcpu *next = v->next_dead;
++        free( v );
++        v = next;
++    }
 +}
 +
 +void hvf_release_vcpu(void)
@@ -5986,7 +6095,7 @@ index ced0a36..75550ed 100644
          ERR("tcsetattr error '%s'\n", strerror(errno));
          return errno_to_status( errno );
 diff --git a/dlls/ntdll/unix/server.c b/dlls/ntdll/unix/server.c
-index c80226f..a787d2f 100644
+index c80226f..2501620 100644
 --- a/dlls/ntdll/unix/server.c
 +++ b/dlls/ntdll/unix/server.c
 @@ -627,6 +627,22 @@ static void invoke_system_apc( const union apc_call *call, union apc_result *res
@@ -6097,8 +6206,18 @@ index c80226f..a787d2f 100644
  
  extern NTSTATUS apple_spawn_main_thread(void);
  
+@@ -1643,6 +1721,9 @@ void server_init_process( struct thread_data *data )
+     sigaddset( &server_block_set, SIGUSR1 );
+     sigaddset( &server_block_set, SIGUSR2 );
+     sigaddset( &server_block_set, SIGCHLD );
++#ifdef WINE_HVF
++    sigaddset( &server_block_set, HVF_RECLAIM_SIGNAL );
++#endif
+     pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
+ 
+     /* receive the first thread request fd on the main socket */
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
-index 02b6d57..e56e454 100644
+index 02b6d57..ac10954 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
 +++ b/dlls/ntdll/unix/signal_arm64.c
 @@ -29,6 +29,9 @@
@@ -6356,7 +6475,30 @@ index 02b6d57..e56e454 100644
      if (is_inside_syscall( data, SP_sig(sigcontext) )) abort_thread(0);
      user_mode_abort_thread( 0, get_syscall_frame( data ));
  }
-@@ -1440,6 +1606,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1427,6 +1593,22 @@ static void save_syscall_entry_frame( ucontext_t *sigcontext )
+  *
+  * Handler for SIGUSR1, used to signal a thread that it got suspended.
+  */
++#ifdef WINE_HVF
++/**********************************************************************
++ *		hvf_reclaim_handler
++ *
++ * Barrique: another thread needs a vCPU and the VM has none left; this thread
++ * waits in a syscall with one, see hvf_reclaim_vcpu(). Blocked with the other
++ * server signals, so it only arrives during the wait itself.
++ */
++static void hvf_reclaim_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
++{
++    if (!hvf_reclaim_requested()) return;
++    hvf_sync_fp();  /* the FP state goes away with the vCPU */
++    hvf_reclaim_vcpu();
++}
++#endif
++
+ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+ {
+     ucontext_t *sigcontext = _sigcontext;
+@@ -1440,6 +1622,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      extern const ULONG_PTR __wine_unix_call_dispatcher_user_stack;
      extern const ULONG_PTR call_user_mode_callback_user_stack_ptr;
  
@@ -6392,7 +6534,7 @@ index 02b6d57..e56e454 100644
      /* if we're in a syscall dispatcher, but not yet on the syscall stack, construct
       * the frame now from the signal context. */
      if ((ULONG_PTR)__wine_syscall_dispatcher <= PC_sig(sigcontext) &&
-@@ -1509,6 +1704,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1509,6 +1720,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      struct syscall_frame *frame = get_syscall_frame( data );
      DWORD i;
  
@@ -6402,7 +6544,18 @@ index 02b6d57..e56e454 100644
      if (!is_inside_syscall( data, SP_sig(sigcontext) )) return;
      if (!frame) return;
  
-@@ -1691,6 +1889,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
+@@ -1601,6 +1815,10 @@ void signal_init_process( TEB *teb )
+     if (sigaction( SIGUSR1, &sig_act, NULL ) == -1) goto error;
+     sig_act.sa_sigaction = usr2_handler;
+     if (sigaction( SIGUSR2, &sig_act, NULL ) == -1) goto error;
++#ifdef WINE_HVF
++    sig_act.sa_sigaction = hvf_reclaim_handler;
++    if (sigaction( HVF_RECLAIM_SIGNAL, &sig_act, NULL ) == -1) goto error;
++#endif
+     sig_act.sa_sigaction = trap_handler;
+     if (sigaction( SIGTRAP, &sig_act, NULL ) == -1) goto error;
+     sig_act.sa_sigaction = segv_handler;
+@@ -1691,6 +1909,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
  }
  
  
@@ -6410,7 +6563,7 @@ index 02b6d57..e56e454 100644
  /***********************************************************************
   *           signal_start_thread
   */
-@@ -1728,6 +1927,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
+@@ -1728,6 +1947,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
                     "mov sp, x4\n\t"
                     "bl " __ASM_NAME("init_syscall_frame") "\n\t"
                     "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
@@ -6418,7 +6571,7 @@ index 02b6d57..e56e454 100644
  
  
  /***********************************************************************
-@@ -1966,4 +2166,480 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+@@ -1966,4 +2186,480 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
  __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
                        __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
  
@@ -7206,10 +7359,10 @@ index 11171cc..e7fbffb 100644
  
      if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..ebaf1cb 100644
+index 829db1e..3c39ace 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
-@@ -138,6 +138,73 @@ static inline struct thread_data *get_thread_data(void)
+@@ -138,6 +138,76 @@ static inline struct thread_data *get_thread_data(void)
      return pthread_getspecific( thread_data_key );
  }
  
@@ -7261,6 +7414,9 @@ index 829db1e..ebaf1cb 100644
 +extern void hvf_print_stats(void);
 +extern BOOL hvf_vcpu_should_release(void);
 +extern void hvf_wait_begin(void);
++extern BOOL hvf_reclaim_requested(void);
++extern void hvf_reclaim_vcpu(void);
++#define HVF_RECLAIM_SIGNAL SIGEMT  /* not used otherwise by Wine */
 +extern void hvf_wait_end(void);
 +extern void hvf_set_tso( BOOL enable );
 +extern BOOL is_wait_syscall( const void *func );
@@ -7283,7 +7439,7 @@ index 829db1e..ebaf1cb 100644
  /* thread private data, stored in NtCurrentTeb()->GdiTebBatch */
  struct teb_data
  {
-@@ -223,6 +290,7 @@ extern ULONG64 mitigation_options[2];
+@@ -223,6 +293,7 @@ extern ULONG64 mitigation_options[2];
  extern int main_argc;
  extern char **main_argv;
  extern WCHAR **main_wargv;
@@ -7291,7 +7447,7 @@ index 829db1e..ebaf1cb 100644
  extern const WCHAR system_dir[];
  extern unsigned int supported_machines_count;
  extern USHORT supported_machines[8];
-@@ -266,6 +334,9 @@ extern int server_get_unix_fd( HANDLE handle, unsigned int wanted_access, int *u
+@@ -266,6 +337,9 @@ extern int server_get_unix_fd( HANDLE handle, unsigned int wanted_access, int *u
                                 int *needs_close, enum server_fd_type *type, unsigned int *options );
  extern int wine_server_receive_fd( obj_handle_t *handle );
  extern void process_exit_wrapper( int status ) DECLSPEC_NORETURN;
@@ -7301,7 +7457,7 @@ index 829db1e..ebaf1cb 100644
  extern void server_init_process( struct thread_data *data );
  extern void server_init_process_done(void);
  extern void server_init_thread( struct thread_data *data );
-@@ -740,4 +811,9 @@ static inline int is_gdt_sel( WORD sel )
+@@ -740,4 +814,9 @@ static inline int is_gdt_sel( WORD sel )
  
  #endif  /* defined(__i386__) || defined(__x86_64__) */
  
