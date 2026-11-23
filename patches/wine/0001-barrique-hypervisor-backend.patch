@@ -7132,7 +7132,7 @@ index 02b6d57..9deed0a 100644
 +
  #endif  /* __aarch64__ */
 diff --git a/dlls/ntdll/unix/socket.c b/dlls/ntdll/unix/socket.c
-index 9674d0f..2a74b8f 100644
+index 9674d0f..41da4ef 100644
 --- a/dlls/ntdll/unix/socket.c
 +++ b/dlls/ntdll/unix/socket.c
 @@ -93,7 +93,9 @@
@@ -7146,6 +7146,22 @@ index 9674d0f..2a74b8f 100644
  
  union unix_sockaddr
  {
+@@ -1194,7 +1196,14 @@ static NTSTATUS sock_send( HANDLE handle, HANDLE event, PIO_APC_ROUTINE apc, voi
+     SERVER_START_REQ( send_socket )
+     {
+         req->flags = server_flags;
+-        req->async  = server_async( handle, &async->io, event, apc, apc_user, iosb_client_ptr(io) );
++        /* The queued remainder of a short write keeps its IOSB inside the async
++         * itself, which async_send_proc() releases before invoke_system_apc()
++         * would write the final status there. Nobody reads that IOSB, so don't
++         * hand it to the server; otherwise a concurrent alloc_fileio() can free
++         * the block first and the late write corrupts memory or faults, losing
++         * the APC result and leaving the socket's write queue stuck. */
++        req->async  = server_async( handle, &async->io, event, apc, apc_user,
++                                    (server_flags & SERVER_SOCKET_IO_SYSTEM) ? 0 : iosb_client_ptr(io) );
+         status = wine_server_call( req );
+         wait_handle = wine_server_ptr_handle( reply->wait );
+         options     = reply->options;
 diff --git a/dlls/ntdll/unix/sync.c b/dlls/ntdll/unix/sync.c
 index a6e4485..a792630 100644
 --- a/dlls/ntdll/unix/sync.c
@@ -16406,7 +16422,7 @@ index 5f16fef..1a0b338 100644
      vulkan_info->sparse_binding = features->sparseBinding;
      vulkan_info->sparse_residency_3d = features->sparseResidencyImage3D;
 diff --git a/libs/vkd3d/libs/vkd3d/state.c b/libs/vkd3d/libs/vkd3d/state.c
-index 14f5250..3e846be 100644
+index 14f5250..b6ee37e 100644
 --- a/libs/vkd3d/libs/vkd3d/state.c
 +++ b/libs/vkd3d/libs/vkd3d/state.c
 @@ -1853,8 +1853,11 @@ static HRESULT vkd3d_render_pass_cache_create_pass_locked(struct vkd3d_render_pa
@@ -16584,12 +16600,29 @@ index 14f5250..3e846be 100644
      size_t rt_count;
      uint32_t mask;
      HRESULT hr;
-@@ -3504,12 +3620,17 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+@@ -3504,12 +3620,34 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
          offset_info.uav_counter_offsets = root_signature->uav_counter_offsets;
      }
  
 +    if (desc->gs.pShaderBytecode && !vk_info->geometry_shaders && !so_desc->NumEntries)
 +        vs_layer_output = passthrough_gs_layer_output(desc);
++    if (desc->gs.pShaderBytecode && !vk_info->geometry_shaders && !vs_layer_output)
++    {
++        struct vkd3d_shader_scan_signature_info gs_info;
++        unsigned int k;
++
++        ERR("Geometry shader %p (%zu bytes) cannot be emulated and will be dropped, so %u, rts %u, ds %#x.\n",
++                desc->gs.pShaderBytecode, (size_t)desc->gs.BytecodeLength, so_desc->NumEntries,
++                desc->rtv_formats.NumRenderTargets, desc->dsv_format);
++        if (scan_shader_signatures(&desc->gs, &gs_info))
++        {
++            for (k = 0; k < gs_info.output.element_count; ++k)
++                ERR("  GS out %s%u reg %u mask %#x sysval %#x.\n", gs_info.output.elements[k].semantic_name,
++                        gs_info.output.elements[k].semantic_index, gs_info.output.elements[k].register_index,
++                        gs_info.output.elements[k].mask, gs_info.output.elements[k].sysval_semantic);
++            vkd3d_shader_free_scan_signature_info(&gs_info);
++        }
++    }
 +
      for (i = 0; i < ARRAY_SIZE(shader_stages); ++i)
      {
@@ -16602,7 +16635,7 @@ index 14f5250..3e846be 100644
  
          if (FAILED(hr = d3d12_pipeline_state_find_and_init_uav_counters(state, device, root_signature,
                  b, shader_stages[i].stage)))
-@@ -3561,8 +3682,9 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+@@ -3561,8 +3699,9 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
          if (shader_stages[i].stage == VK_SHADER_STAGE_VERTEX_BIT)
              vkd3d_prepend_struct(&shader_interface, &signature_info);
  
