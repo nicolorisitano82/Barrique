@@ -2414,7 +2414,7 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..effb505
+index 0000000..428437f
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
 @@ -0,0 +1,1459 @@
@@ -3198,24 +3198,24 @@ index 0000000..effb505
 +
 +static void print_unix_hist(void)
 +{
-+    unsigned int i, j, top[8] = {0};
-+    LONG delta[8] = {0}, total = 0;
++    unsigned int i, j, top[16] = {0};
++    LONG delta[16] = {0}, total = 0;
 +    for (i = 0; i < UNIX_HIST_SIZE; i++)
 +    {
 +        LONG d = unix_hist[i].count - unix_hist[i].last;
 +        unix_hist[i].last = unix_hist[i].count;
 +        total += d;
-+        for (j = 0; j < 8; j++)
++        for (j = 0; j < 16; j++)
 +            if (d > delta[j])
 +            {
-+                memmove( delta + j + 1, delta + j, (7 - j) * sizeof(*delta) );
-+                memmove( top + j + 1, top + j, (7 - j) * sizeof(*top) );
++                memmove( delta + j + 1, delta + j, (15 - j) * sizeof(*delta) );
++                memmove( top + j + 1, top + j, (15 - j) * sizeof(*top) );
 +                delta[j] = d; top[j] = i;
 +                break;
 +            }
 +    }
 +    if (total / 5) fprintf( stderr, "hvf prof %04x:  unix calls %d/s\n", (int)GetCurrentProcessId(), (int)total / 5 );
-+    for (j = 0; j < 8 && delta[j] / 5; j++)
++    for (j = 0; j < 16 && delta[j] / 5; j++)
 +    {
 +        Dl_info info;
 +        const char *lib = "?", *sym = "?";
@@ -9983,7 +9983,7 @@ index c9cc892..0f9fb2e 100644
      {
          if (strstr( app_compat_flags, "HIGHDPIAWARE" )) NtUserSetProcessDpiAwarenessContext( NTUSER_DPI_SYSTEM_AWARE, 0 );
 diff --git a/dlls/win32u/vulkan.c b/dlls/win32u/vulkan.c
-index 3265d74..8b8b5ea 100644
+index 3265d74..e8d3357 100644
 --- a/dlls/win32u/vulkan.c
 +++ b/dlls/win32u/vulkan.c
 @@ -60,9 +60,30 @@ static const UINT EXTERNAL_FENCE_WIN32_BITS = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQ
@@ -10151,7 +10151,7 @@ index 3265d74..8b8b5ea 100644
      device->p_vkDestroySwapchainKHR( device->host.device, swapchain->obj.host.swapchain, NULL );
      instance->p_remove_object( instance, &swapchain->obj.obj );
  
-@@ -2007,6 +2073,60 @@ static VkResult win32u_vkAcquireNextImageKHR( VkDevice client_device, VkSwapchai
+@@ -2007,6 +2073,122 @@ static VkResult win32u_vkAcquireNextImageKHR( VkDevice client_device, VkSwapchai
      return res;
  }
  
@@ -10209,10 +10209,72 @@ index 3265d74..8b8b5ea 100644
 +    return TRUE;
 +}
 +
++#ifdef __APPLE__
++/* Barrique debugging aid: BARRIQUE_GPU_CAPTURE_TRIGGER=<unix path> [BARRIQUE_GPU_CAPTURE_FILE=<path>]
++ * with METAL_CAPTURE_ENABLED=1 writes a Metal GPU trace of the first frame presented
++ * once the trigger file exists, for Xcode. Objective-C through the runtime, nothing linked. */
++static void gpu_capture_present(void)
++{
++    /* objc_msgSend must be called through exact, non-variadic prototypes:
++     * on Apple arm64 variadic arguments go on the stack */
++    typedef void *(*msg0_t)(void *, void *);
++    typedef void *(*msg1_t)(void *, void *, void *);
++    typedef void *(*msgl_t)(void *, void *, long);
++    typedef void *(*msgs_t)(void *, void *, const char *);
++    typedef BOOL (*msg2_t)(void *, void *, void *, void **);
++    static int state = -1;
++    static const char *trigger;
++    static void *msg;
++    static void *(*get_class)(const char *);
++    static void *(*sel)(const char *);
++    static void *manager;
++
++    if (state < 0)
++    {
++        state = 3;
++        if (!(trigger = getenv( "BARRIQUE_GPU_CAPTURE_TRIGGER" ))) return;
++        msg = dlsym( RTLD_DEFAULT, "objc_msgSend" );
++        get_class = dlsym( RTLD_DEFAULT, "objc_getClass" );
++        sel = dlsym( RTLD_DEFAULT, "sel_registerName" );
++        if (!dlopen( "/System/Library/Frameworks/Metal.framework/Metal", RTLD_NOW )) return;
++        if (msg && get_class && sel) state = 0;
++    }
++    if (state == 0 && !access( trigger, F_OK ))
++    {
++        void *(*create_device)(void) = dlsym( RTLD_DEFAULT, "MTLCreateSystemDefaultDevice" );
++        const char *path = getenv( "BARRIQUE_GPU_CAPTURE_FILE" );
++        void *device, *desc, *str, *url, *error = NULL;
++        BOOL ok;
++
++        state = 3;
++        if (!create_device || !(device = create_device())) return;
++        if (!path) path = "/tmp/barrique.gputrace";
++        manager = ((msg0_t)msg)( get_class( "MTLCaptureManager" ), sel( "sharedCaptureManager" ) );
++        desc = ((msg0_t)msg)( ((msg0_t)msg)( get_class( "MTLCaptureDescriptor" ), sel( "alloc" ) ), sel( "init" ) );
++        ((msg1_t)msg)( desc, sel( "setCaptureObject:" ), device );
++        ((msgl_t)msg)( desc, sel( "setDestination:" ), 2 /* MTLCaptureDestinationGPUTraceDocument */ );
++        str = ((msgs_t)msg)( get_class( "NSString" ), sel( "stringWithUTF8String:" ), path );
++        url = ((msg1_t)msg)( get_class( "NSURL" ), sel( "fileURLWithPath:" ), str );
++        ((msg1_t)msg)( desc, sel( "setOutputURL:" ), url );
++        ok = ((msg2_t)msg)( manager, sel( "startCaptureWithDescriptor:error:" ), desc, &error );
++        ERR( "GPU capture to %s: %s\n", path, ok ? "started" : "failed" );
++        if (ok) state = 1;
++    }
++    else if (state == 1)
++    {
++        ((msg0_t)msg)( manager, sel( "stopCapture" ) );
++        ERR( "GPU capture stopped\n" );
++        state = 2;
++    }
++}
++#else
++static void gpu_capture_present(void) {}
++#endif
++
  static VkResult win32u_vkQueuePresentKHR( VkQueue client_queue, const VkPresentInfoKHR *client_present_info )
  {
      VkPresentInfoKHR *present_info = (VkPresentInfoKHR *)client_present_info; /* cast away const, it has been copied in the thunks */
-@@ -2045,7 +2165,10 @@ static VkResult win32u_vkQueuePresentKHR( VkQueue client_queue, const VkPresentI
+@@ -2045,7 +2227,11 @@ static VkResult win32u_vkQueuePresentKHR( VkQueue client_queue, const VkPresentI
          client_surface_update( surface->client );
      }
  
@@ -10221,10 +10283,11 @@ index 3265d74..8b8b5ea 100644
 +        res = VK_SUCCESS;
 +    else
 +        res = device->p_vkQueuePresentKHR( queue->host.queue, present_info );
++    gpu_capture_present();
  
      for (uint32_t i = 0; i < present_info->swapchainCount; i++)
      {
-@@ -3130,6 +3253,12 @@ static void vulkan_init_once(void)
+@@ -3130,6 +3316,12 @@ static void vulkan_init_once(void)
      VkResult res;
  
  #ifdef SONAME_LIBVULKAN
@@ -15089,10 +15152,18 @@ index 71a921a..7b3cd25 100755
              f.write(f"    unix_{func.name},\n")
          f.write("    unix_count,\n")
 diff --git a/dlls/winevulkan/vulkan.c b/dlls/winevulkan/vulkan.c
-index 2dac08a..9133368 100644
+index 2dac08a..f927bda 100644
 --- a/dlls/winevulkan/vulkan.c
 +++ b/dlls/winevulkan/vulkan.c
-@@ -975,6 +975,9 @@ void wine_vkDestroyDeferredOperationKHR(VkDevice device_handle,
+@@ -22,6 +22,7 @@
+ #endif
+ 
+ #include "config.h"
++#include <dlfcn.h>
+ #include <time.h>
+ 
+ #include "vulkan_private.h"
+@@ -975,6 +976,9 @@ void wine_vkDestroyDeferredOperationKHR(VkDevice device_handle,
  static NTSTATUS is_available_instance_function(VkInstance handle, const char *name)
  {
      struct vulkan_instance *instance = vulkan_instance_from_handle(handle);
@@ -15102,10 +15173,46 @@ index 2dac08a..9133368 100644
      return !!vk_funcs->p_vkGetInstanceProcAddr(instance->host.instance, name);
  }
  
-@@ -1034,3 +1037,33 @@ NTSTATUS vk_is_available_device_function32(void *arg)
+@@ -1034,3 +1038,71 @@ NTSTATUS vk_is_available_device_function32(void *arg)
      } *params = arg;
      return is_available_device_function(UlongToPtr(params->device), UlongToPtr(params->name));
  }
++
++/* Barrique: BARRIQUE_VK_STATS=1 prints the batched commands per second, per kind */
++static LONG *batch_stats;
++static LONG batch_stats_last[4096];
++
++static void print_batch_stats(void)
++{
++#ifdef _WIN64
++    extern const unixlib_entry_t __wine_unix_call_funcs[];
++    static ULONGLONG last_time;
++    static LONG printing;
++    ULONGLONG now = NtGetTickCount();
++    unsigned int i;
++
++    if (now - last_time < 5000 || InterlockedExchange(&printing, 1)) return;
++    if (now - last_time >= 5000)
++    {
++        last_time = now;
++        for (i = 0; i < unix_count && i < 4096; i++)
++        {
++            LONG d = batch_stats[i] - batch_stats_last[i];
++            Dl_info info;
++            batch_stats_last[i] = batch_stats[i];
++            if (d / 5 && dladdr(__wine_unix_call_funcs[i], &info) && info.dli_sname)
++                fprintf(stderr, "vk stats %04x: %s %d/s\n", (int)GetCurrentProcessId(), info.dli_sname, (int)d / 5);
++        }
++    }
++    printing = 0;
++#endif
++}
++
++static void __attribute__((constructor)) init_batch_stats(void)
++{
++    const char *env = getenv("BARRIQUE_VK_STATS");
++    if (env && *env == '1') batch_stats = calloc(4096, sizeof(*batch_stats));
++}
 +
 +/* Barrique: replay the commands the client batched, see wine_vk_batch_begin() */
 +NTSTATUS vk_flush_command_batch(void *arg)
@@ -15123,9 +15230,11 @@ index 2dac08a..9133368 100644
 +            ERR("corrupt command batch\n");
 +            return STATUS_INVALID_PARAMETER;
 +        }
++        if (batch_stats) InterlockedIncrement(&batch_stats[header[0]]);
 +        __wine_unix_call_funcs[header[0]]((void *)(ptr + 8));
 +        ptr += header[1];
 +    }
++    if (batch_stats) print_batch_stats();
 +    return STATUS_SUCCESS;
 +#else
 +    return STATUS_NOT_IMPLEMENTED;
@@ -15916,7 +16025,7 @@ index 4b684fc..5730fcc 100644
  register struct _TEB *__wine_current_teb __asm__("x18");
  static FORCEINLINE struct _TEB * WINAPI NtCurrentTeb(void)
 diff --git a/libs/vkd3d/include/vkd3d_shader.h b/libs/vkd3d/include/vkd3d_shader.h
-index dcfdd16..04d7ca3 100644
+index dcfdd16..44ae3a3 100644
 --- a/libs/vkd3d/include/vkd3d_shader.h
 +++ b/libs/vkd3d/include/vkd3d_shader.h
 @@ -297,6 +297,10 @@ enum vkd3d_shader_compile_option_feature_flags
@@ -15930,11 +16039,38 @@ index dcfdd16..04d7ca3 100644
  
      VKD3D_FORCE_32_BIT_ENUM(VKD3D_SHADER_COMPILE_OPTION_FEATURE_FLAGS),
  };
+@@ -434,6 +438,15 @@ enum vkd3d_shader_compile_option_name
+      */
+     VKD3D_SHADER_COMPILE_OPTION_DENORMAL_MODE_F64 = 0x00000010,
+ 
++    /**
++     * Barrique: the vertex shader output at register (\a value - 1) >> 2,
++     * component (\a value - 1) & 3 is written to the Layer built-in, like
++     * SV_RenderTargetArrayIndex. Used to drop a pass-through geometry shader
++     * that only selects the render target layer, on devices without geometry
++     * shaders. 0 disables it.
++     */
++    VKD3D_SHADER_COMPILE_OPTION_BARRIQUE_VS_LAYER_OUTPUT = 0x7f000001,
++
+     VKD3D_FORCE_32_BIT_ENUM(VKD3D_SHADER_COMPILE_OPTION_NAME),
+ };
+ 
 diff --git a/libs/vkd3d/libs/vkd3d-shader/ir.c b/libs/vkd3d/libs/vkd3d-shader/ir.c
-index c8f8b8b..5bd4120 100644
+index c8f8b8b..fa86b6a 100644
 --- a/libs/vkd3d/libs/vkd3d-shader/ir.c
 +++ b/libs/vkd3d/libs/vkd3d-shader/ir.c
-@@ -899,6 +899,8 @@ done:
+@@ -848,6 +848,10 @@ void vsir_compile_info_init(struct vsir_compile_info *vsir, const struct vkd3d_s
+                 features = option->value;
+                 break;
+ 
++            case VKD3D_SHADER_COMPILE_OPTION_BARRIQUE_VS_LAYER_OUTPUT:
++                vsir->vs_layer_output = option->value;
++                break;
++
+             case VKD3D_SHADER_COMPILE_OPTION_CHILD_EFFECT:
+                 vsir->child_effect = !!option->value;
+                 break;
+@@ -899,6 +903,8 @@ done:
          vsir->feature_wave_ops = true;
      if (features & VKD3D_SHADER_COMPILE_OPTION_FEATURE_ZERO_INITIALIZE_WORKGROUP_MEMORY)
          vsir->feature_zero_init_tgsm = true;
@@ -15944,7 +16080,7 @@ index c8f8b8b..5bd4120 100644
      if (vsir->api_version <= VKD3D_SHADER_API_VERSION_1_19)
      {
 diff --git a/libs/vkd3d/libs/vkd3d-shader/spirv.c b/libs/vkd3d/libs/vkd3d-shader/spirv.c
-index 22af3f1..dfcd53f 100644
+index 22af3f1..8aa9d20 100644
 --- a/libs/vkd3d/libs/vkd3d-shader/spirv.c
 +++ b/libs/vkd3d/libs/vkd3d-shader/spirv.c
 @@ -5766,6 +5766,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
@@ -15955,7 +16091,7 @@ index 22af3f1..dfcd53f 100644
      uint32_t id, var_id;
      uint32_t write_mask;
  
-@@ -5785,6 +5786,11 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
+@@ -5785,6 +5786,20 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
          array_sizes[0] = 0;
  
      builtin = vkd3d_get_spirv_builtin(compiler, reg_type, sysval);
@@ -15964,10 +16100,19 @@ index 22af3f1..dfcd53f 100644
 +    drop_output = sysval == VKD3D_SHADER_SV_CULL_DISTANCE && compiler->compile_info.feature_no_cull_distance;
 +    if (drop_output)
 +        builtin = NULL;
++    /* Barrique: an output a dropped pass-through geometry shader copied to
++     * SV_RenderTargetArrayIndex, see VKD3D_SHADER_COMPILE_OPTION_BARRIQUE_VS_LAYER_OUTPUT */
++    if (compiler->shader_type == VKD3D_SHADER_TYPE_VERTEX && compiler->compile_info.vs_layer_output
++            && signature_element->register_index == (compiler->compile_info.vs_layer_output - 1) >> 2
++            && signature_element->mask == 1u << ((compiler->compile_info.vs_layer_output - 1) & 3))
++    {
++        sysval = VKD3D_SHADER_SV_RENDER_TARGET_ARRAY_INDEX;
++        builtin = vkd3d_get_spirv_builtin(compiler, reg_type, sysval);
++    }
  
      write_mask = signature_element->mask;
  
-@@ -5834,7 +5840,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
+@@ -5834,7 +5849,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
  
          spirv_compiler_emit_register_execution_mode(compiler, reg_type);
      }
@@ -15977,17 +16122,46 @@ index 22af3f1..dfcd53f 100644
          storage_class = SpvStorageClassPrivate;
          id = spirv_compiler_emit_array_variable(compiler, &builder->global_stream,
 diff --git a/libs/vkd3d/libs/vkd3d-shader/vkd3d_shader_private.h b/libs/vkd3d/libs/vkd3d-shader/vkd3d_shader_private.h
-index 7a57fb9..46f73e2 100644
+index 7a57fb9..f9f53d5 100644
 --- a/libs/vkd3d/libs/vkd3d-shader/vkd3d_shader_private.h
 +++ b/libs/vkd3d/libs/vkd3d-shader/vkd3d_shader_private.h
-@@ -1711,6 +1711,7 @@ struct vsir_compile_info
+@@ -1711,6 +1711,8 @@ struct vsir_compile_info
      uint32_t feature_float64 : 1;
      uint32_t feature_wave_ops : 1;
      uint32_t feature_zero_init_tgsm : 1;
 +    uint32_t feature_no_cull_distance : 1;
++    uint32_t vs_layer_output;  /* Barrique, see VKD3D_SHADER_COMPILE_OPTION_BARRIQUE_VS_LAYER_OUTPUT */
      uint32_t child_effect : 1;
      uint32_t warn_implicit_truncation : 1;
      uint32_t include_empty_buffers : 1;
+diff --git a/libs/vkd3d/libs/vkd3d/command.c b/libs/vkd3d/libs/vkd3d/command.c
+index 0ece8fd..2327b73 100644
+--- a/libs/vkd3d/libs/vkd3d/command.c
++++ b/libs/vkd3d/libs/vkd3d/command.c
+@@ -5457,8 +5457,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+     }
+     else
+     {
+-        attachment_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+-        attachment_desc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
++        /* Barrique: the aspect not cleared keeps its contents; DONT_CARE drops it
++         * per tile on Metal (MoltenVK) */
++        attachment_desc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
++        attachment_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+     }
+     if (flags & D3D12_CLEAR_FLAG_STENCIL)
+     {
+@@ -5467,8 +5469,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+     }
+     else
+     {
+-        attachment_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+-        attachment_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
++        attachment_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
++        attachment_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+     }
+     attachment_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+     attachment_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 diff --git a/libs/vkd3d/libs/vkd3d/device.c b/libs/vkd3d/libs/vkd3d/device.c
 index 5f16fef..1a0b338 100644
 --- a/libs/vkd3d/libs/vkd3d/device.c
@@ -16001,10 +16175,36 @@ index 5f16fef..1a0b338 100644
      vulkan_info->sparse_binding = features->sparseBinding;
      vulkan_info->sparse_residency_3d = features->sparseResidencyImage3D;
 diff --git a/libs/vkd3d/libs/vkd3d/state.c b/libs/vkd3d/libs/vkd3d/state.c
-index 14f5250..2bb23b2 100644
+index 14f5250..3e846be 100644
 --- a/libs/vkd3d/libs/vkd3d/state.c
 +++ b/libs/vkd3d/libs/vkd3d/state.c
-@@ -2380,6 +2380,8 @@ static unsigned int feature_flags_compile_option(const struct d3d12_device *devi
+@@ -1853,8 +1853,11 @@ static HRESULT vkd3d_render_pass_cache_create_pass_locked(struct vkd3d_render_pa
+         }
+         else
+         {
+-            attachments[attachment_index].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+-            attachments[attachment_index].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
++        /* Barrique: DONT_CARE lets tile-based GPUs (Metal through MoltenVK) drop the
++         * contents per tile, and later passes read garbage depth/stencil (black
++         * squares in Unreal Engine scenes); keep them. */
++            attachments[attachment_index].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
++            attachments[attachment_index].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+         }
+         if (key->stencil_enable)
+         {
+@@ -1863,8 +1866,9 @@ static HRESULT vkd3d_render_pass_cache_create_pass_locked(struct vkd3d_render_pa
+         }
+         else
+         {
+-            attachments[attachment_index].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+-            attachments[attachment_index].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
++            /* Barrique: see above */
++            attachments[attachment_index].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
++            attachments[attachment_index].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+         }
+         attachments[attachment_index].initialLayout = depth_layout;
+         attachments[attachment_index].finalLayout = depth_layout;
+@@ -2380,13 +2384,28 @@ static unsigned int feature_flags_compile_option(const struct d3d12_device *devi
          flags |= VKD3D_SHADER_COMPILE_OPTION_FEATURE_WAVE_OPS;
      if (device->vk_info.KHR_zero_initialize_workgroup_memory)
          flags |= VKD3D_SHADER_COMPILE_OPTION_FEATURE_ZERO_INITIALIZE_WORKGROUP_MEMORY;
@@ -16013,6 +16213,176 @@ index 14f5250..2bb23b2 100644
  
      return flags;
  }
+ 
++static HRESULT create_shader_stage_layer(struct d3d12_device *device,
++        struct VkPipelineShaderStageCreateInfo *stage_desc, enum VkShaderStageFlagBits stage,
++        const D3D12_SHADER_BYTECODE *code, const struct vkd3d_shader_interface_info *shader_interface,
++        unsigned int vs_layer_output);
++
+ static HRESULT create_shader_stage(struct d3d12_device *device,
+         struct VkPipelineShaderStageCreateInfo *stage_desc, enum VkShaderStageFlagBits stage,
+         const D3D12_SHADER_BYTECODE *code, const struct vkd3d_shader_interface_info *shader_interface)
++{
++    return create_shader_stage_layer(device, stage_desc, stage, code, shader_interface, 0);
++}
++
++static HRESULT create_shader_stage_layer(struct d3d12_device *device,
++        struct VkPipelineShaderStageCreateInfo *stage_desc, enum VkShaderStageFlagBits stage,
++        const D3D12_SHADER_BYTECODE *code, const struct vkd3d_shader_interface_info *shader_interface,
++        unsigned int vs_layer_output)
+ {
+     const struct vkd3d_vk_device_procs *vk_procs = &device->vk_procs;
+     struct vkd3d_shader_compile_info compile_info;
+@@ -2406,6 +2425,7 @@ static HRESULT create_shader_stage(struct d3d12_device *device,
+         {VKD3D_SHADER_COMPILE_OPTION_DENORMAL_MODE_F16, VKD3D_SHADER_DENORMAL_MODE_ANY},
+         {VKD3D_SHADER_COMPILE_OPTION_DENORMAL_MODE_F32, VKD3D_SHADER_DENORMAL_MODE_ANY},
+         {VKD3D_SHADER_COMPILE_OPTION_DENORMAL_MODE_F64, VKD3D_SHADER_DENORMAL_MODE_ANY},
++        {VKD3D_SHADER_COMPILE_OPTION_BARRIQUE_VS_LAYER_OUTPUT, vs_layer_output},
+     };
+ 
+     stage_desc->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+@@ -3212,6 +3232,102 @@ static VkLogicOp vk_logic_op_from_d3d12(D3D12_LOGIC_OP op)
+     }
+ }
+ 
++static bool scan_shader_signatures(const D3D12_SHADER_BYTECODE *code,
++        struct vkd3d_shader_scan_signature_info *info)
++{
++    struct vkd3d_shader_compile_info compile_info;
++
++    memset(info, 0, sizeof(*info));
++    info->type = VKD3D_SHADER_STRUCTURE_TYPE_SCAN_SIGNATURE_INFO;
++    memset(&compile_info, 0, sizeof(compile_info));
++    compile_info.type = VKD3D_SHADER_STRUCTURE_TYPE_COMPILE_INFO;
++    compile_info.next = info;
++    compile_info.source.code = code->pShaderBytecode;
++    compile_info.source.size = code->BytecodeLength;
++    compile_info.log_level = VKD3D_SHADER_LOG_NONE;
++    if (vkd3d_shader_parse_dxbc_source_type(&compile_info.source, &compile_info.source_type, NULL) < 0)
++        return false;
++    return vkd3d_shader_scan(&compile_info, NULL) >= 0;
++}
++
++static const struct vkd3d_shader_signature_element *find_signature_element(
++        const struct vkd3d_shader_signature *signature, const char *name, unsigned int index)
++{
++    unsigned int i;
++
++    for (i = 0; i < signature->element_count; ++i)
++    {
++        if (!ascii_strcasecmp(signature->elements[i].semantic_name, name)
++                && signature->elements[i].semantic_index == index)
++            return &signature->elements[i];
++    }
++    return NULL;
++}
++
++/* Barrique: Metal (MoltenVK) has no geometry shaders, and MoltenVK silently drops
++ * the stage, so draws that select the render target layer in a geometry shader all
++ * land in layer 0 (Unreal Engine's WriteToSliceGS fills volume textures this way,
++ * the tonemapper LUT among them: black scenes). Such a geometry shader only copies
++ * its inputs and writes one integer input to SV_RenderTargetArrayIndex; with
++ * matching signatures the vertex shader can write that output to Layer itself.
++ * Returns the VKD3D_SHADER_COMPILE_OPTION_BARRIQUE_VS_LAYER_OUTPUT value, 0 if the
++ * geometry shader is not such a pass-through. */
++static unsigned int passthrough_gs_layer_output(const struct d3d12_pipeline_state_desc *desc)
++{
++    struct vkd3d_shader_scan_signature_info vs_info, gs_info;
++    const struct vkd3d_shader_signature_element *e, *layer_in = NULL, *vs_e;
++    bool has_layer_out = false, ok = true;
++    unsigned int i, ret = 0;
++
++    if (!desc->vs.pShaderBytecode || desc->hs.pShaderBytecode || desc->ds.pShaderBytecode
++            || desc->primitive_topology_type != D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE)
++        return 0;
++    if (!scan_shader_signatures(&desc->vs, &vs_info))
++        return 0;
++    if (!scan_shader_signatures(&desc->gs, &gs_info))
++    {
++        vkd3d_shader_free_scan_signature_info(&vs_info);
++        return 0;
++    }
++
++    for (i = 0; ok && i < gs_info.output.element_count; ++i)
++    {
++        e = &gs_info.output.elements[i];
++        if (e->stream_index)
++            ok = false;
++        else if (e->sysval_semantic == VKD3D_SHADER_SV_RENDER_TARGET_ARRAY_INDEX)
++            has_layer_out = true;
++        else if (e->sysval_semantic != VKD3D_SHADER_SV_NONE && e->sysval_semantic != VKD3D_SHADER_SV_POSITION)
++            ok = false;
++        /* everything else must come unchanged from the vertex shader */
++        else if (!(vs_e = find_signature_element(&vs_info.output, e->semantic_name, e->semantic_index))
++                || vs_e->register_index != e->register_index || vs_e->mask != e->mask)
++            ok = false;
++    }
++    for (i = 0; ok && i < gs_info.input.element_count; ++i)
++    {
++        e = &gs_info.input.elements[i];
++        if (e->component_type != VKD3D_SHADER_COMPONENT_UINT
++                || find_signature_element(&gs_info.output, e->semantic_name, e->semantic_index))
++            continue;
++        if (layer_in || (e->mask & (e->mask - 1)))
++            ok = false;  /* ambiguous */
++        layer_in = e;
++    }
++    if (ok && has_layer_out && layer_in
++            && (vs_e = find_signature_element(&vs_info.output, layer_in->semantic_name, layer_in->semantic_index))
++            && vs_e->mask && !(vs_e->mask & (vs_e->mask - 1)))
++    {
++        ret = ((vs_e->register_index << 2) | vkd3d_log2i(vs_e->mask)) + 1;
++        WARN("Dropping pass-through geometry shader, vertex shader output %s%u (o%u) becomes the layer.\n",
++                vs_e->semantic_name, vs_e->semantic_index, vs_e->register_index);
++    }
++
++    vkd3d_shader_free_scan_signature_info(&gs_info);
++    vkd3d_shader_free_scan_signature_info(&vs_info);
++    return ret;
++}
++
+ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *state,
+         struct d3d12_device *device, const struct d3d12_pipeline_state_desc *desc)
+ {
+@@ -3238,7 +3354,7 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+     const struct vkd3d_format *format;
+     unsigned int instance_divisor;
+     VkVertexInputRate input_rate;
+-    unsigned int i, j;
++    unsigned int i, j, vs_layer_output = 0;
+     size_t rt_count;
+     uint32_t mask;
+     HRESULT hr;
+@@ -3504,12 +3620,17 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+         offset_info.uav_counter_offsets = root_signature->uav_counter_offsets;
+     }
+ 
++    if (desc->gs.pShaderBytecode && !vk_info->geometry_shaders && !so_desc->NumEntries)
++        vs_layer_output = passthrough_gs_layer_output(desc);
++
+     for (i = 0; i < ARRAY_SIZE(shader_stages); ++i)
+     {
+         const D3D12_SHADER_BYTECODE *b = (const void *)((uintptr_t)desc + shader_stages[i].offset);
+ 
+         if (!b->pShaderBytecode)
+             continue;
++        if (shader_stages[i].stage == VK_SHADER_STAGE_GEOMETRY_BIT && vs_layer_output)
++            continue;
+ 
+         if (FAILED(hr = d3d12_pipeline_state_find_and_init_uav_counters(state, device, root_signature,
+                 b, shader_stages[i].stage)))
+@@ -3561,8 +3682,9 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+         if (shader_stages[i].stage == VK_SHADER_STAGE_VERTEX_BIT)
+             vkd3d_prepend_struct(&shader_interface, &signature_info);
+ 
+-        if (FAILED(hr = create_shader_stage(device, &graphics->stages[graphics->stage_count],
+-                shader_stages[i].stage, b, &shader_interface)))
++        if (FAILED(hr = create_shader_stage_layer(device, &graphics->stages[graphics->stage_count],
++                shader_stages[i].stage, b, &shader_interface,
++                shader_stages[i].stage == VK_SHADER_STAGE_VERTEX_BIT ? vs_layer_output : 0)))
+             goto fail;
+ 
+         ++graphics->stage_count;
 diff --git a/libs/vkd3d/libs/vkd3d/vkd3d_private.h b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 index 822e172..02ec2d9 100644
 --- a/libs/vkd3d/libs/vkd3d/vkd3d_private.h
