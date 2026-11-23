@@ -16080,10 +16080,24 @@ index c8f8b8b..fa86b6a 100644
      if (vsir->api_version <= VKD3D_SHADER_API_VERSION_1_19)
      {
 diff --git a/libs/vkd3d/libs/vkd3d-shader/spirv.c b/libs/vkd3d/libs/vkd3d-shader/spirv.c
-index 22af3f1..8aa9d20 100644
+index 22af3f1..c9650ad 100644
 --- a/libs/vkd3d/libs/vkd3d-shader/spirv.c
 +++ b/libs/vkd3d/libs/vkd3d-shader/spirv.c
-@@ -5766,6 +5766,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
+@@ -5483,6 +5483,13 @@ static uint32_t spirv_compiler_emit_builtin_variable_v(struct spirv_compiler *co
+     vkd3d_spirv_add_iface_variable(builder, id);
+     spirv_compiler_decorate_builtin(compiler, id, builtin->spirv_builtin);
+ 
++    /* D3D guarantees identical position results for identical vertex shader
++     * code, which depth prepass + EQUAL/GEQUAL base passes rely on. Metal only
++     * keeps that with preserveInvariance, which MoltenVK enables for an
++     * Invariant Position. */
++    if (storage_class == SpvStorageClassOutput && builtin->spirv_builtin == SpvBuiltInPosition)
++        vkd3d_spirv_build_op_decorate(builder, id, SpvDecorationInvariant, NULL, 0);
++
+     if (compiler->shader_type == VKD3D_SHADER_TYPE_PIXEL && storage_class == SpvStorageClassInput
+             && builtin->data_type != VSIR_DATA_F32 && builtin->data_type != VSIR_DATA_BOOL)
+         vkd3d_spirv_build_op_decorate(builder, id, SpvDecorationFlat, NULL, 0);
+@@ -5766,6 +5773,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
      SpvStorageClass storage_class;
      unsigned int array_sizes[2];
      bool is_patch_constant;
@@ -16091,7 +16105,7 @@ index 22af3f1..8aa9d20 100644
      uint32_t id, var_id;
      uint32_t write_mask;
  
-@@ -5785,6 +5786,20 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
+@@ -5785,6 +5793,20 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
          array_sizes[0] = 0;
  
      builtin = vkd3d_get_spirv_builtin(compiler, reg_type, sysval);
@@ -16112,7 +16126,7 @@ index 22af3f1..8aa9d20 100644
  
      write_mask = signature_element->mask;
  
-@@ -5834,7 +5849,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
+@@ -5834,7 +5856,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
  
          spirv_compiler_emit_register_execution_mode(compiler, reg_type);
      }
@@ -16135,10 +16149,219 @@ index 7a57fb9..f9f53d5 100644
      uint32_t warn_implicit_truncation : 1;
      uint32_t include_empty_buffers : 1;
 diff --git a/libs/vkd3d/libs/vkd3d/command.c b/libs/vkd3d/libs/vkd3d/command.c
-index 0ece8fd..2327b73 100644
+index 0ece8fd..c6b4b5c 100644
 --- a/libs/vkd3d/libs/vkd3d/command.c
 +++ b/libs/vkd3d/libs/vkd3d/command.c
-@@ -5457,8 +5457,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+@@ -2174,6 +2174,163 @@ static void d3d12_command_list_invalidate_current_pipeline(struct d3d12_command_
+     list->current_pipeline = VK_NULL_HANDLE;
+ }
+ 
++/* Barrique debugging aid: VKD3D_BARRIQUE_RT_DUMP=<windows path of a trigger file>.
++ * Once that file exists, render target 0 of every render pass recorded afterwards
++ * (scene-sized 2D targets only, at most RT_DUMP_MAX) is copied to a readback buffer;
++ * dumps are numbered in ExecuteCommandLists order and written as raw texels to
++ * C:\\vkrtdump\\<seq>_<width>x<height>_f<dxgi format>_<resource>.raw some frames later. */
++#define RT_DUMP_MAX 90
++static int rt_dump_state = -1;  /* -1 unknown, 0 waiting for the trigger, 1 dumping, 2 writing, 3 done */
++static const char *rt_dump_trigger;
++static LONG rt_dump_recorded, rt_dump_seq, rt_dump_executes;
++static struct vkd3d_rt_dump rt_dump_pending[RT_DUMP_MAX];
++static unsigned int rt_dump_pending_count;
++static struct vkd3d_mutex rt_dump_mutex;
++
++static void d3d12_command_list_dump_rt(struct d3d12_command_list *list, struct d3d12_resource *resource)
++{
++    const struct vkd3d_vk_device_procs *vk_procs = &list->device->vk_procs;
++    D3D12_HEAP_PROPERTIES heap_properties = {D3D12_HEAP_TYPE_READBACK};
++    D3D12_RESOURCE_DESC1 buffer_desc = {0};
++    struct vkd3d_rt_dump *dump;
++    VkBufferImageCopy region;
++    VkImageMemoryBarrier barrier;
++    VkImageAspectFlags aspect;
++    VkDeviceSize size;
++
++    if (rt_dump_state != 1 || !resource || resource->desc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D
++            || resource->desc.Width < 1024
++            || resource->desc.SampleDesc.Count != 1 || !resource->format || resource->format->block_width > 1)
++        return;
++    aspect = resource->format->vk_aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT ? VK_IMAGE_ASPECT_DEPTH_BIT
++            : resource->format->vk_aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT ? VK_IMAGE_ASPECT_COLOR_BIT : 0;
++    if (!aspect)
++        return;
++    if (InterlockedIncrement(&rt_dump_recorded) > RT_DUMP_MAX)
++        return;
++    if (!vkd3d_array_reserve((void **)&list->rt_dumps, &list->rt_dumps_size,
++            list->rt_dump_count + 1, sizeof(*list->rt_dumps)))
++        return;
++    dump = &list->rt_dumps[list->rt_dump_count];
++    memset(dump, 0, sizeof(*dump));
++    dump->width = resource->desc.Width;
++    dump->height = resource->desc.Height;
++    dump->byte_count = aspect == VK_IMAGE_ASPECT_DEPTH_BIT ? 4 : resource->format->byte_count;
++    dump->format = aspect == VK_IMAGE_ASPECT_DEPTH_BIT ? 999 : resource->format->dxgi_format;
++    dump->resource = resource;
++    size = (VkDeviceSize)dump->width * dump->height * dump->byte_count;
++
++    buffer_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
++    buffer_desc.Width = size;
++    buffer_desc.Height = 1;
++    buffer_desc.DepthOrArraySize = 1;
++    buffer_desc.MipLevels = 1;
++    buffer_desc.SampleDesc.Count = 1;
++    buffer_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
++    if (FAILED(vkd3d_create_buffer(list->device, &heap_properties, D3D12_HEAP_FLAG_NONE, &buffer_desc, &dump->buffer)))
++        return;
++    if (FAILED(vkd3d_allocate_buffer_memory(list->device, dump->buffer, &heap_properties,
++            D3D12_HEAP_FLAG_NONE, &dump->memory, NULL, NULL)))
++    {
++        VK_CALL(vkDestroyBuffer(list->device->vk_device, dump->buffer, NULL));
++        return;
++    }
++
++    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
++    barrier.pNext = NULL;
++    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
++    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
++    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
++    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
++    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
++    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
++    barrier.image = resource->u.vk_image;
++    barrier.subresourceRange.aspectMask = resource->format->vk_aspect_mask;
++    barrier.subresourceRange.baseMipLevel = 0;
++    barrier.subresourceRange.levelCount = 1;
++    barrier.subresourceRange.baseArrayLayer = 0;
++    barrier.subresourceRange.layerCount = 1;
++    VK_CALL(vkCmdPipelineBarrier(list->vk_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
++            VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, 1, &barrier));
++
++    memset(&region, 0, sizeof(region));
++    region.imageSubresource.aspectMask = aspect;
++    region.imageSubresource.layerCount = 1;
++    region.imageExtent.width = dump->width;
++    region.imageExtent.height = dump->height;
++    region.imageExtent.depth = 1;
++    VK_CALL(vkCmdCopyImageToBuffer(list->vk_command_buffer, resource->u.vk_image,
++            VK_IMAGE_LAYOUT_GENERAL, dump->buffer, 1, &region));
++
++    barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
++    barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
++    VK_CALL(vkCmdPipelineBarrier(list->vk_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
++            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, NULL, 0, NULL, 1, &barrier));
++    ++list->rt_dump_count;
++}
++
++static void rt_dump_execute(struct d3d12_device *device, struct d3d12_command_list *list)
++{
++    const struct vkd3d_vk_device_procs *vk_procs = &device->vk_procs;
++    unsigned int i;
++
++    if (rt_dump_state < 0)
++    {
++        rt_dump_trigger = getenv("VKD3D_BARRIQUE_RT_DUMP");
++        rt_dump_state = rt_dump_trigger ? 0 : 3;
++        if (rt_dump_trigger)
++            vkd3d_mutex_init(&rt_dump_mutex);
++    }
++    if (rt_dump_state == 3)
++        return;
++    vkd3d_mutex_lock(&rt_dump_mutex);
++    if (rt_dump_state == 0 && GetFileAttributesA(rt_dump_trigger) != INVALID_FILE_ATTRIBUTES)
++    {
++        ERR("Dumping render targets.\n");
++        rt_dump_state = 1;
++    }
++    if (list)
++    {
++        for (i = 0; i < list->rt_dump_count && rt_dump_pending_count < RT_DUMP_MAX; ++i)
++        {
++            list->rt_dumps[i].seq = ++rt_dump_seq;
++            rt_dump_pending[rt_dump_pending_count++] = list->rt_dumps[i];
++        }
++        list->rt_dump_count = 0;
++    }
++    if (rt_dump_state == 1 && rt_dump_recorded >= RT_DUMP_MAX)
++        rt_dump_state = 2;
++    if (rt_dump_state == 2 && ++rt_dump_executes > 200)
++    {
++        VK_CALL(vkDeviceWaitIdle(device->vk_device));
++        CreateDirectoryA("C:\\vkrtdump", NULL);
++        for (i = 0; i < rt_dump_pending_count; ++i)
++        {
++            struct vkd3d_rt_dump *dump = &rt_dump_pending[i];
++            char name[128];
++            void *data;
++            FILE *f;
++
++            sprintf(name, "C:\\vkrtdump\\%04u_%ux%u_f%u_%p.raw", dump->seq, dump->width,
++                    dump->height, dump->format, dump->resource);
++            if (VK_CALL(vkMapMemory(device->vk_device, dump->memory, 0, VK_WHOLE_SIZE, 0, &data)) >= 0)
++            {
++                if ((f = fopen(name, "wb")))
++                {
++                    fwrite(data, 1, (size_t)dump->width * dump->height * dump->byte_count, f);
++                    fclose(f);
++                }
++                VK_CALL(vkUnmapMemory(device->vk_device, dump->memory));
++            }
++            VK_CALL(vkDestroyBuffer(device->vk_device, dump->buffer, NULL));
++            VK_CALL(vkFreeMemory(device->vk_device, dump->memory, NULL));
++        }
++        ERR("Wrote %u render target dumps.\n", rt_dump_pending_count);
++        rt_dump_state = 3;
++    }
++    vkd3d_mutex_unlock(&rt_dump_mutex);
++}
++
+ static void d3d12_command_list_end_current_render_pass(struct d3d12_command_list *list)
+ {
+     const struct vkd3d_vk_device_procs *vk_procs = &list->device->vk_procs;
+@@ -2185,7 +2342,24 @@ static void d3d12_command_list_end_current_render_pass(struct d3d12_command_list
+     }
+ 
+     if (list->current_render_pass)
++    {
+         VK_CALL(vkCmdEndRenderPass(list->vk_command_buffer));
++        /* dump each render target once it is done with: when another one follows, or at Close() */
++        if (rt_dump_state == 1 && list->rt_dump_prev && list->rt_dump_prev != list->rtv_resources[0])
++        {
++            unsigned int m;
++
++            d3d12_command_list_dump_rt(list, list->rt_dump_prev);
++            for (m = 0; m < 3; ++m)
++                if (list->rt_dump_prev_mrt[m])
++                    d3d12_command_list_dump_rt(list, list->rt_dump_prev_mrt[m]);
++        }
++        list->rt_dump_prev = list->rtv_resources[0];
++        memcpy(list->rt_dump_prev_mrt, &list->rtv_resources[1], sizeof(list->rt_dump_prev_mrt));
++        if (rt_dump_state == 1 && list->rt_dump_prev_dsv && list->rt_dump_prev_dsv != list->dsv_resource)
++            d3d12_command_list_dump_rt(list, list->rt_dump_prev_dsv);
++        list->rt_dump_prev_dsv = list->dsv_resource;
++    }
+ 
+     list->current_render_pass = VK_NULL_HANDLE;
+ 
+@@ -2657,6 +2831,19 @@ static HRESULT STDMETHODCALLTYPE d3d12_command_list_Close(ID3D12GraphicsCommandL
+     vk_procs = &list->device->vk_procs;
+ 
+     d3d12_command_list_end_current_render_pass(list);
++    if (rt_dump_state == 1 && list->rt_dump_prev)
++    {
++        unsigned int m;
++
++        d3d12_command_list_dump_rt(list, list->rt_dump_prev);
++        for (m = 0; m < 3; ++m)
++            if (list->rt_dump_prev_mrt[m])
++                d3d12_command_list_dump_rt(list, list->rt_dump_prev_mrt[m]);
++    }
++    if (rt_dump_state == 1 && list->rt_dump_prev_dsv)
++        d3d12_command_list_dump_rt(list, list->rt_dump_prev_dsv);
++    list->rt_dump_prev = list->rt_dump_prev_dsv = NULL;
++    memset(list->rt_dump_prev_mrt, 0, sizeof(list->rt_dump_prev_mrt));
+     if (list->is_predicated)
+         VK_CALL(vkCmdEndConditionalRenderingEXT(list->vk_command_buffer));
+ 
+@@ -5457,8 +5644,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
      }
      else
      {
@@ -16151,7 +16374,7 @@ index 0ece8fd..2327b73 100644
      }
      if (flags & D3D12_CLEAR_FLAG_STENCIL)
      {
-@@ -5467,8 +5469,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+@@ -5467,8 +5656,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
      }
      else
      {
@@ -16162,6 +16385,14 @@ index 0ece8fd..2327b73 100644
      }
      attachment_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
      attachment_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+@@ -7012,6 +7201,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+         }
+ 
+         command_list_flush_vk_heap_updates(cmd_list);
++        rt_dump_execute(command_queue->device, cmd_list);
+ 
+         buffers[i] = cmd_list->vk_command_buffer;
+     }
 diff --git a/libs/vkd3d/libs/vkd3d/device.c b/libs/vkd3d/libs/vkd3d/device.c
 index 5f16fef..1a0b338 100644
 --- a/libs/vkd3d/libs/vkd3d/device.c
@@ -16384,7 +16615,7 @@ index 14f5250..3e846be 100644
  
          ++graphics->stage_count;
 diff --git a/libs/vkd3d/libs/vkd3d/vkd3d_private.h b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
-index 822e172..02ec2d9 100644
+index 822e172..80c2db3 100644
 --- a/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 +++ b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 @@ -155,6 +155,7 @@ struct vkd3d_vulkan_info
@@ -16395,6 +16626,32 @@ index 822e172..02ec2d9 100644
      bool tessellation_shaders;
  
      bool uav_read_without_format;
+@@ -1289,11 +1290,25 @@ struct vkd3d_resource_list
+ };
+ 
+ /* ID3D12CommandList */
++/* Barrique: render target dumps, see d3d12_command_list_dump_rt() */
++struct vkd3d_rt_dump
++{
++    VkBuffer buffer;
++    VkDeviceMemory memory;
++    unsigned int width, height, byte_count, format;
++    const void *resource;
++    unsigned int seq;
++};
++
+ struct d3d12_command_list
+ {
+     ID3D12GraphicsCommandList6 ID3D12GraphicsCommandList6_iface;
+     unsigned int refcount;
+ 
++    struct vkd3d_rt_dump *rt_dumps;
++    size_t rt_dumps_size, rt_dump_count;
++    struct d3d12_resource *rt_dump_prev, *rt_dump_prev_dsv, *rt_dump_prev_mrt[3];
++
+     D3D12_COMMAND_LIST_TYPE type;
+     VkQueueFlags vk_queue_flags;
+ 
 diff --git a/loader/main.c b/loader/main.c
 index 71ba308..a539b41 100644
 --- a/loader/main.c
