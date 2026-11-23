@@ -16165,7 +16165,7 @@ index 7a57fb9..f9f53d5 100644
      uint32_t warn_implicit_truncation : 1;
      uint32_t include_empty_buffers : 1;
 diff --git a/libs/vkd3d/libs/vkd3d/command.c b/libs/vkd3d/libs/vkd3d/command.c
-index 0ece8fd..c6b4b5c 100644
+index 0ece8fd..8ecfd76 100644
 --- a/libs/vkd3d/libs/vkd3d/command.c
 +++ b/libs/vkd3d/libs/vkd3d/command.c
 @@ -2174,6 +2174,163 @@ static void d3d12_command_list_invalidate_current_pipeline(struct d3d12_command_
@@ -16332,7 +16332,7 @@ index 0ece8fd..c6b4b5c 100644
  static void d3d12_command_list_end_current_render_pass(struct d3d12_command_list *list)
  {
      const struct vkd3d_vk_device_procs *vk_procs = &list->device->vk_procs;
-@@ -2185,7 +2342,24 @@ static void d3d12_command_list_end_current_render_pass(struct d3d12_command_list
+@@ -2185,7 +2342,30 @@ static void d3d12_command_list_end_current_render_pass(struct d3d12_command_list
      }
  
      if (list->current_render_pass)
@@ -16349,7 +16349,13 @@ index 0ece8fd..c6b4b5c 100644
 +                    d3d12_command_list_dump_rt(list, list->rt_dump_prev_mrt[m]);
 +        }
 +        list->rt_dump_prev = list->rtv_resources[0];
-+        memcpy(list->rt_dump_prev_mrt, &list->rtv_resources[1], sizeof(list->rt_dump_prev_mrt));
++        {
++            unsigned int m, count = list->state && d3d12_pipeline_state_is_graphics(list->state)
++                    ? list->state->u.graphics.rt_count : 1;
++
++            for (m = 0; m < ARRAY_SIZE(list->rt_dump_prev_mrt); ++m)
++                list->rt_dump_prev_mrt[m] = m + 1 < count ? list->rtv_resources[m + 1] : NULL;
++        }
 +        if (rt_dump_state == 1 && list->rt_dump_prev_dsv && list->rt_dump_prev_dsv != list->dsv_resource)
 +            d3d12_command_list_dump_rt(list, list->rt_dump_prev_dsv);
 +        list->rt_dump_prev_dsv = list->dsv_resource;
@@ -16357,7 +16363,7 @@ index 0ece8fd..c6b4b5c 100644
  
      list->current_render_pass = VK_NULL_HANDLE;
  
-@@ -2657,6 +2831,19 @@ static HRESULT STDMETHODCALLTYPE d3d12_command_list_Close(ID3D12GraphicsCommandL
+@@ -2657,6 +2837,19 @@ static HRESULT STDMETHODCALLTYPE d3d12_command_list_Close(ID3D12GraphicsCommandL
      vk_procs = &list->device->vk_procs;
  
      d3d12_command_list_end_current_render_pass(list);
@@ -16377,7 +16383,7 @@ index 0ece8fd..c6b4b5c 100644
      if (list->is_predicated)
          VK_CALL(vkCmdEndConditionalRenderingEXT(list->vk_command_buffer));
  
-@@ -5457,8 +5644,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+@@ -5457,8 +5650,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
      }
      else
      {
@@ -16390,7 +16396,7 @@ index 0ece8fd..c6b4b5c 100644
      }
      if (flags & D3D12_CLEAR_FLAG_STENCIL)
      {
-@@ -5467,8 +5656,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+@@ -5467,8 +5662,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
      }
      else
      {
@@ -16401,7 +16407,7 @@ index 0ece8fd..c6b4b5c 100644
      }
      attachment_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
      attachment_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-@@ -7012,6 +7201,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+@@ -7012,6 +7207,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
          }
  
          command_list_flush_vk_heap_updates(cmd_list);
