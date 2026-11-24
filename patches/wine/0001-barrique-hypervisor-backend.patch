@@ -6168,7 +6168,7 @@ index ced0a36..75550ed 100644
          ERR("tcsetattr error '%s'\n", strerror(errno));
          return errno_to_status( errno );
 diff --git a/dlls/ntdll/unix/server.c b/dlls/ntdll/unix/server.c
-index c80226f..2501620 100644
+index c80226f..2464f38 100644
 --- a/dlls/ntdll/unix/server.c
 +++ b/dlls/ntdll/unix/server.c
 @@ -627,6 +627,22 @@ static void invoke_system_apc( const union apc_call *call, union apc_result *res
@@ -6227,17 +6227,18 @@ index c80226f..2501620 100644
          if (errno == ENOSYS || errno == EINVAL) have_pipe2 = FALSE;  /* don't try again */
      }
  #endif
-@@ -1473,6 +1506,51 @@ static int server_connect(void)
+@@ -1473,6 +1506,55 @@ static int server_connect(void)
  #include <mach/mach.h>
  #include <mach/mach_error.h>
  #include <servers/bootstrap.h>
 +#include <sys/event.h>
 +#include <sys/un.h>
 +
-+/* Barrique: with msync, threads wait in shared memory instead of on their server
-+ * pipe, so they never see the wineserver go away (wineserver -k, crash) and the
-+ * process would live on, holding its VM. Watch the server process and exit with it,
-+ * as the threads of a process without msync do when their pipe closes. */
++/* Barrique: threads do not always wait on their server pipe: with msync they wait in
++ * shared memory, and under HVF NtWaitForAlertByThreadId and vCPU parking sleep on an
++ * address. Such a process never sees the wineserver go away (wineserver -k, crash)
++ * and would live on, holding its VM and its tray icons. Watch the server process and
++ * exit with it, as threads waiting on their pipe do when it closes. */
 +static void *server_watch_thread( void *arg )
 +{
 +    pid_t pid = (pid_t)(ULONG_PTR)arg;
@@ -6260,10 +6261,13 @@ index c80226f..2501620 100644
 +
 +void server_watch_death(void)
 +{
++    static LONG started;
 +    pid_t pid = 0;
 +    socklen_t len = sizeof(pid);
 +    pthread_attr_t attr;
 +    pthread_t thread;
++
++    if (InterlockedExchange( &started, 1 )) return;
 +
 +    if (getsockopt( fd_socket, SOL_LOCAL, LOCAL_PEERPID, &pid, &len ) || pid <= 0)
 +    {
@@ -6279,7 +6283,7 @@ index c80226f..2501620 100644
  
  extern NTSTATUS apple_spawn_main_thread(void);
  
-@@ -1643,6 +1721,9 @@ void server_init_process( struct thread_data *data )
+@@ -1643,6 +1725,9 @@ void server_init_process( struct thread_data *data )
      sigaddset( &server_block_set, SIGUSR1 );
      sigaddset( &server_block_set, SIGUSR2 );
      sigaddset( &server_block_set, SIGCHLD );
@@ -6289,6 +6293,16 @@ index c80226f..2501620 100644
      pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
  
      /* receive the first thread request fd on the main socket */
+@@ -1705,6 +1790,9 @@ void server_init_process( struct thread_data *data )
+     SERVER_END_REQ;
+ 
+     if (ret) server_protocol_error( "init_first_thread failed with status %x\n", ret );
++#ifdef __APPLE__
++    server_watch_death();
++#endif
+ 
+     if (!supported_machines_count)
+         fatal_error( "'%s' is a 64-bit installation, it cannot be used with a 32-bit wineserver.\n",
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
 index 02b6d57..9deed0a 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
