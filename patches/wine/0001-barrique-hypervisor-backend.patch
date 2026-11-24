@@ -16086,7 +16086,7 @@ index dcfdd16..44ae3a3 100644
  };
  
 diff --git a/libs/vkd3d/libs/vkd3d-shader/ir.c b/libs/vkd3d/libs/vkd3d-shader/ir.c
-index c8f8b8b..fa86b6a 100644
+index c8f8b8b..0b8b764 100644
 --- a/libs/vkd3d/libs/vkd3d-shader/ir.c
 +++ b/libs/vkd3d/libs/vkd3d-shader/ir.c
 @@ -848,6 +848,10 @@ void vsir_compile_info_init(struct vsir_compile_info *vsir, const struct vkd3d_s
@@ -16109,6 +16109,25 @@ index c8f8b8b..fa86b6a 100644
  
      if (vsir->api_version <= VKD3D_SHADER_API_VERSION_1_19)
      {
+@@ -5464,7 +5470,17 @@ static int signature_element_register_compare(const void *a, const void *b)
+      * into a single register after I/O normalisation, so we order system
+      * values after non-system values here, allowing the non-system values to
+      * get merged into a single register. */
+-    return vkd3d_u32_compare(f->sysval_semantic, e->sysval_semantic);
++    if ((ret = vkd3d_u32_compare(f->sysval_semantic, e->sysval_semantic)))
++        return ret;
++
++    /* Barrique: qsort() is not stable. The merged element takes its component
++     * type from the first element, so without a total order a register packing
++     * e.g. a float in .x and a uint in .y could become float2 in one stage and
++     * uint2 in the next, and Metal rejects the pipeline ("Fragment input(s)
++     * user(locnN) mismatching vertex shader output type(s)"). */
++    if ((ret = vkd3d_u32_compare(e->mask, f->mask)))
++        return ret;
++    return vkd3d_u32_compare(e->sort_index, f->sort_index);
+ }
+ 
+ static int signature_element_index_compare(const void *a, const void *b)
 diff --git a/libs/vkd3d/libs/vkd3d-shader/spirv.c b/libs/vkd3d/libs/vkd3d-shader/spirv.c
 index 22af3f1..c9650ad 100644
 --- a/libs/vkd3d/libs/vkd3d-shader/spirv.c
@@ -16442,7 +16461,7 @@ index 5f16fef..1a0b338 100644
      vulkan_info->sparse_binding = features->sparseBinding;
      vulkan_info->sparse_residency_3d = features->sparseResidencyImage3D;
 diff --git a/libs/vkd3d/libs/vkd3d/state.c b/libs/vkd3d/libs/vkd3d/state.c
-index 14f5250..b6ee37e 100644
+index 14f5250..8332f31 100644
 --- a/libs/vkd3d/libs/vkd3d/state.c
 +++ b/libs/vkd3d/libs/vkd3d/state.c
 @@ -1853,8 +1853,11 @@ static HRESULT vkd3d_render_pass_cache_create_pass_locked(struct vkd3d_render_pa
@@ -16620,7 +16639,15 @@ index 14f5250..b6ee37e 100644
      size_t rt_count;
      uint32_t mask;
      HRESULT hr;
-@@ -3504,12 +3620,34 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+@@ -3262,6 +3378,7 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+ 
+     memset(&state->uav_counters, 0, sizeof(state->uav_counters));
+     graphics->stage_count = 0;
++    graphics->compile_failed = false;
+ 
+     memset(&signature_info, 0, sizeof(signature_info));
+     signature_info.type = VKD3D_SHADER_STRUCTURE_TYPE_SCAN_SIGNATURE_INFO;
+@@ -3504,12 +3621,34 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
          offset_info.uav_counter_offsets = root_signature->uav_counter_offsets;
      }
  
@@ -16655,7 +16682,7 @@ index 14f5250..b6ee37e 100644
  
          if (FAILED(hr = d3d12_pipeline_state_find_and_init_uav_counters(state, device, root_signature,
                  b, shader_stages[i].stage)))
-@@ -3561,8 +3699,9 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+@@ -3561,8 +3700,9 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
          if (shader_stages[i].stage == VK_SHADER_STAGE_VERTEX_BIT)
              vkd3d_prepend_struct(&shader_interface, &signature_info);
  
@@ -16667,8 +16694,28 @@ index 14f5250..b6ee37e 100644
              goto fail;
  
          ++graphics->stage_count;
+@@ -4006,6 +4146,9 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+ 
+     VKD3D_ASSERT(d3d12_pipeline_state_is_graphics(state));
+ 
++    if (graphics->compile_failed)
++        return VK_NULL_HANDLE;
++
+     memset(&pipeline_key, 0, sizeof(pipeline_key));
+     pipeline_key.topology = topology;
+ 
+@@ -4125,6 +4268,9 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+             1, &pipeline_desc, NULL, &vk_pipeline))) < 0)
+     {
+         WARN("Failed to create Vulkan graphics pipeline, vr %d.\n", vr);
++        /* Barrique: a pipeline Metal rejects fails the same way every time; don't
++         * recompile it on every draw */
++        graphics->compile_failed = true;
+         return VK_NULL_HANDLE;
+     }
+ 
 diff --git a/libs/vkd3d/libs/vkd3d/vkd3d_private.h b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
-index 822e172..80c2db3 100644
+index 822e172..3bf1392 100644
 --- a/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 +++ b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 @@ -155,6 +155,7 @@ struct vkd3d_vulkan_info
@@ -16679,7 +16726,15 @@ index 822e172..80c2db3 100644
      bool tessellation_shaders;
  
      bool uav_read_without_format;
-@@ -1289,11 +1290,25 @@ struct vkd3d_resource_list
+@@ -1032,6 +1033,7 @@ struct d3d12_graphics_pipeline_state
+ {
+     VkPipelineShaderStageCreateInfo stages[VKD3D_MAX_SHADER_STAGES];
+     size_t stage_count;
++    bool compile_failed;
+ 
+     VkVertexInputAttributeDescription attributes[D3D12_VS_INPUT_REGISTER_COUNT];
+     VkVertexInputRate input_rates[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+@@ -1289,11 +1291,25 @@ struct vkd3d_resource_list
  };
  
  /* ID3D12CommandList */
