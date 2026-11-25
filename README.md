@@ -50,7 +50,7 @@ are alpha numbers: expect them to move.
 | OpenTTD, 50,000 ticks without a window (CPU only) | 4.4 s ARM64, 5.3 s x86-64, 5.5–5.9 s 32-bit x86 |
 | Program start (`hello`), warm / cold | 0.04–0.08 s / ~0.5 s |
 | A trivial Windows system call | 1.18 µs ARM64, 1.40 µs x86, 1.68 µs x86-64 (native macOS: ~0.1 µs) |
-| Mutex, semaphore, event wait (`WINEMSYNC=1`) | 3.6–4 µs, instead of 26–32 µs through the wineserver |
+| Mutex, semaphore, event wait (msync, on by default; `WINEMSYNC=0` turns it off) | 3.6–4 µs, instead of 26–32 µs through the wineserver |
 | First touch of new memory | 2.45 µs per 4K page (512 MB in ~320 ms) |
 | Wine conformance tests (`ntdll`, `kernel32`, ARM64 and x86) | 99.994% of ~17.7 million checks pass |
 

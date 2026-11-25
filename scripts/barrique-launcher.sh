@@ -14,6 +14,10 @@
 #                               32-bit programs have no DXMT and use wined3d anyway)
 #   BARRIQUE_PREFIX=<dir>       another prefix (default <data>/prefix)
 #   BARRIQUE_DATA=<dir>         another data folder (default ~/Library/Application Support/Barrique)
+#   WINEMSYNC=0|1               in-process synchronization (msync, default 1): events,
+#                               mutexes and waits in shared memory instead of wineserver
+#                               round trips (Hogwarts Legacy ~20 -> 25-35 FPS); must be
+#                               the same for every program sharing a wineserver
 #   FEX_DISKCACHE=0|1           FEX keeps translated x86 code on disk (default 1), in
 #                               the prefix (AppData/Local/fex-emu/DiskCache, 1 GB at most):
 #                               the second time a program or game area runs it is not
@@ -25,6 +29,7 @@ DATA=${BARRIQUE_DATA:-$HOME/Library/Application Support/Barrique}
 export WINEPREFIX=${BARRIQUE_PREFIX:-$DATA/prefix}
 export WINE_HVF=1                                   # Windows code runs in the Hypervisor.framework VM
 export BARRIQUE_D3D=${BARRIQUE_D3D:-dxmt}
+export WINEMSYNC=${WINEMSYNC:-1}
 export FEX_DISKCACHE=${FEX_DISKCACHE:-1}
 export WINEDEBUG=${WINEDEBUG:--all}
 mkdir -p "$DATA/logs"

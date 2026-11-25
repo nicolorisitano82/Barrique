@@ -27,7 +27,7 @@ Legenda: **[MS]** = idea presa da [MetalSharp-Wine](https://github.com/metalshar
 | Input: tastiera e mouse di base | ✅ attraverso winemac; ✅ focus dal Finder e mouse look (cursore nascosto e bloccato, delta relativi); 🔧 controller (SDL2 pronto, non provato); ⬜ delta senza accelerazione, metodi di input (vedi sotto) |
 | Doppio clic sulla `.app`, apertura di un `.exe` dal Finder | ✅ lanciatore nativo, "Apri con" per `.exe`/`.msi`/`.bat`/`.lnk` (fase 6) |
 | Steam | ✅ 2026-11-20: login, libreria, negozio e lista amici; **Muck** (Unity 2019, D3D11 su DXMT) scaricato, installato e giocato (grafica, mouse look, tastiera, audio ok). La finestra di login compare in 5 avvii su 5 (prima 3 su 5). Il primo caricamento dopo il login dura circa 1 minuto (CEF x64 sotto FEX) e nel frattempo Steam mostra "Steamwebhelper non risponde"; **Portal** (Source a 32 bit, D3D9 su wined3d, sotto FEX) giocabile dopo due correzioni DPI (vedi fase 8) |
-| msync (sincronizzazione in-process) | 🔧 port da CrossOver 26.3, spento di default (`WINEMSYNC=1`): primitive del server da 27-28 µs a 3,6-4 µs, test di sincronizzazione come senza msync |
+| msync (sincronizzazione in-process) | ✅ port da CrossOver 26.3, acceso di default dal launcher della `.app` dal 2026-11-25 (`WINEMSYNC=0` lo spegne): primitive del server da 27-28 µs a 3,6-4 µs, test di sincronizzazione come senza msync; Hogwarts Legacy da ~20 a 25-35 FPS (con la correzione del recupero dei vCPU in `hvf.c`) |
 
 ## Cosa manca: quadro completo (2026-11-19)
 
