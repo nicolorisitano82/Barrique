@@ -1212,7 +1212,7 @@ index c6bb47f..e97ba81 100644
  
  static UINT STDMETHODCALLTYPE dxgi_factory_GetCreationFlags(IWineDXGIFactory *iface)
 diff --git a/dlls/dxgi/swapchain.c b/dlls/dxgi/swapchain.c
-index 283c18d..4eec2a3 100644
+index 283c18d..263b2b1 100644
 --- a/dlls/dxgi/swapchain.c
 +++ b/dlls/dxgi/swapchain.c
 @@ -246,7 +246,7 @@ static ULONG STDMETHODCALLTYPE d3d11_swapchain_AddRef(IDXGISwapChain4 *iface)
@@ -1488,7 +1488,38 @@ index 283c18d..4eec2a3 100644
  {
      struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
      ULONG refcount = InterlockedDecrement(&swapchain->refcount);
-@@ -2417,7 +2570,7 @@ static HRESULT d3d12_swapchain_present(struct d3d12_swapchain *swapchain,
+@@ -2377,6 +2530,30 @@ static HRESULT d3d12_swapchain_present(struct d3d12_swapchain *swapchain,
+         return S_OK;
+     }
+ 
++    {
++        /* Barrique: BARRIQUE_FPS=1 prints the presents per second every 5 seconds */
++        static int fps_enabled = -1;
++        static LONG frames;
++        static ULONGLONG start;
++        char value[4];
++
++        if (fps_enabled < 0)
++            fps_enabled = GetEnvironmentVariableA("BARRIQUE_FPS", value, sizeof(value)) && value[0] == '1';
++        if (fps_enabled)
++        {
++            ULONGLONG now = GetTickCount64();
++            LONG count = InterlockedIncrement(&frames);
++
++            if (!start) start = now;
++            else if (now - start >= 5000)
++            {
++                ERR("fps %.1f\n", count * 1000.0 / (now - start));
++                frames = 0;
++                start = now;
++            }
++        }
++    }
++
+     if (!(swapchain->desc.Flags & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT))
+     {
+         /* After around two seconds Present() will succeed anyway, without any error. */
+@@ -2417,7 +2594,7 @@ static HRESULT d3d12_swapchain_present(struct d3d12_swapchain *swapchain,
      return S_OK;
  }
  
@@ -1497,7 +1528,7 @@ index 283c18d..4eec2a3 100644
  {
      struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
  
-@@ -2426,7 +2579,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_Present(IDXGISwapChain4 *iface,
+@@ -2426,7 +2603,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_Present(IDXGISwapChain4 *iface,
      return d3d12_swapchain_present(swapchain, sync_interval, flags);
  }
  
@@ -1506,7 +1537,7 @@ index 283c18d..4eec2a3 100644
          UINT buffer_idx, REFIID iid, void **surface)
  {
      struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
-@@ -2444,7 +2597,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_GetBuffer(IDXGISwapChain4 *ifac
+@@ -2444,7 +2621,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_GetBuffer(IDXGISwapChain4 *ifac
      return ID3D12Resource_QueryInterface(swapchain->buffers[buffer_idx], iid, surface);
  }
  
@@ -1515,7 +1546,7 @@ index 283c18d..4eec2a3 100644
          BOOL fullscreen, IDXGIOutput *target)
  {
      struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
-@@ -2703,7 +2856,7 @@ static HRESULT d3d12_swapchain_resize_buffers(struct d3d12_swapchain *swapchain,
+@@ -2703,7 +2880,7 @@ static HRESULT d3d12_swapchain_resize_buffers(struct d3d12_swapchain *swapchain,
      return d3d12_swapchain_create_d3d12_resources(swapchain);
  }
  
@@ -1524,7 +1555,7 @@ index 283c18d..4eec2a3 100644
          UINT buffer_count, UINT width, UINT height, DXGI_FORMAT format, UINT flags)
  {
      struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
-@@ -2714,7 +2867,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_ResizeBuffers(IDXGISwapChain4 *
+@@ -2714,7 +2891,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_ResizeBuffers(IDXGISwapChain4 *
      return d3d12_swapchain_resize_buffers(swapchain, buffer_count, width, height, format, flags);
  }
  
@@ -1533,7 +1564,7 @@ index 283c18d..4eec2a3 100644
          const DXGI_MODE_DESC *target_mode_desc)
  {
      struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
-@@ -2850,7 +3003,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_GetCoreWindow(IDXGISwapChain4 *
+@@ -2850,7 +3027,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_GetCoreWindow(IDXGISwapChain4 *
      return DXGI_ERROR_INVALID_CALL;
  }
  
@@ -1542,7 +1573,7 @@ index 283c18d..4eec2a3 100644
          UINT sync_interval, UINT flags, const DXGI_PRESENT_PARAMETERS *present_parameters)
  {
      struct d3d12_swapchain *swapchain = d3d12_swapchain_from_IDXGISwapChain4(iface);
-@@ -3063,7 +3216,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_SetColorSpace1(IDXGISwapChain4
+@@ -3063,7 +3240,7 @@ static HRESULT STDMETHODCALLTYPE d3d12_swapchain_SetColorSpace1(IDXGISwapChain4
      return S_OK;
  }
  
@@ -1551,6 +1582,42 @@ index 283c18d..4eec2a3 100644
          UINT buffer_count, UINT width, UINT height, DXGI_FORMAT format, UINT flags,
          const UINT *node_mask, IUnknown * const *present_queue)
  {
+diff --git a/dlls/kernelbase/file.c b/dlls/kernelbase/file.c
+index 7b0f0a6..ad0e93d 100644
+--- a/dlls/kernelbase/file.c
++++ b/dlls/kernelbase/file.c
+@@ -4186,7 +4186,7 @@ void WINAPI DECLSPEC_HOTPATCH GetLocalTime( SYSTEMTIME *systime )
+ {
+     LARGE_INTEGER ft, ft2;
+ 
+-    NtQuerySystemTime( &ft );
++    ft.QuadPart = RtlGetSystemTimePrecise();  /* Barrique: no syscall, see ntdll */
+     RtlSystemTimeToLocalTime( &ft, &ft2 );
+     FileTimeToSystemTime( (FILETIME *)&ft2, systime );
+ }
+@@ -4199,7 +4199,7 @@ void WINAPI DECLSPEC_HOTPATCH GetSystemTime( SYSTEMTIME *systime )
+ {
+     LARGE_INTEGER ft;
+ 
+-    NtQuerySystemTime( &ft );
++    ft.QuadPart = RtlGetSystemTimePrecise();  /* Barrique: no syscall, see ntdll */
+     FileTimeToSystemTime( (FILETIME *)&ft, systime );
+ }
+ 
+@@ -4226,7 +4226,12 @@ BOOL WINAPI DECLSPEC_HOTPATCH GetSystemTimeAdjustment( DWORD *adjust, DWORD *inc
+  */
+ void WINAPI DECLSPEC_HOTPATCH GetSystemTimeAsFileTime( FILETIME *time )
+ {
+-    NtQuerySystemTime( (LARGE_INTEGER *)time );
++    LARGE_INTEGER t;
++
++    /* Barrique: no syscall, see RtlGetSystemTimePrecise() in ntdll */
++    t.QuadPart = RtlGetSystemTimePrecise();
++    time->dwLowDateTime = t.u.LowPart;
++    time->dwHighDateTime = t.u.HighPart;
+ }
+ 
+ 
 diff --git a/dlls/kernelbase/memory.c b/dlls/kernelbase/memory.c
 index 2ce2dca..17fc297 100644
 --- a/dlls/kernelbase/memory.c
@@ -2336,10 +2403,38 @@ index ee2936e..1bda9a5 100644
  }
  
 diff --git a/dlls/ntdll/time.c b/dlls/ntdll/time.c
-index 5a96a1e..e1053af 100644
+index 5a96a1e..46fa665 100644
 --- a/dlls/ntdll/time.c
 +++ b/dlls/ntdll/time.c
-@@ -381,6 +381,22 @@ LONGLONG WINAPI RtlGetSystemTimePrecise( void )
+@@ -372,6 +372,27 @@ LONGLONG WINAPI RtlGetSystemTimePrecise( void )
+ {
+     LONGLONG ret;
+ 
++#if defined(__aarch64__) || defined(__arm64ec__)
++    /* Barrique: under Hypervisor.framework every syscall leaves the VM, and games
++     * read the time thousands of times per second; derive it from the performance
++     * counter (read in the VM), with the offset to the real time measured again
++     * every second */
++    if (user_shared_data->QpcFrequency == TICKSPERSEC)
++    {
++        static LONGLONG offset, next_calibration;
++        LARGE_INTEGER counter, now, after;
++
++        RtlQueryPerformanceCounter( &counter );
++        if (counter.QuadPart < ReadAcquire64( &next_calibration ))
++            return counter.QuadPart + ReadNoFence64( &offset );
++
++        NtQuerySystemTime( &now );
++        RtlQueryPerformanceCounter( &after );
++        WriteNoFence64( &offset, now.QuadPart - (counter.QuadPart + after.QuadPart) / 2 );
++        WriteRelease64( &next_calibration, after.QuadPart + TICKSPERSEC );
++        return now.QuadPart;
++    }
++#endif
+     WINE_UNIX_CALL( unix_system_time_precise, &ret );
+     return ret;
+ }
+@@ -381,6 +402,22 @@ LONGLONG WINAPI RtlGetSystemTimePrecise( void )
   */
  BOOL WINAPI DECLSPEC_HOTPATCH RtlQueryPerformanceCounter( LARGE_INTEGER *counter )
  {
@@ -16572,10 +16667,67 @@ index 7a57fb9..f9f53d5 100644
      uint32_t warn_implicit_truncation : 1;
      uint32_t include_empty_buffers : 1;
 diff --git a/libs/vkd3d/libs/vkd3d/command.c b/libs/vkd3d/libs/vkd3d/command.c
-index 0ece8fd..c0901c2 100644
+index 0ece8fd..6044cd1 100644
 --- a/libs/vkd3d/libs/vkd3d/command.c
 +++ b/libs/vkd3d/libs/vkd3d/command.c
-@@ -2174,6 +2174,163 @@ static void d3d12_command_list_invalidate_current_pipeline(struct d3d12_command_
+@@ -1489,10 +1489,48 @@ static HRESULT d3d12_command_allocator_allocate_command_buffer(struct d3d12_comm
+     allocator->command_buffers[allocator->command_buffer_count++] = list->vk_command_buffer;
+ 
+     allocator->current_command_list = list;
++    list->vk_init_command_buffer = VK_NULL_HANDLE;
++    list->pass_query_count = list->ended_query_count = 0;
+ 
+     return S_OK;
+ }
+ 
++/* Barrique: a command buffer submitted right before the list's own one, for the
++ * query resets that can't be recorded inside a render pass */
++static VkCommandBuffer d3d12_command_list_get_init_command_buffer(struct d3d12_command_list *list)
++{
++    struct d3d12_command_allocator *allocator = list->allocator;
++    const struct vkd3d_vk_device_procs *vk_procs = &list->device->vk_procs;
++    VkCommandBufferAllocateInfo command_buffer_info;
++    VkCommandBufferBeginInfo begin_info;
++    VkCommandBuffer vk_buffer;
++
++    if (list->vk_init_command_buffer)
++        return list->vk_init_command_buffer;
++    if (!allocator || !vkd3d_array_reserve((void **)&allocator->command_buffers, &allocator->command_buffers_size,
++            allocator->command_buffer_count + 1, sizeof(*allocator->command_buffers)))
++        return VK_NULL_HANDLE;
++
++    command_buffer_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
++    command_buffer_info.pNext = NULL;
++    command_buffer_info.commandPool = allocator->vk_command_pool;
++    command_buffer_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
++    command_buffer_info.commandBufferCount = 1;
++    if (VK_CALL(vkAllocateCommandBuffers(list->device->vk_device, &command_buffer_info, &vk_buffer)) < 0)
++        return VK_NULL_HANDLE;
++    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
++    begin_info.pNext = NULL;
++    begin_info.flags = 0;
++    begin_info.pInheritanceInfo = NULL;
++    if (VK_CALL(vkBeginCommandBuffer(vk_buffer, &begin_info)) < 0)
++    {
++        VK_CALL(vkFreeCommandBuffers(list->device->vk_device, allocator->vk_command_pool, 1, &vk_buffer));
++        return VK_NULL_HANDLE;
++    }
++    allocator->command_buffers[allocator->command_buffer_count++] = vk_buffer;
++    return list->vk_init_command_buffer = vk_buffer;
++}
++
+ static void d3d12_command_allocator_remove_command_list(struct d3d12_command_allocator *allocator,
+         const struct d3d12_command_list *list)
+ {
+@@ -1721,6 +1759,7 @@ static void d3d12_command_list_allocator_destroyed(struct d3d12_command_list *li
+ 
+     list->allocator = NULL;
+     list->vk_command_buffer = VK_NULL_HANDLE;
++    list->vk_init_command_buffer = VK_NULL_HANDLE;
+ }
+ 
+ static void vkd3d_buffer_destroy(struct vkd3d_buffer *buffer, struct d3d12_device *device)
+@@ -2174,10 +2213,181 @@ static void d3d12_command_list_invalidate_current_pipeline(struct d3d12_command_
      list->current_pipeline = VK_NULL_HANDLE;
  }
  
@@ -16739,7 +16891,25 @@ index 0ece8fd..c0901c2 100644
  static void d3d12_command_list_end_current_render_pass(struct d3d12_command_list *list)
  {
      const struct vkd3d_vk_device_procs *vk_procs = &list->device->vk_procs;
-@@ -2185,7 +2342,30 @@ static void d3d12_command_list_end_current_render_pass(struct d3d12_command_list
+ 
++    if (list->current_render_pass)
++    {
++        /* Queries begun inside a render pass instance must end in it; D3D12 keeps
++         * counting, the count of the draws after this point is lost. */
++        while (list->pass_query_count)
++        {
++            const struct vkd3d_pass_query *q = &list->pass_queries[--list->pass_query_count];
++
++            VK_CALL(vkCmdEndQuery(list->vk_command_buffer, q->vk_pool, q->index));
++            if (list->ended_query_count < ARRAY_SIZE(list->ended_queries))
++                list->ended_queries[list->ended_query_count++] = *q;
++        }
++    }
++
+     if (list->xfb_enabled)
+     {
+         VK_CALL(vkCmdEndTransformFeedbackEXT(list->vk_command_buffer, 0, ARRAY_SIZE(list->so_counter_buffers),
+@@ -2185,7 +2395,30 @@ static void d3d12_command_list_end_current_render_pass(struct d3d12_command_list
      }
  
      if (list->current_render_pass)
@@ -16770,7 +16940,7 @@ index 0ece8fd..c0901c2 100644
  
      list->current_render_pass = VK_NULL_HANDLE;
  
-@@ -2657,6 +2837,19 @@ static HRESULT STDMETHODCALLTYPE d3d12_command_list_Close(ID3D12GraphicsCommandL
+@@ -2657,6 +2890,19 @@ static HRESULT STDMETHODCALLTYPE d3d12_command_list_Close(ID3D12GraphicsCommandL
      vk_procs = &list->device->vk_procs;
  
      d3d12_command_list_end_current_render_pass(list);
@@ -16790,7 +16960,53 @@ index 0ece8fd..c0901c2 100644
      if (list->is_predicated)
          VK_CALL(vkCmdEndConditionalRenderingEXT(list->vk_command_buffer));
  
-@@ -4903,7 +5096,7 @@ static void d3d12_command_list_set_root_cbv(struct d3d12_command_list *list,
+@@ -2665,6 +2911,12 @@ static HRESULT STDMETHODCALLTYPE d3d12_command_list_Close(ID3D12GraphicsCommandL
+         WARN("Failed to end command buffer, vr %d.\n", vr);
+         return hresult_from_vk_result(vr);
+     }
++    if (list->vk_init_command_buffer && (vr = VK_CALL(vkEndCommandBuffer(list->vk_init_command_buffer))) < 0)
++    {
++        WARN("Failed to end init command buffer, vr %d.\n", vr);
++        return hresult_from_vk_result(vr);
++    }
++    list->pass_query_count = list->ended_query_count = 0;
+ 
+     if (list->allocator)
+     {
+@@ -2848,11 +3100,22 @@ static bool d3d12_command_list_update_current_framebuffer(struct d3d12_command_l
+     return true;
+ }
+ 
++/* Barrique: this runs for every draw and dispatch. Waking the descriptor worker
++ * each time costs two VM exits under Hypervisor.framework (wake, and the worker
++ * going back to sleep) and makes it flush a handful of descriptors at a time;
++ * the worker only gets updates done ahead of ExecuteCommandLists(), which
++ * flushes them anyway, so wake it now and then. */
++static void d3d12_command_list_kick_worker(struct d3d12_command_list *list)
++{
++    if (!(list->worker_kick_count++ & 63))
++        vkd3d_cond_signal(&list->device->worker_cond);
++}
++
+ static bool d3d12_command_list_update_compute_pipeline(struct d3d12_command_list *list)
+ {
+     const struct vkd3d_vk_device_procs *vk_procs = &list->device->vk_procs;
+ 
+-    vkd3d_cond_signal(&list->device->worker_cond);
++    d3d12_command_list_kick_worker(list);
+ 
+     if (list->current_pipeline != VK_NULL_HANDLE)
+         return true;
+@@ -2875,7 +3138,7 @@ static bool d3d12_command_list_update_graphics_pipeline(struct d3d12_command_lis
+     VkRenderPass vk_render_pass;
+     VkPipeline vk_pipeline;
+ 
+-    vkd3d_cond_signal(&list->device->worker_cond);
++    d3d12_command_list_kick_worker(list);
+ 
+     if (list->current_pipeline != VK_NULL_HANDLE)
+         return true;
+@@ -4903,7 +5166,7 @@ static void d3d12_command_list_set_root_cbv(struct d3d12_command_list *list,
          buffer_info.range = VK_WHOLE_SIZE;
      }
  
@@ -16799,7 +17015,7 @@ index 0ece8fd..c0901c2 100644
      {
          vk_write_descriptor_set_from_root_descriptor(&descriptor_write, root_parameter, NULL, NULL, &buffer_info);
          VK_CALL(vkCmdPushDescriptorSetKHR(list->vk_command_buffer, bindings->vk_bind_point,
-@@ -4975,7 +5168,7 @@ static void d3d12_command_list_set_root_descriptor(struct d3d12_command_list *li
+@@ -4975,7 +5238,7 @@ static void d3d12_command_list_set_root_descriptor(struct d3d12_command_list *li
          return;
      }
  
@@ -16808,7 +17024,7 @@ index 0ece8fd..c0901c2 100644
      {
          vk_write_descriptor_set_from_root_descriptor(&descriptor_write, root_parameter, NULL, &vk_buffer_view, NULL);
          VK_CALL(vkCmdPushDescriptorSetKHR(list->vk_command_buffer, bindings->vk_bind_point,
-@@ -5457,8 +5650,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+@@ -5457,8 +5720,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
      }
      else
      {
@@ -16821,7 +17037,7 @@ index 0ece8fd..c0901c2 100644
      }
      if (flags & D3D12_CLEAR_FLAG_STENCIL)
      {
-@@ -5467,8 +5662,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+@@ -5467,8 +5732,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
      }
      else
      {
@@ -16832,14 +17048,119 @@ index 0ece8fd..c0901c2 100644
      }
      attachment_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
      attachment_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-@@ -7012,6 +7207,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+@@ -5907,13 +6172,34 @@ static void STDMETHODCALLTYPE d3d12_command_list_BeginQuery(ID3D12GraphicsComman
+ 
+     vk_procs = &list->device->vk_procs;
+ 
++    if (type == D3D12_QUERY_TYPE_OCCLUSION)
++        flags = VK_QUERY_CONTROL_PRECISE_BIT;
++
++    /* Barrique: ending the render pass for each occlusion query (Unreal Engine
++     * issues thousands per second) makes tile-based GPUs load and store every
++     * attachment again; the reset is what can't be inside a render pass, so
++     * record it in a command buffer that runs before this list's one. */
++    if (list->current_render_pass && (type == D3D12_QUERY_TYPE_OCCLUSION || type == D3D12_QUERY_TYPE_BINARY_OCCLUSION)
++            && list->pass_query_count < ARRAY_SIZE(list->pass_queries))
++    {
++        VkCommandBuffer vk_init_buffer = d3d12_command_list_get_init_command_buffer(list);
++
++        if (vk_init_buffer)
++        {
++            struct vkd3d_pass_query *q = &list->pass_queries[list->pass_query_count++];
++
++            VK_CALL(vkCmdResetQueryPool(vk_init_buffer, query_heap->vk_query_pool, index, 1));
++            VK_CALL(vkCmdBeginQuery(list->vk_command_buffer, query_heap->vk_query_pool, index, flags));
++            q->vk_pool = query_heap->vk_query_pool;
++            q->index = index;
++            return;
++        }
++    }
++
+     d3d12_command_list_end_current_render_pass(list);
+ 
+     VK_CALL(vkCmdResetQueryPool(list->vk_command_buffer, query_heap->vk_query_pool, index, 1));
+ 
+-    if (type == D3D12_QUERY_TYPE_OCCLUSION)
+-        flags = VK_QUERY_CONTROL_PRECISE_BIT;
+-
+     if (D3D12_QUERY_TYPE_SO_STATISTICS_STREAM0 <= type && type <= D3D12_QUERY_TYPE_SO_STATISTICS_STREAM3)
+     {
+         unsigned int stream_index = type - D3D12_QUERY_TYPE_SO_STATISTICS_STREAM0;
+@@ -5936,6 +6222,33 @@ static void STDMETHODCALLTYPE d3d12_command_list_EndQuery(ID3D12GraphicsCommandL
+ 
+     vk_procs = &list->device->vk_procs;
+ 
++    if (type == D3D12_QUERY_TYPE_OCCLUSION || type == D3D12_QUERY_TYPE_BINARY_OCCLUSION)
++    {
++        unsigned int i;
++
++        /* Barrique: begun inside the current render pass, see BeginQuery() */
++        for (i = 0; i < list->pass_query_count; ++i)
++        {
++            if (list->pass_queries[i].vk_pool == query_heap->vk_query_pool && list->pass_queries[i].index == index)
++            {
++                VK_CALL(vkCmdEndQuery(list->vk_command_buffer, query_heap->vk_query_pool, index));
++                list->pass_queries[i] = list->pass_queries[--list->pass_query_count];
++                d3d12_query_heap_mark_result_as_available(query_heap, index);
++                return;
++            }
++        }
++        /* or ended already with the render pass it was begun in */
++        for (i = 0; i < list->ended_query_count; ++i)
++        {
++            if (list->ended_queries[i].vk_pool == query_heap->vk_query_pool && list->ended_queries[i].index == index)
++            {
++                list->ended_queries[i] = list->ended_queries[--list->ended_query_count];
++                d3d12_query_heap_mark_result_as_available(query_heap, index);
++                return;
++            }
++        }
++    }
++
+     d3d12_command_list_end_current_render_pass(list);
+ 
+     d3d12_query_heap_mark_result_as_available(query_heap, index);
+@@ -6984,8 +7297,8 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+     struct d3d12_command_queue *command_queue = impl_from_ID3D12CommandQueue(iface);
+     struct d3d12_command_list *cmd_list;
+     struct vkd3d_cs_op_data *op;
++    unsigned int i, buffer_count = 0;
+     VkCommandBuffer *buffers;
+-    unsigned int i;
+ 
+     TRACE("iface %p, command_list_count %u, command_lists %p.\n",
+             iface, command_list_count, command_lists);
+@@ -6993,7 +7306,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+     if (!command_list_count)
+         return;
+ 
+-    if (!(buffers = vkd3d_calloc(command_list_count, sizeof(*buffers))))
++    if (!(buffers = vkd3d_calloc(command_list_count * 2, sizeof(*buffers))))
+     {
+         ERR("Failed to allocate command buffer array.\n");
+         return;
+@@ -7012,8 +7325,11 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
          }
  
          command_list_flush_vk_heap_updates(cmd_list);
 +        rt_dump_execute(command_queue->device, cmd_list);
  
-         buffers[i] = cmd_list->vk_command_buffer;
+-        buffers[i] = cmd_list->vk_command_buffer;
++        if (cmd_list->vk_init_command_buffer)
++            buffers[buffer_count++] = cmd_list->vk_init_command_buffer;
++        buffers[buffer_count++] = cmd_list->vk_command_buffer;
      }
+ 
+     vkd3d_mutex_lock(&command_queue->op_mutex);
+@@ -7025,7 +7341,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+     }
+     op->opcode = VKD3D_CS_OP_EXECUTE;
+     op->u.execute.buffers = buffers;
+-    op->u.execute.buffer_count = command_list_count;
++    op->u.execute.buffer_count = buffer_count;
+ 
+     d3d12_command_queue_submit_locked(command_queue);
+ 
 diff --git a/libs/vkd3d/libs/vkd3d/device.c b/libs/vkd3d/libs/vkd3d/device.c
 index 5f16fef..d58160f 100644
 --- a/libs/vkd3d/libs/vkd3d/device.c
@@ -17152,7 +17473,7 @@ index 14f5250..14a3474 100644
      }
  
 diff --git a/libs/vkd3d/libs/vkd3d/vkd3d_private.h b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
-index 822e172..e3fda94 100644
+index 822e172..f65cc16 100644
 --- a/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 +++ b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 @@ -155,6 +155,7 @@ struct vkd3d_vulkan_info
@@ -17179,7 +17500,7 @@ index 822e172..e3fda94 100644
  
      VkVertexInputAttributeDescription attributes[D3D12_VS_INPUT_REGISTER_COUNT];
      VkVertexInputRate input_rates[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
-@@ -1289,11 +1292,25 @@ struct vkd3d_resource_list
+@@ -1289,13 +1292,36 @@ struct vkd3d_resource_list
  };
  
  /* ID3D12CommandList */
@@ -17204,7 +17525,18 @@ index 822e172..e3fda94 100644
 +
      D3D12_COMMAND_LIST_TYPE type;
      VkQueueFlags vk_queue_flags;
++    unsigned int worker_kick_count;
++    /* Barrique: occlusion queries recorded inside a render pass, see d3d12_command_list_BeginQuery() */
++    VkCommandBuffer vk_init_command_buffer;
++    struct vkd3d_pass_query
++    {
++        VkQueryPool vk_pool;
++        unsigned int index;
++    } pass_queries[16], ended_queries[64];
++    unsigned int pass_query_count, ended_query_count;
  
+     bool is_recording;
+     bool is_valid;
 diff --git a/loader/main.c b/loader/main.c
 index 71ba308..a539b41 100644
 --- a/loader/main.c
