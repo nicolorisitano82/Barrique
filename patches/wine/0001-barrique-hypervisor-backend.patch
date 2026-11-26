@@ -163,6 +163,20 @@ index dc33877..72bc8ce 100644
          }
          r = start_local_service(buf, num_args, (LPCWSTR *)args);
          if (r != ERROR_SUCCESS)
+diff --git a/dlls/comctl32/listview.c b/dlls/comctl32/listview.c
+index fc27599..d0c8e55 100644
+--- a/dlls/comctl32/listview.c
++++ b/dlls/comctl32/listview.c
+@@ -4726,7 +4726,8 @@ static void LISTVIEW_DrawItemPart(LISTVIEW_INFO *infoPtr, LVITEMW *item, const N
+ 
+         TRACE("iImage=%d\n", item->iImage);
+ 
+-        if (item->state & (LVIS_SELECTED | LVIS_CUT) && infoPtr->bFocus)
++        /* custom draw may clear CDIS_SELECTED to draw the item as not selected */
++        if (((nmlvcd->nmcd.uItemState & CDIS_SELECTED) || (item->state & LVIS_CUT)) && infoPtr->bFocus)
+             style = ILD_SELECTED;
+         else
+             style = ILD_NORMAL;
 diff --git a/dlls/crypt32/Makefile.in b/dlls/crypt32/Makefile.in
 index 9a02541..96f8d19 100644
 --- a/dlls/crypt32/Makefile.in
@@ -9999,6 +10013,268 @@ index 5f1c58b..c00a115 100644
  
  SOURCES = \
  	lsa.c \
+diff --git a/dlls/shell32/ebrowser.c b/dlls/shell32/ebrowser.c
+index dc31421..aad516c 100644
+--- a/dlls/shell32/ebrowser.c
++++ b/dlls/shell32/ebrowser.c
+@@ -36,7 +36,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(shell);
+ 
+ #define SPLITTER_WIDTH 2
+ #define NP_MIN_WIDTH 60
+-#define NP_DEFAULT_WIDTH 150
++#define NP_DEFAULT_WIDTH 200
+ #define SV_MIN_WIDTH 150
+ 
+ typedef struct _event_client {
+@@ -547,6 +547,38 @@ static LRESULT navpane_splitter_endresize(ExplorerBrowserImpl *This, HWND hwnd,
+     return TRUE;
+ }
+ 
++static void navpane_add_user_roots(INameSpaceTreeControl2 *pnstc2)
++{
++    static const KNOWNFOLDERID *folders[] =
++    {
++        &FOLDERID_Desktop, &FOLDERID_Downloads, &FOLDERID_Documents,
++        &FOLDERID_Pictures, &FOLDERID_Music, &FOLDERID_Videos,
++    };
++    unsigned int i;
++
++    for (i = 0; i < ARRAY_SIZE(folders); i++)
++    {
++        WCHAR path[MAX_PATH];
++        LPITEMIDLIST pidl;
++        IShellItem *psi;
++
++        if (FAILED(SHGetKnownFolderIDList(folders[i], 0, NULL, &pidl)))
++            continue;
++        /* skip file system folders that do not exist */
++        if (!_ILIsDesktop(pidl) && SHGetPathFromIDListW(pidl, path) && !PathIsDirectoryW(path))
++        {
++            ILFree(pidl);
++            continue;
++        }
++        if (SUCCEEDED(SHCreateShellItem(NULL, NULL, pidl, &psi)))
++        {
++            INameSpaceTreeControl2_AppendRoot(pnstc2, psi, SHCONTF_FOLDERS, NSTCRS_VISIBLE, NULL);
++            IShellItem_Release(psi);
++        }
++        ILFree(pidl);
++    }
++}
++
+ static LRESULT navpane_on_wm_create(HWND hwnd, CREATESTRUCTW *crs)
+ {
+     ExplorerBrowserImpl *This = crs->lpCreateParams;
+@@ -563,12 +595,11 @@ static LRESULT navpane_on_wm_create(HWND hwnd, CREATESTRUCTW *crs)
+ 
+     if(SUCCEEDED(hr))
+     {
+-        style = NSTCS_HASEXPANDOS | NSTCS_ROOTHASEXPANDO | NSTCS_SHOWSELECTIONALWAYS;
++        style = NSTCS_HASEXPANDOS | NSTCS_ROOTHASEXPANDO | NSTCS_SHOWSELECTIONALWAYS | NSTCS_FULLROWSELECT;
+         hr = INameSpaceTreeControl2_Initialize(pnstc2, GetParent(hwnd), NULL, style);
+         if(SUCCEEDED(hr))
+         {
+             INameSpaceTreeControlEvents *pnstce;
+-            IShellFolder *psfdesktop;
+             IShellItem *psi;
+             IOleWindow *pow;
+             LPITEMIDLIST pidl;
+@@ -593,31 +624,23 @@ static LRESULT navpane_on_wm_create(HWND hwnd, CREATESTRUCTW *crs)
+                 ERR("TreeAdvise failed. (0x%08lx).\n", hr);
+ 
+             /*
+-             * Add the default roots
++             * Add the default roots: the user folders (like "Quick access"),
++             * then "This PC" expanded.
+              */
++            navpane_add_user_roots(pnstc2);
+ 
+-            /* TODO: This should be FOLDERID_Links */
+-            hr = SHGetSpecialFolderLocation(NULL, CSIDL_FAVORITES, &pidl);
++            hr = SHGetSpecialFolderLocation(NULL, CSIDL_DRIVES, &pidl);
+             if(SUCCEEDED(hr))
+             {
+                 hr = SHCreateShellItem(NULL, NULL, pidl, &psi);
+                 if(SUCCEEDED(hr))
+                 {
+-                    hr = INameSpaceTreeControl2_AppendRoot(pnstc2, psi, SHCONTF_NONFOLDERS, NSTCRS_VISIBLE, NULL);
++                    hr = INameSpaceTreeControl2_AppendRoot(pnstc2, psi, SHCONTF_FOLDERS, NSTCRS_EXPANDED, NULL);
+                     IShellItem_Release(psi);
+                 }
+                 ILFree(pidl);
+             }
+ 
+-            SHGetDesktopFolder(&psfdesktop);
+-            hr = SHGetItemFromObject((IUnknown*)psfdesktop, &IID_IShellItem, (void**)&psi);
+-            IShellFolder_Release(psfdesktop);
+-            if(SUCCEEDED(hr))
+-            {
+-                hr = INameSpaceTreeControl2_AppendRoot(pnstc2, psi, SHCONTF_FOLDERS, NSTCRS_EXPANDED, NULL);
+-                IShellItem_Release(psi);
+-            }
+-
+             /* TODO:
+              * We should advertise IID_INameSpaceTreeControl to the site of the
+              * host through its IProfferService interface, if any.
+diff --git a/dlls/shell32/shell32.rc b/dlls/shell32/shell32.rc
+index 6738ba8..1b3809b 100644
+--- a/dlls/shell32/shell32.rc
++++ b/dlls/shell32/shell32.rc
+@@ -130,7 +130,7 @@ END
+ STRINGTABLE
+ {
+         /* columns in the shellview */
+-	IDS_SHV_COLUMN1		"File"
++	IDS_SHV_COLUMN1		"Name"
+ 	IDS_SHV_COLUMN2		"Size"
+ 	IDS_SHV_COLUMN3		"Type"
+ 	IDS_SHV_COLUMN4		"Modified"
+@@ -237,6 +237,7 @@ the folder?"
+ 	IDS_NEWFOLDER		"New Folder"
+ 
+         IDS_NEW_MENU_FOLDER         "New &Folder"
++        IDS_LOCAL_DISK              "Local Disk"
+ 
+ 	IDS_CPANEL_TITLE            "Wine Control Panel"
+ 	IDS_CPANEL_NAME             "Name"
+diff --git a/dlls/shell32/shfldr_fs.c b/dlls/shell32/shfldr_fs.c
+index 40ce832..cc05281 100644
+--- a/dlls/shell32/shfldr_fs.c
++++ b/dlls/shell32/shfldr_fs.c
+@@ -174,11 +174,11 @@ static const IUnknownVtbl unkvt =
+ 
+ static const shvheader GenericSFHeader[] =
+ {
+-    { &FMTID_Storage, PID_STG_NAME,        IDS_SHV_COLUMN1, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT,  LVCFMT_RIGHT, 15 },
++    { &FMTID_Storage, PID_STG_NAME,        IDS_SHV_COLUMN1, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT,  LVCFMT_LEFT,  30 },
+     { &FMTID_Storage, PID_STG_SIZE,        IDS_SHV_COLUMN2, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT,  LVCFMT_RIGHT, 10 },
+-    { &FMTID_Storage, PID_STG_STORAGETYPE, IDS_SHV_COLUMN3, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT,  LVCFMT_RIGHT, 10 },
+-    { &FMTID_Storage, PID_STG_WRITETIME,   IDS_SHV_COLUMN4, SHCOLSTATE_TYPE_DATE | SHCOLSTATE_ONBYDEFAULT, LVCFMT_RIGHT, 12 },
+-    { &FMTID_Storage, PID_STG_ATTRIBUTES,  IDS_SHV_COLUMN5, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT,  LVCFMT_RIGHT, 5  },
++    { &FMTID_Storage, PID_STG_STORAGETYPE, IDS_SHV_COLUMN3, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT,  LVCFMT_LEFT,  18 },
++    { &FMTID_Storage, PID_STG_WRITETIME,   IDS_SHV_COLUMN4, SHCOLSTATE_TYPE_DATE | SHCOLSTATE_ONBYDEFAULT, LVCFMT_LEFT,  16 },
++    { &FMTID_Storage, PID_STG_ATTRIBUTES,  IDS_SHV_COLUMN5, SHCOLSTATE_TYPE_STR | SHCOLSTATE_ONBYDEFAULT,  LVCFMT_LEFT,  8  },
+ };
+ 
+ #define GENERICSHELLVIEWCOLUMNS 5
+diff --git a/dlls/shell32/shfldr_mycomp.c b/dlls/shell32/shfldr_mycomp.c
+index 6d24a8e..bc32b78 100644
+--- a/dlls/shell32/shfldr_mycomp.c
++++ b/dlls/shell32/shfldr_mycomp.c
+@@ -675,6 +675,8 @@ static HRESULT WINAPI ISF_MyComputer_fnGetDisplayNameOf (IShellFolder2 *iface,
+ 
+                 GetVolumeInformationW (pszPath, wszDrive, ARRAY_SIZE(wszDrive) - 5, NULL, NULL,
+                         NULL, NULL, 0);
++                if (!wszDrive[0] && GetDriveTypeW (pszPath) == DRIVE_FIXED)
++                    LoadStringW (shell32_hInstance, IDS_LOCAL_DISK, wszDrive, ARRAY_SIZE(wszDrive) - 5);
+                 lstrcatW (wszDrive, L" (");
+                 lstrcpynW (wszDrive + lstrlenW(wszDrive), pszPath, 3);
+                 lstrcatW (wszDrive, L")");
+diff --git a/dlls/shell32/shlview.c b/dlls/shell32/shlview.c
+index af09787..5fc7a05 100644
+--- a/dlls/shell32/shlview.c
++++ b/dlls/shell32/shlview.c
+@@ -400,6 +400,10 @@ static BOOL ShellView_CreateList (IShellViewImpl * This)
+ 
+         dwStyle |= ViewModeToListStyle(This->FolderSettings.ViewMode);
+ 
++        /* icons flow in rows like on Windows, except on the desktop */
++        if (!(This->FolderSettings.fFlags & FWF_DESKTOP))
++            dwStyle &= ~LVS_ALIGNLEFT;
++
+ 	if (This->FolderSettings.fFlags & FWF_AUTOARRANGE)	dwStyle |= LVS_AUTOARRANGE;
+ 	if (This->FolderSettings.fFlags & FWF_DESKTOP)
+ 	  This->FolderSettings.fFlags |= FWF_NOCLIENTEDGE | FWF_NOSCROLL;
+@@ -426,6 +430,9 @@ static BOOL ShellView_CreateList (IShellViewImpl * This)
+         This->ListViewSortInfo.nHeaderID = -1;
+         This->ListViewSortInfo.nLastHeaderID = -1;
+ 
++        if (This->FolderSettings.fFlags & FWF_FULLROWSELECT)
++            SendMessageW(This->hWndList, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
++
+         if (This->FolderSettings.fFlags & FWF_DESKTOP) {
+           /*
+            * FIXME: look at the registry value
+@@ -444,6 +451,30 @@ static BOOL ShellView_CreateList (IShellViewImpl * This)
+ 	return TRUE;
+ }
+ 
++/**********************************************************
++* update_sort_arrow()
++*
++* - shows the sort direction in the column header
++*/
++static void update_sort_arrow(IShellViewImpl *This)
++{
++    HWND header = (HWND)SendMessageW(This->hWndList, LVM_GETHEADER, 0, 0);
++    int i, count;
++    HDITEMW item;
++
++    if (!header) return;
++    count = SendMessageW(header, HDM_GETITEMCOUNT, 0, 0);
++    for (i = 0; i < count; i++)
++    {
++        item.mask = HDI_FORMAT;
++        if (!SendMessageW(header, HDM_GETITEMW, i, (LPARAM)&item)) continue;
++        item.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
++        if (i == This->ListViewSortInfo.nHeaderID)
++            item.fmt |= This->ListViewSortInfo.bIsAscending ? HDF_SORTUP : HDF_SORTDOWN;
++        SendMessageW(header, HDM_SETITEMW, i, (LPARAM)&item);
++    }
++}
++
+ /**********************************************************
+ * ShellView_InitList()
+ *
+@@ -1328,6 +1359,7 @@ static LRESULT ShellView_OnCommand(IShellViewImpl * This,DWORD dwCmdID, DWORD dw
+ 	    This->ListViewSortInfo.bIsAscending = TRUE;
+ 	    This->ListViewSortInfo.nLastHeaderID = This->ListViewSortInfo.nHeaderID;
+ 	    SendMessageW(This->hWndList, LVM_SORTITEMS, (WPARAM) &This->ListViewSortInfo, (LPARAM)ShellView_ListViewCompareItems);
++	    update_sort_arrow(This);
+ 	    break;
+ 
+ 	  default:
+@@ -1390,6 +1422,20 @@ static LRESULT ShellView_OnNotify(IShellViewImpl * This, UINT CtlID, LPNMHDR lpn
+ 
+ 	  case NM_CUSTOMDRAW:
+ 	    TRACE("-- NM_CUSTOMDRAW %p\n",This);
++	    if (lpnmh->hwndFrom == This->hWndList && (This->FolderSettings.fFlags & FWF_FULLROWSELECT))
++	    {
++	        NMLVCUSTOMDRAW *cd = (NMLVCUSTOMDRAW *)lpnmh;
++
++	        /* modern selection colors, as used by the Windows Explorer theme */
++	        if (cd->nmcd.dwDrawStage == CDDS_PREPAINT)
++	            return CDRF_NOTIFYITEMDRAW;
++	        if (cd->nmcd.dwDrawStage == CDDS_ITEMPREPAINT && (cd->nmcd.uItemState & CDIS_SELECTED))
++	        {
++	            cd->nmcd.uItemState &= ~CDIS_SELECTED;
++	            cd->clrText = GetSysColor(COLOR_WINDOWTEXT);
++	            cd->clrTextBk = GetFocus() == This->hWndList ? RGB(0xcc, 0xe8, 0xff) : RGB(0xd9, 0xd9, 0xd9);
++	        }
++	    }
+ 	    return CDRF_DODEFAULT;
+ 
+ 	  case NM_RELEASEDCAPTURE:
+@@ -1451,6 +1497,7 @@ static LRESULT ShellView_OnNotify(IShellViewImpl * This, UINT CtlID, LPNMHDR lpn
+ 	    This->ListViewSortInfo.nLastHeaderID = This->ListViewSortInfo.nHeaderID;
+ 
+ 	    SendMessageW(lpnmlv->hdr.hwndFrom, LVM_SORTITEMS, (WPARAM) &This->ListViewSortInfo, (LPARAM)ShellView_ListViewCompareItems);
++	    update_sort_arrow(This);
+ 	    break;
+ 
+ 	  case LVN_GETDISPINFOA:
+diff --git a/dlls/shell32/shresdef.h b/dlls/shell32/shresdef.h
+index 64763f8..02cd915 100644
+--- a/dlls/shell32/shresdef.h
++++ b/dlls/shell32/shresdef.h
+@@ -138,6 +138,7 @@
+ #define IDS_RECYCLEBIN_OVERWRITE_CAPTION 171
+ 
+ #define IDS_NEW_MENU_FOLDER         180
++#define IDS_LOCAL_DISK              181
+ 
+ #define IDS_LICENSE                 256
+ #define IDS_LICENSE_CAPTION         257
 diff --git a/dlls/win32u/Makefile.in b/dlls/win32u/Makefile.in
 index 454fb25..bcec456 100644
 --- a/dlls/win32u/Makefile.in
@@ -18731,6 +19007,2766 @@ index 9288b58..41d44b7 100644
  [Wow64]
  ; Wow6432Node symlinks
  HKLM,Software\Classes\Wow6432Node\AppId,"SymbolicLinkValue",0x60000,"\Registry\Machine\Software\Classes\AppId"
+diff --git a/po/it.po b/po/it.po
+index 2cbe802..502c126 100644
+--- a/po/it.po
++++ b/po/it.po
+@@ -11108,6 +11108,10 @@ msgstr "Nuovo"
+ msgid "New &Folder"
+ msgstr "Nuova &cartella"
+ 
++#: dlls/shell32/shell32.rc:240
++msgid "Local Disk"
++msgstr "Disco locale"
++
+ #: dlls/shell32/shell32.rc:70
+ msgid "New &Link"
+ msgstr "Nuovo co&llegamento"
+@@ -17031,6 +17035,50 @@ msgstr "Sei sicuro di volere eliminare questi valori?"
+ msgid "Wine Desktop"
+ msgstr "Scrivania"
+ 
++#: programs/explorer/explorer.rc:39
++msgid "1 item"
++msgstr "1 elemento"
++
++#: programs/explorer/explorer.rc:40
++msgid "%d items"
++msgstr "%d elementi"
++
++#: programs/explorer/explorer.rc:41
++msgid "1 item selected"
++msgstr "1 elemento selezionato"
++
++#: programs/explorer/explorer.rc:42
++msgid "%d items selected"
++msgstr "%d elementi selezionati"
++
++#: programs/explorer/explorer.rc:43
++msgid "Search %s"
++msgstr "Cerca in %s"
++
++#: programs/explorer/explorer.rc:44
++msgid "Cannot find '%s'. Check the spelling and try again."
++msgstr "Impossibile trovare '%s'. Verificare che il nome sia stato digitato correttamente e riprovare."
++
++#: programs/explorer/explorer.rc:45
++msgid "Back (Alt+Left Arrow)"
++msgstr "Indietro (Alt+freccia sinistra)"
++
++#: programs/explorer/explorer.rc:46
++msgid "Forward (Alt+Right Arrow)"
++msgstr "Avanti (Alt+freccia destra)"
++
++#: programs/explorer/explorer.rc:47
++msgid "Up to parent folder (Alt+Up Arrow)"
++msgstr "Cartella superiore (Alt+freccia su)"
++
++#: programs/explorer/explorer.rc:48
++msgid "Refresh (F5)"
++msgstr "Aggiorna (F5)"
++
++#: programs/explorer/explorer.rc:50
++msgid "Large icons"
++msgstr "Icone grandi"
++
+ #: programs/findstr/findstr.rc:28
+ #, fuzzy
+ #| msgid "LAN Connection"
+diff --git a/programs/explorer/explorer.c b/programs/explorer/explorer.c
+index 1854144..7f385e5 100644
+--- a/programs/explorer/explorer.c
++++ b/programs/explorer/explorer.c
+@@ -34,21 +34,52 @@
+ #include <shlwapi.h>
+ #include <commoncontrols.h>
+ #include <commctrl.h>
++#include <math.h>
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(explorer);
+ 
+ #define EXPLORER_INFO_INDEX 0
+ 
+-#define NAV_TOOLBAR_HEIGHT 30
+-#define PATHBOX_HEIGHT 240
+-static int nav_toolbar_height;
+-static int pathbox_height;
+-
+-#define DEFAULT_WIDTH 640
+-#define DEFAULT_HEIGHT 480
+-static int default_width;
+-static int default_height;
+-
++/* Layout metrics, in 96 DPI units. */
++#define CMDBAR_HEIGHT     44
++#define NAV_BUTTON_SIZE   32
++#define ADDRESS_HEIGHT    30
++#define SEARCH_WIDTH      240
++#define STATUS_HEIGHT     26
++#define CRUMB_PADDING     6
++#define CHEVRON_WIDTH     16
++#define GLYPH_SIZE        16
++#define SMALL_GLYPH_SIZE  10
++#define DEFAULT_WIDTH     1000
++#define DEFAULT_HEIGHT    640
++#define MIN_WIDTH         480
++#define MIN_HEIGHT        320
++
++#define MAX_HISTORY       200
++#define MAX_MENU_ITEMS    500
++#define MAX_SIZE_ITEMS    2000
++
++#define ID_ADDRESS_EDIT   101
++#define ID_SEARCH_EDIT    102
++
++#define WM_EXPLORER_FOCUS_VIEW (WM_APP + 1)
++
++#define TIMER_SEARCH      1
++#define TIMER_STATUS      2
++#define TIMER_POLL        3
++
++#define CLR_TEXT          RGB(0x1a, 0x1a, 0x1a)
++#define CLR_DISABLED      RGB(0xbf, 0xbf, 0xbf)
++#define CLR_DIM           RGB(0x60, 0x60, 0x60)
++#define CLR_HOT           RGB(0xe5, 0xf3, 0xff)
++#define CLR_PRESSED       RGB(0xcc, 0xe8, 0xff)
++#define CLR_BORDER        RGB(0xd9, 0xd9, 0xd9)
++#define CLR_FOCUS         RGB(0x00, 0x78, 0xd7)
++#define CLR_SEPARATOR     RGB(0xf0, 0xf0, 0xf0)
++#define CLR_BACKGROUND    RGB(0xff, 0xff, 0xff)
++#define CLR_STATUS_TEXT   RGB(0x33, 0x33, 0x33)
++
++static const WCHAR settings_key[] = L"Software\\Wine\\Explorer\\Browser";
+ 
+ HINSTANCE explorer_hInstance;
+ 
+@@ -58,23 +89,99 @@ typedef struct parametersTAG {
+     WCHAR   selection[MAX_PATH];
+ } parameters_struct;
+ 
++enum glyph
++{
++    GLYPH_BACK,
++    GLYPH_FORWARD,
++    GLYPH_UP,
++    GLYPH_REFRESH,
++    GLYPH_CHEVRON,
++    GLYPH_OVERFLOW,
++    GLYPH_SEARCH,
++    GLYPH_DETAILS,
++    GLYPH_TILES,
++    GLYPH_COUNT
++};
++
++#define GLYPH_VARIANTS 3
++
++enum hit
++{
++    HIT_NONE = -1,
++    HIT_BACK,
++    HIT_FORWARD,
++    HIT_UP,
++    HIT_REFRESH,
++    HIT_ADDRESS,
++    HIT_ROOT_CHEVRON,
++    HIT_VIEW_DETAILS,
++    HIT_VIEW_ICONS,
++    HIT_CRUMB = 0x10000,
++    HIT_CRUMB_CHEVRON = 0x20000,
++};
++
++struct crumb
++{
++    ITEMIDLIST *pidl;   /* absolute */
++    WCHAR *name;
++    int text_width;
++    BOOL visible;
++    RECT text_rect;
++    RECT chevron_rect;
++};
++
++struct glyph_bitmap
++{
++    HBITMAP bitmap;
++    COLORREF color;
++    int size;
++};
++
+ typedef struct
+ {
++    IServiceProvider IServiceProvider_iface;
++    ICommDlgBrowser ICommDlgBrowser_iface;
++
+     IExplorerBrowser *browser;
+-    HWND main_window,path_box;
+-    INT rebar_height;
++    HWND main_window, address_edit, search_edit, list_view, tooltip;
+     LPITEMIDLIST pidl;
+-    IImageList *icon_list;
+     DWORD advise_cookie;
+ 
+     IShellWindows *sw;
+     LONG sw_cookie;
++
++    UINT dpi;
++    HFONT font;
++    int font_height;
++    int small_icon_size;
++    struct glyph_bitmap glyphs[GLYPH_COUNT][GLYPH_VARIANTS];
++
++    /* mirror of the browser travel log, used for the button states */
++    LPITEMIDLIST history[MAX_HISTORY];
++    int history_count, history_pos;
++    int travel;
++
++    struct crumb *crumbs;
++    int crumb_count, crumb_start, crumb_first_visible;
++
++    RECT cmdbar_rect, back_rect, forward_rect, up_rect, address_rect, refresh_rect;
++    RECT icon_rect, root_chevron_rect, search_rect;
++    RECT status_rect, details_rect, icons_rect;
++    int hot, pressed;
++    BOOL tracking_mouse;
++    BOOL editing;
++    BOOL fonts_applied_tree;
++
++    WCHAR *filter;
++    BOOL ignore_search_change;
++    WCHAR status_text[256];
++    UINT view_mode;
+ } explorer_info;
+ 
+-enum
++static int scale(const explorer_info *info, int value)
+ {
+-    BACK_BUTTON,FORWARD_BUTTON,UP_BUTTON
+-};
++    return MulDiv(value, info->dpi, USER_DEFAULT_SCREEN_DPI);
++}
+ 
+ static void variant_from_pidl(VARIANT *var, const ITEMIDLIST *pidl)
+ {
+@@ -83,234 +190,1349 @@ static void variant_from_pidl(VARIANT *var, const ITEMIDLIST *pidl)
+     memcpy(V_ARRAY(var)->pvData, pidl, ILGetSize(pidl));
+ }
+ 
+-typedef struct
++static WCHAR *strdupW(const WCHAR *str)
+ {
+-    IExplorerBrowserEvents IExplorerBrowserEvents_iface;
+-    explorer_info* info;
+-    LONG ref;
+-} IExplorerBrowserEventsImpl;
++    WCHAR *ret = malloc((wcslen(str) + 1) * sizeof(WCHAR));
++    if (ret) wcscpy(ret, str);
++    return ret;
++}
+ 
+-static IExplorerBrowserEventsImpl *impl_from_IExplorerBrowserEvents(IExplorerBrowserEvents *iface)
++/******************************************************************************
++ * Settings
++ */
++
++static DWORD get_setting_dword(const WCHAR *name, DWORD def)
+ {
+-    return CONTAINING_RECORD(iface, IExplorerBrowserEventsImpl, IExplorerBrowserEvents_iface);
++    DWORD value, size = sizeof(value);
++    if (RegGetValueW(HKEY_CURRENT_USER, settings_key, name, RRF_RT_REG_DWORD, NULL, &value, &size))
++        return def;
++    return value;
+ }
+ 
+-static HRESULT WINAPI IExplorerBrowserEventsImpl_fnQueryInterface(IExplorerBrowserEvents *iface, REFIID riid, void **ppvObject)
++static void set_setting_dword(const WCHAR *name, DWORD value)
+ {
+-    return E_NOINTERFACE;
++    RegSetKeyValueW(HKEY_CURRENT_USER, settings_key, name, REG_DWORD, &value, sizeof(value));
+ }
+ 
+-static ULONG WINAPI IExplorerBrowserEventsImpl_fnAddRef(IExplorerBrowserEvents *iface)
++/******************************************************************************
++ * Glyphs: simple vector icons, rendered supersampled with GDI and reduced to
++ * premultiplied alpha bitmaps so they look smooth at any DPI.
++ */
++
++#define SUPERSAMPLE 4
++
++static void glyph_polyline(HDC hdc, int size, const float *coords, int count)
+ {
+-    IExplorerBrowserEventsImpl *This = impl_from_IExplorerBrowserEvents(iface);
+-    return InterlockedIncrement(&This->ref);
++    POINT pts[8];
++    int i;
++
++    for (i = 0; i < count && i < ARRAY_SIZE(pts); i++)
++    {
++        pts[i].x = (int)(coords[2 * i] * size + 0.5f);
++        pts[i].y = (int)(coords[2 * i + 1] * size + 0.5f);
++    }
++    Polyline(hdc, pts, i);
+ }
+ 
+-static ULONG WINAPI IExplorerBrowserEventsImpl_fnRelease(IExplorerBrowserEvents *iface)
++static void draw_glyph_shape(HDC hdc, enum glyph glyph, int size)
+ {
+-    IExplorerBrowserEventsImpl *This = impl_from_IExplorerBrowserEvents(iface);
+-    ULONG ref = InterlockedDecrement(&This->ref);
+-    if(!ref) free(This);
+-    return ref;
++    switch (glyph)
++    {
++    case GLYPH_BACK:
++    {
++        static const float shaft[] = {0.84f, 0.5f, 0.16f, 0.5f};
++        static const float head[] = {0.44f, 0.22f, 0.16f, 0.5f, 0.44f, 0.78f};
++        glyph_polyline(hdc, size, shaft, 2);
++        glyph_polyline(hdc, size, head, 3);
++        break;
++    }
++    case GLYPH_FORWARD:
++    {
++        static const float shaft[] = {0.16f, 0.5f, 0.84f, 0.5f};
++        static const float head[] = {0.56f, 0.22f, 0.84f, 0.5f, 0.56f, 0.78f};
++        glyph_polyline(hdc, size, shaft, 2);
++        glyph_polyline(hdc, size, head, 3);
++        break;
++    }
++    case GLYPH_UP:
++    {
++        static const float shaft[] = {0.5f, 0.84f, 0.5f, 0.16f};
++        static const float head[] = {0.22f, 0.44f, 0.5f, 0.16f, 0.78f, 0.44f};
++        glyph_polyline(hdc, size, shaft, 2);
++        glyph_polyline(hdc, size, head, 3);
++        break;
++    }
++    case GLYPH_REFRESH:
++    {
++        const float pi = 3.14159265f, r = 0.32f;
++        const float start = 10.0f * pi / 180.0f, end = 300.0f * pi / 180.0f;
++        float t, dx, dy, ex, ey, wing = 0.2f, a;
++        POINT pts[33], head[3];
++        int i;
++
++        for (i = 0; i <= 32; i++)
++        {
++            t = start + (end - start) * i / 32;
++            pts[i].x = (int)((0.5f + r * cosf(t)) * size + 0.5f);
++            pts[i].y = (int)((0.5f + r * sinf(t)) * size + 0.5f);
++        }
++        Polyline(hdc, pts, 33);
++
++        ex = 0.5f + r * cosf(end);
++        ey = 0.5f + r * sinf(end);
++        dx = -sinf(end);
++        dy = cosf(end);
++        a = 0.7f;
++        head[0].x = (int)((ex - wing * (dx * cosf(a) - dy * sinf(a))) * size + 0.5f);
++        head[0].y = (int)((ey - wing * (dx * sinf(a) + dy * cosf(a))) * size + 0.5f);
++        head[1].x = (int)(ex * size + 0.5f);
++        head[1].y = (int)(ey * size + 0.5f);
++        head[2].x = (int)((ex - wing * (dx * cosf(-a) - dy * sinf(-a))) * size + 0.5f);
++        head[2].y = (int)((ey - wing * (dx * sinf(-a) + dy * cosf(-a))) * size + 0.5f);
++        Polyline(hdc, head, 3);
++        break;
++    }
++    case GLYPH_CHEVRON:
++    {
++        static const float chevron[] = {0.38f, 0.2f, 0.66f, 0.5f, 0.38f, 0.8f};
++        glyph_polyline(hdc, size, chevron, 3);
++        break;
++    }
++    case GLYPH_OVERFLOW:
++    {
++        static const float first[] = {0.5f, 0.22f, 0.24f, 0.5f, 0.5f, 0.78f};
++        static const float second[] = {0.8f, 0.22f, 0.54f, 0.5f, 0.8f, 0.78f};
++        glyph_polyline(hdc, size, first, 3);
++        glyph_polyline(hdc, size, second, 3);
++        break;
++    }
++    case GLYPH_SEARCH:
++    {
++        static const float handle[] = {0.4f, 0.6f, 0.14f, 0.86f};
++        Ellipse(hdc, (int)(0.36f * size), (int)(0.12f * size), (int)(0.88f * size), (int)(0.64f * size));
++        glyph_polyline(hdc, size, handle, 2);
++        break;
++    }
++    case GLYPH_DETAILS:
++    {
++        static const float l1[] = {0.12f, 0.24f, 0.88f, 0.24f};
++        static const float l2[] = {0.12f, 0.5f, 0.88f, 0.5f};
++        static const float l3[] = {0.12f, 0.76f, 0.88f, 0.76f};
++        glyph_polyline(hdc, size, l1, 2);
++        glyph_polyline(hdc, size, l2, 2);
++        glyph_polyline(hdc, size, l3, 2);
++        break;
++    }
++    case GLYPH_TILES:
++        Rectangle(hdc, (int)(0.12f * size), (int)(0.12f * size), (int)(0.44f * size), (int)(0.44f * size));
++        Rectangle(hdc, (int)(0.56f * size), (int)(0.12f * size), (int)(0.88f * size), (int)(0.44f * size));
++        Rectangle(hdc, (int)(0.12f * size), (int)(0.56f * size), (int)(0.44f * size), (int)(0.88f * size));
++        Rectangle(hdc, (int)(0.56f * size), (int)(0.56f * size), (int)(0.88f * size), (int)(0.88f * size));
++        break;
++    default:
++        break;
++    }
+ }
+ 
+-static BOOL create_combobox_item(IShellFolder *folder, LPCITEMIDLIST child_pidl, IImageList *icon_list, COMBOBOXEXITEMW *item)
++static HBITMAP render_glyph(enum glyph glyph, int size, COLORREF color)
+ {
+-    STRRET strret;
+-    HRESULT hres;
+-    PIDLIST_ABSOLUTE parent_pidl, pidl;
+-    SHFILEINFOW info;
+-    IImageList *list;
+-
+-    strret.uType=STRRET_WSTR;
+-    hres = IShellFolder_GetDisplayNameOf( folder, child_pidl, SHGDN_FORADDRESSBAR, &strret );
+-    if(SUCCEEDED(hres))
+-        hres = StrRetToStrW(&strret, child_pidl, &item->pszText);
+-    if(FAILED(hres))
++    int big = size * SUPERSAMPLE, x, y, i, j, stroke;
++    BITMAPINFO bmi;
++    LOGBRUSH lb;
++    DWORD *src, *dst;
++    HBITMAP src_bitmap, dst_bitmap = NULL;
++    HGDIOBJ old_bitmap, old_pen, old_brush;
++    HPEN pen;
++    HDC hdc;
++
++    if (size <= 0) return NULL;
++
++    memset(&bmi, 0, sizeof(bmi));
++    bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
++    bmi.bmiHeader.biWidth = big;
++    bmi.bmiHeader.biHeight = -big;
++    bmi.bmiHeader.biPlanes = 1;
++    bmi.bmiHeader.biBitCount = 32;
++    bmi.bmiHeader.biCompression = BI_RGB;
++
++    if (!(hdc = CreateCompatibleDC(0))) return NULL;
++    if (!(src_bitmap = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, (void **)&src, NULL, 0)))
+     {
+-        WARN( "Could not get name for pidl\n" );
+-        return FALSE;
++        DeleteDC(hdc);
++        return NULL;
++    }
++    memset(src, 0xff, big * big * sizeof(DWORD));
++
++    stroke = max(SUPERSAMPLE, big / 15);
++    lb.lbStyle = BS_SOLID;
++    lb.lbColor = RGB(0, 0, 0);
++    lb.lbHatch = 0;
++    pen = ExtCreatePen(PS_GEOMETRIC | PS_SOLID | PS_ENDCAP_ROUND | PS_JOIN_ROUND, stroke, &lb, 0, NULL);
++
++    old_bitmap = SelectObject(hdc, src_bitmap);
++    old_pen = SelectObject(hdc, pen);
++    old_brush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
++    draw_glyph_shape(hdc, glyph, big);
++    GdiFlush();
++    SelectObject(hdc, old_brush);
++    SelectObject(hdc, old_pen);
++    DeleteObject(pen);
++
++    bmi.bmiHeader.biWidth = size;
++    bmi.bmiHeader.biHeight = -size;
++    if ((dst_bitmap = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, (void **)&dst, NULL, 0)))
++    {
++        for (y = 0; y < size; y++)
++        {
++            for (x = 0; x < size; x++)
++            {
++                unsigned int sum = 0, a;
++
++                for (j = 0; j < SUPERSAMPLE; j++)
++                    for (i = 0; i < SUPERSAMPLE; i++)
++                        sum += 255 - (src[(y * SUPERSAMPLE + j) * big + x * SUPERSAMPLE + i] & 0xff);
++                a = sum / (SUPERSAMPLE * SUPERSAMPLE);
++                dst[y * size + x] = (a << 24) | ((GetRValue(color) * a / 255) << 16) |
++                                    ((GetGValue(color) * a / 255) << 8) | (GetBValue(color) * a / 255);
++            }
++        }
++    }
++
++    SelectObject(hdc, old_bitmap);
++    DeleteObject(src_bitmap);
++    DeleteDC(hdc);
++    return dst_bitmap;
++}
++
++static void free_glyphs(explorer_info *info)
++{
++    int i, j;
++
++    for (i = 0; i < GLYPH_COUNT; i++)
++        for (j = 0; j < GLYPH_VARIANTS; j++)
++        {
++            if (info->glyphs[i][j].bitmap) DeleteObject(info->glyphs[i][j].bitmap);
++            info->glyphs[i][j].bitmap = NULL;
++        }
++}
++
++static void draw_glyph(explorer_info *info, HDC hdc, enum glyph glyph, int size, COLORREF color, const RECT *rect)
++{
++    BLENDFUNCTION blend = {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
++    struct glyph_bitmap *slot = NULL;
++    HGDIOBJ old;
++    HDC mem;
++    int i;
++
++    for (i = 0; i < GLYPH_VARIANTS; i++)
++    {
++        struct glyph_bitmap *cur = &info->glyphs[glyph][i];
++        if (cur->bitmap && cur->color == color && cur->size == size)
++        {
++            slot = cur;
++            break;
++        }
++        if (!slot && !cur->bitmap) slot = cur;
++    }
++    if (!slot) slot = &info->glyphs[glyph][0];
++    if (!slot->bitmap || slot->color != color || slot->size != size)
++    {
++        if (slot->bitmap) DeleteObject(slot->bitmap);
++        slot->bitmap = render_glyph(glyph, size, color);
++        slot->color = color;
++        slot->size = size;
++    }
++    if (!slot->bitmap) return;
++
++    mem = CreateCompatibleDC(hdc);
++    old = SelectObject(mem, slot->bitmap);
++    GdiAlphaBlend(hdc, rect->left + (rect->right - rect->left - size) / 2,
++                  rect->top + (rect->bottom - rect->top - size) / 2,
++                  size, size, mem, 0, 0, size, size, blend);
++    SelectObject(mem, old);
++    DeleteDC(mem);
++}
++
++/******************************************************************************
++ * Fonts
++ */
++
++static int CALLBACK font_exists_proc(const LOGFONTW *lf, const TEXTMETRICW *tm, DWORD type, LPARAM lparam)
++{
++    *(BOOL *)lparam = TRUE;
++    return 0;
++}
++
++static BOOL font_exists(const WCHAR *name)
++{
++    LOGFONTW lf;
++    BOOL found = FALSE;
++    HDC hdc = GetDC(0);
++
++    memset(&lf, 0, sizeof(lf));
++    lf.lfCharSet = DEFAULT_CHARSET;
++    lstrcpynW(lf.lfFaceName, name, LF_FACESIZE);
++    EnumFontFamiliesExW(hdc, &lf, font_exists_proc, (LPARAM)&found, 0);
++    ReleaseDC(0, hdc);
++    return found;
++}
++
++static void create_ui_font(explorer_info *info)
++{
++    static const WCHAR *faces[] = {L"Segoe UI", L"Selawik"};
++    NONCLIENTMETRICSW ncm;
++    TEXTMETRICW tm;
++    LOGFONTW lf;
++    HGDIOBJ old;
++    HDC hdc;
++    int i;
++
++    if (info->font) DeleteObject(info->font);
++
++    memset(&ncm, 0, sizeof(ncm));
++    ncm.cbSize = sizeof(ncm);
++    if (!SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0, info->dpi))
++        SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
++    lf = ncm.lfMessageFont;
++
++    for (i = 0; i < ARRAY_SIZE(faces); i++)
++    {
++        if (!font_exists(faces[i])) continue;
++        lstrcpynW(lf.lfFaceName, faces[i], LF_FACESIZE);
++        lf.lfHeight = -MulDiv(9, info->dpi, 72);
++        lf.lfWeight = FW_NORMAL;
++        break;
++    }
++    info->font = CreateFontIndirectW(&lf);
++
++    hdc = GetDC(0);
++    old = SelectObject(hdc, info->font);
++    GetTextMetricsW(hdc, &tm);
++    SelectObject(hdc, old);
++    ReleaseDC(0, hdc);
++    info->font_height = tm.tmHeight;
++}
++
++/******************************************************************************
++ * Breadcrumbs
++ */
++
++static void free_crumbs(explorer_info *info)
++{
++    int i;
++
++    for (i = 0; i < info->crumb_count; i++)
++    {
++        ILFree(info->crumbs[i].pidl);
++        CoTaskMemFree(info->crumbs[i].name);
++    }
++    free(info->crumbs);
++    info->crumbs = NULL;
++    info->crumb_count = 0;
++}
++
++static WCHAR *get_display_name(PCIDLIST_ABSOLUTE pidl, SIGDN type)
++{
++    WCHAR *name = NULL;
++
++    if (FAILED(SHGetNameFromIDList(pidl, type, &name)))
++        name = NULL;
++    return name;
++}
++
++static void build_crumbs(explorer_info *info)
++{
++    ITEMIDLIST *drives = NULL, *first;
++    const ITEMIDLIST *cur;
++    int count = 0, i;
++    HGDIOBJ old;
++    SIZE size;
++    HDC hdc;
++
++    free_crumbs(info);
++    if (!info->pidl) return;
++
++    for (cur = info->pidl; !ILIsEmpty(cur); cur = ILGetNext(cur)) count++;
++    if (!(info->crumbs = calloc(count + 1, sizeof(*info->crumbs)))) return;
++
++    for (i = 0; i <= count; i++)
++    {
++        ITEMIDLIST *pidl = ILClone(info->pidl);
++        int depth = count;
++
++        if (!pidl) break;
++        while (depth > i)
++        {
++            ILRemoveLastID(pidl);
++            depth--;
++        }
++        info->crumbs[i].pidl = pidl;
++        if (!(info->crumbs[i].name = get_display_name(pidl, SIGDN_NORMALDISPLAY)))
++            SHStrDupW(L"?", &info->crumbs[i].name);
++        info->crumb_count++;
++    }
++
++    /* Hide the Desktop root when browsing inside "This PC", like Windows does. */
++    info->crumb_start = 0;
++    if (count >= 1 && SUCCEEDED(SHGetSpecialFolderLocation(NULL, CSIDL_DRIVES, &drives)))
++    {
++        if ((first = ILCloneFirst(info->pidl)))
++        {
++            if (ILIsEqual(first, drives)) info->crumb_start = 1;
++            ILFree(first);
++        }
++        ILFree(drives);
++    }
++
++    hdc = GetDC(0);
++    old = SelectObject(hdc, info->font);
++    for (i = 0; i < info->crumb_count; i++)
++    {
++        GetTextExtentPoint32W(hdc, info->crumbs[i].name, wcslen(info->crumbs[i].name), &size);
++        info->crumbs[i].text_width = size.cx;
++    }
++    SelectObject(hdc, old);
++    ReleaseDC(0, hdc);
++}
++
++static void layout_crumbs(explorer_info *info)
++{
++    int pad = scale(info, CRUMB_PADDING), chevron = scale(info, CHEVRON_WIDTH);
++    int icon = info->small_icon_size;
++    int top = info->address_rect.top + 1, bottom = info->address_rect.bottom - 1;
++    int x, avail, total, i;
++
++    x = info->address_rect.left + scale(info, 6);
++    SetRect(&info->icon_rect, x, top, x + icon, bottom);
++    x += icon + scale(info, 2);
++    SetRect(&info->root_chevron_rect, x, top, x + chevron, bottom);
++    x += chevron;
++
++    for (i = 0; i < info->crumb_count; i++) info->crumbs[i].visible = FALSE;
++    info->crumb_first_visible = info->crumb_count;
++    if (!info->crumb_count) return;
++
++    avail = info->refresh_rect.left - scale(info, 4) - x;
++    i = info->crumb_count - 1;
++    total = info->crumbs[i].text_width + 2 * pad + chevron;
++    info->crumb_first_visible = i;
++    while (info->crumb_first_visible > info->crumb_start)
++    {
++        int w = info->crumbs[info->crumb_first_visible - 1].text_width + 2 * pad + chevron;
++        if (total + w > avail) break;
++        total += w;
++        info->crumb_first_visible--;
++    }
++
++    for (i = info->crumb_first_visible; i < info->crumb_count; i++)
++    {
++        struct crumb *crumb = &info->crumbs[i];
++        int w = crumb->text_width + 2 * pad;
++
++        if (x + w + chevron > info->refresh_rect.left - scale(info, 4))
++            w = max(pad * 2, info->refresh_rect.left - scale(info, 4) - x - chevron);
++        crumb->visible = TRUE;
++        SetRect(&crumb->text_rect, x, top, x + w, bottom);
++        x += w;
++        SetRect(&crumb->chevron_rect, x, top, x + chevron, bottom);
++        x += chevron;
++    }
++}
++
++/******************************************************************************
++ * Layout and painting
++ */
++
++static void layout(explorer_info *info)
++{
++    int margin = scale(info, 6), button = scale(info, NAV_BUTTON_SIZE), gap = scale(info, 8);
++    int address_height = scale(info, ADDRESS_HEIGHT), search_width, y, edit_height;
++    RECT client, browser_rect;
++    TOOLINFOW ti;
++
++    GetClientRect(info->main_window, &client);
++
++    SetRect(&info->cmdbar_rect, 0, 0, client.right, scale(info, CMDBAR_HEIGHT));
++    y = (info->cmdbar_rect.bottom - button) / 2;
++    SetRect(&info->back_rect, margin, y, margin + button, y + button);
++    info->forward_rect = info->back_rect;
++    OffsetRect(&info->forward_rect, button, 0);
++    info->up_rect = info->forward_rect;
++    OffsetRect(&info->up_rect, button + scale(info, 2), 0);
++
++    search_width = min(scale(info, SEARCH_WIDTH), max(scale(info, 120), client.right / 4));
++    y = (info->cmdbar_rect.bottom - address_height) / 2;
++    SetRect(&info->search_rect, client.right - margin - search_width, y, client.right - margin, y + address_height);
++    SetRect(&info->address_rect, info->up_rect.right + gap, y, info->search_rect.left - gap, y + address_height);
++    if (info->address_rect.right < info->address_rect.left + address_height * 3)
++        info->address_rect.right = info->address_rect.left + address_height * 3;
++    SetRect(&info->refresh_rect, info->address_rect.right - address_height, y + 1,
++            info->address_rect.right - 1, y + address_height - 1);
++
++    SetRect(&info->status_rect, 0, max(info->cmdbar_rect.bottom, client.bottom - scale(info, STATUS_HEIGHT)),
++            client.right, client.bottom);
++    y = info->status_rect.top + (info->status_rect.bottom - info->status_rect.top - scale(info, 22)) / 2;
++    SetRect(&info->icons_rect, client.right - margin - scale(info, 22), y, client.right - margin, y + scale(info, 22));
++    info->details_rect = info->icons_rect;
++    OffsetRect(&info->details_rect, -scale(info, 24), 0);
++
++    edit_height = info->font_height + scale(info, 2);
++    y = info->address_rect.top + (address_height - edit_height) / 2;
++    MoveWindow(info->address_edit, info->address_rect.left + scale(info, 8), y,
++               max(0, info->refresh_rect.left - info->address_rect.left - scale(info, 12)), edit_height, TRUE);
++    MoveWindow(info->search_edit, info->search_rect.left + scale(info, 8), y,
++               max(0, info->search_rect.right - info->search_rect.left - scale(info, 8) - address_height), edit_height, TRUE);
++
++    layout_crumbs(info);
++
++    SetRect(&browser_rect, 0, info->cmdbar_rect.bottom, client.right, info->status_rect.top);
++    IExplorerBrowser_SetRect(info->browser, NULL, browser_rect);
++
++    if (info->tooltip)
++    {
++        static const int ids[] = {HIT_BACK, HIT_FORWARD, HIT_UP, HIT_REFRESH, HIT_VIEW_DETAILS, HIT_VIEW_ICONS};
++        const RECT *rects[] = {&info->back_rect, &info->forward_rect, &info->up_rect, &info->refresh_rect,
++                               &info->details_rect, &info->icons_rect};
++        int i;
++
++        for (i = 0; i < ARRAY_SIZE(ids); i++)
++        {
++            memset(&ti, 0, sizeof(ti));
++            ti.cbSize = sizeof(ti);
++            ti.hwnd = info->main_window;
++            ti.uId = ids[i];
++            ti.rect = *rects[i];
++            SendMessageW(info->tooltip, TTM_NEWTOOLRECTW, 0, (LPARAM)&ti);
++        }
+     }
+ 
+-    item->mask &= ~CBEIF_IMAGE;
+-    hres = SHGetIDListFromObject( (IUnknown *)folder, &parent_pidl );
+-    if (FAILED(hres)) return FALSE;
++    InvalidateRect(info->main_window, NULL, FALSE);
++}
++
++static BOOL can_go_back(const explorer_info *info)
++{
++    return info->history_pos > 0;
++}
++
++static BOOL can_go_forward(const explorer_info *info)
++{
++    return info->history_pos < info->history_count - 1;
++}
++
++static BOOL can_go_up(const explorer_info *info)
++{
++    return info->pidl && !ILIsEmpty(info->pidl);
++}
++
++static void fill_rect(HDC hdc, const RECT *rect, COLORREF color)
++{
++    SetBkColor(hdc, color);
++    ExtTextOutW(hdc, 0, 0, ETO_OPAQUE, rect, NULL, 0, NULL);
++}
+ 
+-    pidl = ILCombine( parent_pidl, child_pidl );
+-    if (pidl)
++static void frame_rect(HDC hdc, const RECT *rect, COLORREF color)
++{
++    RECT r;
++
++    SetRect(&r, rect->left, rect->top, rect->right, rect->top + 1);
++    fill_rect(hdc, &r, color);
++    SetRect(&r, rect->left, rect->bottom - 1, rect->right, rect->bottom);
++    fill_rect(hdc, &r, color);
++    SetRect(&r, rect->left, rect->top, rect->left + 1, rect->bottom);
++    fill_rect(hdc, &r, color);
++    SetRect(&r, rect->right - 1, rect->top, rect->right, rect->bottom);
++    fill_rect(hdc, &r, color);
++}
++
++static void draw_hot_background(const explorer_info *info, HDC hdc, int hit, const RECT *rect)
++{
++    if (info->pressed == hit && (info->hot == hit || hit >= HIT_CRUMB_CHEVRON || hit == HIT_ROOT_CHEVRON))
++        fill_rect(hdc, rect, CLR_PRESSED);
++    else if (info->hot == hit && info->pressed == HIT_NONE)
++        fill_rect(hdc, rect, CLR_HOT);
++}
++
++static void draw_nav_button(explorer_info *info, HDC hdc, int hit, enum glyph glyph, const RECT *rect, BOOL enabled)
++{
++    if (enabled) draw_hot_background(info, hdc, hit, rect);
++    draw_glyph(info, hdc, glyph, scale(info, GLYPH_SIZE), enabled ? CLR_TEXT : CLR_DISABLED, rect);
++}
++
++static void paint_cmdbar(explorer_info *info, HDC hdc)
++{
++    RECT r = info->cmdbar_rect;
++    int i;
++
++    fill_rect(hdc, &r, CLR_BACKGROUND);
++    r.top = r.bottom - 1;
++    fill_rect(hdc, &r, CLR_SEPARATOR);
++
++    draw_nav_button(info, hdc, HIT_BACK, GLYPH_BACK, &info->back_rect, can_go_back(info));
++    draw_nav_button(info, hdc, HIT_FORWARD, GLYPH_FORWARD, &info->forward_rect, can_go_forward(info));
++    draw_nav_button(info, hdc, HIT_UP, GLYPH_UP, &info->up_rect, can_go_up(info));
++
++    /* address box */
++    fill_rect(hdc, &info->address_rect, CLR_BACKGROUND);
++    if (!info->editing && info->hot == HIT_ADDRESS)
+     {
+-        list = (IImageList *)SHGetFileInfoW( (WCHAR *)pidl, 0, &info, sizeof(info),
+-                                             SHGFI_PIDL | SHGFI_SMALLICON | SHGFI_SYSICONINDEX );
++        r = info->address_rect;
++        InflateRect(&r, -1, -1);
++        fill_rect(hdc, &r, RGB(0xfa, 0xfc, 0xff));
++    }
++    frame_rect(hdc, &info->address_rect, info->editing ? CLR_FOCUS :
++               (info->hot == HIT_ADDRESS ? RGB(0x99, 0xc8, 0xf2) : CLR_BORDER));
++    draw_nav_button(info, hdc, HIT_REFRESH, GLYPH_REFRESH, &info->refresh_rect, TRUE);
++
++    if (!info->editing && info->pidl)
++    {
++        SHFILEINFOW sfi;
++        HIMAGELIST list;
++        HGDIOBJ old_font;
++
++        list = (HIMAGELIST)SHGetFileInfoW((const WCHAR *)info->pidl, 0, &sfi, sizeof(sfi),
++                                          SHGFI_PIDL | SHGFI_SYSICONINDEX | SHGFI_SMALLICON);
+         if (list)
+         {
+-            IImageList_Release( list );
+-            item->iImage = info.iIcon;
+-            item->mask |= CBEIF_IMAGE;
++            int size = info->small_icon_size;
++            ImageList_Draw(list, sfi.iIcon, hdc, info->icon_rect.left,
++                           info->icon_rect.top + (info->icon_rect.bottom - info->icon_rect.top - size) / 2,
++                           ILD_TRANSPARENT);
++            IImageList_Release((IImageList *)list);
+         }
+-        ILFree( pidl );
++
++        draw_hot_background(info, hdc, HIT_ROOT_CHEVRON, &info->root_chevron_rect);
++        draw_glyph(info, hdc, info->crumb_first_visible > info->crumb_start ? GLYPH_OVERFLOW : GLYPH_CHEVRON,
++                   scale(info, SMALL_GLYPH_SIZE), CLR_DIM, &info->root_chevron_rect);
++
++        old_font = SelectObject(hdc, info->font);
++        SetBkMode(hdc, TRANSPARENT);
++        SetTextColor(hdc, CLR_TEXT);
++        for (i = 0; i < info->crumb_count; i++)
++        {
++            struct crumb *crumb = &info->crumbs[i];
++            RECT text;
++
++            if (!crumb->visible) continue;
++            if (info->hot == HIT_CRUMB + i || info->hot == HIT_CRUMB_CHEVRON + i)
++            {
++                RECT both;
++                UnionRect(&both, &crumb->text_rect, &crumb->chevron_rect);
++                if (info->pressed == HIT_NONE) fill_rect(hdc, &both, CLR_HOT);
++            }
++            draw_hot_background(info, hdc, HIT_CRUMB + i, &crumb->text_rect);
++            draw_hot_background(info, hdc, HIT_CRUMB_CHEVRON + i, &crumb->chevron_rect);
++            text = crumb->text_rect;
++            InflateRect(&text, -scale(info, CRUMB_PADDING), 0);
++            DrawTextW(hdc, crumb->name, -1, &text, DT_SINGLELINE | DT_VCENTER | DT_LEFT | DT_END_ELLIPSIS | DT_NOPREFIX);
++            draw_glyph(info, hdc, GLYPH_CHEVRON, scale(info, SMALL_GLYPH_SIZE), CLR_DIM, &crumb->chevron_rect);
++        }
++        SelectObject(hdc, old_font);
+     }
+-    ILFree( parent_pidl );
+ 
+-    return TRUE;
++    /* search box */
++    fill_rect(hdc, &info->search_rect, CLR_BACKGROUND);
++    frame_rect(hdc, &info->search_rect, GetFocus() == info->search_edit ? CLR_FOCUS : CLR_BORDER);
++    r = info->search_rect;
++    r.left = r.right - (r.bottom - r.top);
++    draw_glyph(info, hdc, GLYPH_SEARCH, scale(info, 14), CLR_DIM, &r);
+ }
+ 
+-static void update_path_box(explorer_info *info)
++static void paint_status(explorer_info *info, HDC hdc)
+ {
+-    COMBOBOXEXITEMW item;
+-    COMBOBOXEXITEMW main_item;
+-    IShellFolder *desktop;
+-    IPersistFolder2 *persist;
+-    LPITEMIDLIST desktop_pidl;
+-    IEnumIDList *ids;
++    UINT mode = info->view_mode;
++    HGDIOBJ old_font;
++    RECT r = info->status_rect;
++
++    fill_rect(hdc, &r, CLR_BACKGROUND);
++
++    old_font = SelectObject(hdc, info->font);
++    SetBkMode(hdc, TRANSPARENT);
++    SetTextColor(hdc, CLR_STATUS_TEXT);
++    r.left += scale(info, 12);
++    r.right = info->details_rect.left - scale(info, 8);
++    DrawTextW(hdc, info->status_text, -1, &r, DT_SINGLELINE | DT_VCENTER | DT_LEFT | DT_END_ELLIPSIS | DT_NOPREFIX);
++    SelectObject(hdc, old_font);
++
++    if (mode == FVM_DETAILS) fill_rect(hdc, &info->details_rect, CLR_PRESSED);
++    else draw_hot_background(info, hdc, HIT_VIEW_DETAILS, &info->details_rect);
++    if (mode == FVM_ICON || mode == FVM_THUMBNAIL) fill_rect(hdc, &info->icons_rect, CLR_PRESSED);
++    else draw_hot_background(info, hdc, HIT_VIEW_ICONS, &info->icons_rect);
++    draw_glyph(info, hdc, GLYPH_DETAILS, scale(info, 14), CLR_TEXT, &info->details_rect);
++    draw_glyph(info, hdc, GLYPH_TILES, scale(info, 14), CLR_TEXT, &info->icons_rect);
++}
+ 
+-    SendMessageW(info->path_box,CB_RESETCONTENT,0,0);
+-    SHGetDesktopFolder(&desktop);
+-    IShellFolder_QueryInterface(desktop,&IID_IPersistFolder2,(void**)&persist);
+-    IPersistFolder2_GetCurFolder(persist,&desktop_pidl);
+-    IPersistFolder2_Release(persist);
+-    persist = NULL;
+-    /*Add Desktop*/
+-    item.iItem = -1;
+-    item.mask = CBEIF_TEXT | CBEIF_INDENT | CBEIF_LPARAM;
+-    item.iIndent = 0;
+-    create_combobox_item(desktop,desktop_pidl,info->icon_list,&item);
+-    item.lParam = (LPARAM)desktop_pidl;
+-    SendMessageW(info->path_box,CBEM_INSERTITEMW,0,(LPARAM)&item);
+-    if(ILIsEqual(info->pidl,desktop_pidl))
+-        main_item = item;
+-    else
+-        CoTaskMemFree(item.pszText);
+-    /*Add all direct subfolders of Desktop*/
+-    if(SUCCEEDED(IShellFolder_EnumObjects(desktop,NULL,SHCONTF_FOLDERS,&ids))
+-       && ids!=NULL)
+-    {
+-        LPITEMIDLIST curr_pidl=NULL;
+-        HRESULT hres;
+-
+-        item.iIndent = 1;
+-        while(1)
+-        {
+-            ILFree(curr_pidl);
+-            curr_pidl=NULL;
+-            hres = IEnumIDList_Next(ids,1,&curr_pidl,NULL);
+-            if(FAILED(hres) || hres == S_FALSE)
+-                break;
+-            if (!create_combobox_item( desktop, curr_pidl, info->icon_list, &item ))
+-                WARN( "Could not create a combobox item\n" );
+-            else
++static void paint_buffered(explorer_info *info, HDC hdc, const RECT *rect,
++                           void (*paint)(explorer_info *, HDC))
++{
++    int width = rect->right - rect->left, height = rect->bottom - rect->top;
++    HBITMAP bitmap;
++    HGDIOBJ old;
++    HDC mem;
++
++    if (width <= 0 || height <= 0) return;
++    mem = CreateCompatibleDC(hdc);
++    bitmap = CreateCompatibleBitmap(hdc, width, height);
++    if (!mem || !bitmap)
++    {
++        if (bitmap) DeleteObject(bitmap);
++        if (mem) DeleteDC(mem);
++        paint(info, hdc);
++        return;
++    }
++    old = SelectObject(mem, bitmap);
++    SetViewportOrgEx(mem, -rect->left, -rect->top, NULL);
++    paint(info, mem);
++    SetViewportOrgEx(mem, 0, 0, NULL);
++    BitBlt(hdc, rect->left, rect->top, width, height, mem, 0, 0, SRCCOPY);
++    SelectObject(mem, old);
++    DeleteObject(bitmap);
++    DeleteDC(mem);
++}
++
++static void on_paint(explorer_info *info)
++{
++    PAINTSTRUCT ps;
++    RECT tmp;
++    HDC hdc;
++
++    hdc = BeginPaint(info->main_window, &ps);
++    if (IntersectRect(&tmp, &ps.rcPaint, &info->cmdbar_rect))
++        paint_buffered(info, hdc, &info->cmdbar_rect, paint_cmdbar);
++    if (IntersectRect(&tmp, &ps.rcPaint, &info->status_rect))
++        paint_buffered(info, hdc, &info->status_rect, paint_status);
++    EndPaint(info->main_window, &ps);
++}
++
++static void invalidate_bars(explorer_info *info)
++{
++    InvalidateRect(info->main_window, &info->cmdbar_rect, FALSE);
++    InvalidateRect(info->main_window, &info->status_rect, FALSE);
++}
++
++static int hit_test(const explorer_info *info, POINT pt)
++{
++    int i;
++
++    if (PtInRect(&info->back_rect, pt)) return HIT_BACK;
++    if (PtInRect(&info->forward_rect, pt)) return HIT_FORWARD;
++    if (PtInRect(&info->up_rect, pt)) return HIT_UP;
++    if (PtInRect(&info->refresh_rect, pt)) return HIT_REFRESH;
++    if (PtInRect(&info->details_rect, pt)) return HIT_VIEW_DETAILS;
++    if (PtInRect(&info->icons_rect, pt)) return HIT_VIEW_ICONS;
++    if (!PtInRect(&info->address_rect, pt)) return HIT_NONE;
++    if (info->editing) return HIT_NONE;
++    if (PtInRect(&info->root_chevron_rect, pt)) return HIT_ROOT_CHEVRON;
++    for (i = 0; i < info->crumb_count; i++)
++    {
++        if (!info->crumbs[i].visible) continue;
++        if (PtInRect(&info->crumbs[i].text_rect, pt)) return HIT_CRUMB + i;
++        if (PtInRect(&info->crumbs[i].chevron_rect, pt)) return HIT_CRUMB_CHEVRON + i;
++    }
++    return HIT_ADDRESS;
++}
++
++/******************************************************************************
++ * Status bar
++ */
++
++static void update_status(explorer_info *info)
++{
++    WCHAR text[256], fmt[128], buf[128], size_text[32];
++    IFolderView *view;
++    int count = 0, selected = 0;
++    ULONGLONG total = 0;
++    BOOL have_size = FALSE;
++
++    if (SUCCEEDED(IExplorerBrowser_GetCurrentView(info->browser, &IID_IFolderView, (void **)&view)))
++    {
++        UINT mode;
++
++        if (SUCCEEDED(IFolderView_GetCurrentViewMode(view, &mode)) && mode != info->view_mode)
++        {
++            info->view_mode = mode;
++            InvalidateRect(info->main_window, &info->status_rect, FALSE);
++        }
++        IFolderView_ItemCount(view, SVGIO_ALLVIEW, &count);
++        if (info->list_view && IsWindow(info->list_view))
++            selected = SendMessageW(info->list_view, LVM_GETSELECTEDCOUNT, 0, 0);
++
++        if (selected > 0 && selected <= MAX_SIZE_ITEMS)
++        {
++            int index = -1;
++
++            while ((index = SendMessageW(info->list_view, LVM_GETNEXTITEM, index, LVNI_SELECTED)) != -1)
+             {
+-                LPITEMIDLIST full_pidl = ILCombine(desktop_pidl,curr_pidl);
+-                item.lParam = (LPARAM)full_pidl;
+-                SendMessageW(info->path_box,CBEM_INSERTITEMW,0,(LPARAM)&item);
+-                if(ILIsEqual(full_pidl,info->pidl))
+-                    main_item = item;
+-                else if(ILIsParent(full_pidl,info->pidl,FALSE))
++                WIN32_FILE_ATTRIBUTE_DATA data;
++                WCHAR path[MAX_PATH];
++                ITEMIDLIST *child, *full;
++
++                if (FAILED(IFolderView_Item(view, index, &child))) continue;
++                if ((full = ILCombine(info->pidl, child)))
+                 {
+-                    /*add all parents of the pidl passed in*/
+-                    LPITEMIDLIST next_pidl = ILFindChild(full_pidl,info->pidl);
+-                    IShellFolder *curr_folder = NULL, *temp;
+-                    hres = IShellFolder_BindToObject(desktop,curr_pidl,NULL,
+-                                                     &IID_IShellFolder,
+-                                                     (void**)&curr_folder);
+-                    if (FAILED(hres)) WARN( "Could not get an IShellFolder\n" );
+-                    while(!ILIsEmpty(next_pidl))
++                    if (SHGetPathFromIDListW(full, path) &&
++                        GetFileAttributesExW(path, GetFileExInfoStandard, &data) &&
++                        !(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+                     {
+-                        LPITEMIDLIST first = ILCloneFirst(next_pidl);
+-                        CoTaskMemFree(item.pszText);
+-                        if(!create_combobox_item(curr_folder,first,
+-                                                 info->icon_list,&item))
+-                        {
+-                            WARN( "Could not create a combobox item\n" );
+-                            break;
+-                        }
+-                        ++item.iIndent;
+-                        full_pidl = ILCombine(full_pidl,first);
+-                        item.lParam = (LPARAM)full_pidl;
+-                        SendMessageW(info->path_box,CBEM_INSERTITEMW,0,(LPARAM)&item);
+-                        temp=NULL;
+-                        hres = IShellFolder_BindToObject(curr_folder,first,NULL,
+-                                                         &IID_IShellFolder,
+-                                                         (void**)&temp);
+-                        if(FAILED(hres))
+-                        {
+-                            WARN( "Could not get an IShellFolder\n" );
+-                            break;
+-                        }
+-                        IShellFolder_Release(curr_folder);
+-                        curr_folder = temp;
+-
+-                        ILFree(first);
+-                        next_pidl = ILGetNext(next_pidl);
++                        total += ((ULONGLONG)data.nFileSizeHigh << 32) | data.nFileSizeLow;
++                        have_size = TRUE;
+                     }
+-                    memcpy(&main_item,&item,sizeof(item));
+-                    if(curr_folder)
+-                        IShellFolder_Release(curr_folder);
+-                    item.iIndent = 1;
++                    ILFree(full);
+                 }
++                ILFree(child);
++            }
++        }
++        IFolderView_Release(view);
++    }
++
++    if (count == 1)
++        LoadStringW(explorer_hInstance, IDS_ITEMS_ONE, text, ARRAY_SIZE(text));
++    else
++    {
++        LoadStringW(explorer_hInstance, IDS_ITEMS, fmt, ARRAY_SIZE(fmt));
++        swprintf(text, ARRAY_SIZE(text), fmt, count);
++    }
++
++    if (selected > 0)
++    {
++        if (selected == 1)
++            LoadStringW(explorer_hInstance, IDS_SELECTED_ONE, buf, ARRAY_SIZE(buf));
++        else
++        {
++            LoadStringW(explorer_hInstance, IDS_SELECTED, fmt, ARRAY_SIZE(fmt));
++            swprintf(buf, ARRAY_SIZE(buf), fmt, selected);
++        }
++        wcscat(text, L"     ");
++        wcsncat(text, buf, ARRAY_SIZE(text) - wcslen(text) - 1);
++        if (have_size && StrFormatByteSizeW(total, size_text, ARRAY_SIZE(size_text)))
++        {
++            wcsncat(text, L"  ", ARRAY_SIZE(text) - wcslen(text) - 1);
++            wcsncat(text, size_text, ARRAY_SIZE(text) - wcslen(text) - 1);
++        }
++    }
++
++    if (wcscmp(text, info->status_text))
++    {
++        lstrcpynW(info->status_text, text, ARRAY_SIZE(info->status_text));
++        InvalidateRect(info->main_window, &info->status_rect, FALSE);
++    }
++}
++
++/******************************************************************************
++ * Navigation
++ */
++
++static void browse_back(explorer_info *info)
++{
++    info->travel = -1;
++    IExplorerBrowser_BrowseToObject(info->browser, NULL, SBSP_NAVIGATEBACK);
++    info->travel = 0;
++}
++
++static void browse_forward(explorer_info *info)
++{
++    info->travel = 1;
++    IExplorerBrowser_BrowseToObject(info->browser, NULL, SBSP_NAVIGATEFORWARD);
++    info->travel = 0;
++}
++
++static void browse_up(explorer_info *info)
++{
++    if (can_go_up(info))
++        IExplorerBrowser_BrowseToObject(info->browser, NULL, SBSP_PARENT);
++}
++
++static void browse_to(explorer_info *info, PCIDLIST_ABSOLUTE pidl)
++{
++    IExplorerBrowser_BrowseToIDList(info->browser, pidl, SBSP_ABSOLUTE);
++}
++
++static void refresh_view(explorer_info *info)
++{
++    IShellView *view;
++
++    if (SUCCEEDED(IExplorerBrowser_GetCurrentView(info->browser, &IID_IShellView, (void **)&view)))
++    {
++        IShellView_Refresh(view);
++        IShellView_Release(view);
++    }
++    update_status(info);
++}
++
++static void focus_view(explorer_info *info)
++{
++    if (info->list_view && IsWindow(info->list_view))
++        SetFocus(info->list_view);
++    else
++        SetFocus(info->main_window);
++}
++
++static void history_update(explorer_info *info, PCIDLIST_ABSOLUTE pidl)
++{
++    int i;
++
++    if (info->travel < 0)
++    {
++        if (info->history_pos > 0) info->history_pos--;
++        return;
++    }
++    if (info->travel > 0)
++    {
++        if (info->history_pos < info->history_count - 1) info->history_pos++;
++        return;
++    }
++    if (info->history_count && ILIsEqual(info->history[info->history_pos], pidl))
++        return;
++
++    for (i = info->history_pos + 1; i < info->history_count; i++)
++        ILFree(info->history[i]);
++    if (info->history_count) info->history_count = info->history_pos + 1;
++    if (info->history_count == MAX_HISTORY)
++    {
++        ILFree(info->history[0]);
++        memmove(info->history, info->history + 1, (MAX_HISTORY - 1) * sizeof(info->history[0]));
++        info->history_count--;
++    }
++    info->history[info->history_count++] = ILClone(pidl);
++    info->history_pos = info->history_count - 1;
++}
++
++struct menu_entry
++{
++    ITEMIDLIST *pidl;
++    WCHAR *name;
++};
++
++static int __cdecl compare_menu_entries(const void *a, const void *b)
++{
++    return StrCmpLogicalW(((const struct menu_entry *)a)->name, ((const struct menu_entry *)b)->name);
++}
++
++static int track_menu(explorer_info *info, HMENU menu, int hit, const RECT *anchor)
++{
++    POINT pt;
++    int cmd;
++
++    pt.x = anchor->left;
++    pt.y = info->address_rect.bottom;
++    ClientToScreen(info->main_window, &pt);
++    info->pressed = hit;
++    InvalidateRect(info->main_window, &info->cmdbar_rect, FALSE);
++    UpdateWindow(info->main_window);
++    cmd = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON,
++                         pt.x, pt.y, 0, info->main_window, NULL);
++    info->pressed = HIT_NONE;
++    info->hot = HIT_NONE;
++    InvalidateRect(info->main_window, &info->cmdbar_rect, FALSE);
++    return cmd;
++}
++
++static void show_folder_menu(explorer_info *info, PCIDLIST_ABSOLUTE parent, int hit, const RECT *anchor)
++{
++    IShellFolder *desktop, *folder;
++    struct menu_entry *entries;
++    ITEMIDLIST *child;
++    IEnumIDList *ids;
++    int count = 0, i, cmd;
++    HMENU menu;
++
++    if (FAILED(SHGetDesktopFolder(&desktop))) return;
++    if (ILIsEmpty(parent))
++    {
++        folder = desktop;
++        IShellFolder_AddRef(folder);
++    }
++    else if (FAILED(IShellFolder_BindToObject(desktop, parent, NULL, &IID_IShellFolder, (void **)&folder)))
++    {
++        IShellFolder_Release(desktop);
++        return;
++    }
++    IShellFolder_Release(desktop);
++
++    if (!(entries = calloc(MAX_MENU_ITEMS, sizeof(*entries))))
++    {
++        IShellFolder_Release(folder);
++        return;
++    }
++
++    if (SUCCEEDED(IShellFolder_EnumObjects(folder, info->main_window, SHCONTF_FOLDERS, &ids)) && ids)
++    {
++        while (count < MAX_MENU_ITEMS && IEnumIDList_Next(ids, 1, &child, NULL) == S_OK)
++        {
++            STRRET str;
++            WCHAR *name;
++
++            if (SUCCEEDED(IShellFolder_GetDisplayNameOf(folder, child, SHGDN_INFOLDER, &str)) &&
++                SUCCEEDED(StrRetToStrW(&str, child, &name)))
++            {
++                if ((entries[count].pidl = ILCombine(parent, child)))
++                    entries[count++].name = name;
+                 else
+-                    CoTaskMemFree(item.pszText);
++                    CoTaskMemFree(name);
+             }
++            ILFree(child);
+         }
+-        ILFree(curr_pidl);
+         IEnumIDList_Release(ids);
+     }
+-    else WARN( "Could not enumerate the desktop\n" );
+-    SendMessageW(info->path_box,CBEM_SETITEMW,0,(LPARAM)&main_item);
+-    CoTaskMemFree(main_item.pszText);
++    IShellFolder_Release(folder);
++
++    if (count)
++    {
++        qsort(entries, count, sizeof(*entries), compare_menu_entries);
++        menu = CreatePopupMenu();
++        for (i = 0; i < count; i++)
++        {
++            AppendMenuW(menu, MF_STRING, i + 1, entries[i].name);
++            if (info->pidl && (ILIsEqual(entries[i].pidl, info->pidl) || ILIsParent(entries[i].pidl, info->pidl, FALSE)))
++                SetMenuDefaultItem(menu, i + 1, FALSE);
++        }
++        cmd = track_menu(info, menu, hit, anchor);
++        DestroyMenu(menu);
++        if (cmd > 0 && cmd <= count) browse_to(info, entries[cmd - 1].pidl);
++    }
++
++    for (i = 0; i < count; i++)
++    {
++        ILFree(entries[i].pidl);
++        CoTaskMemFree(entries[i].name);
++    }
++    free(entries);
+ }
+ 
+-static HRESULT WINAPI IExplorerBrowserEventsImpl_fnOnNavigationComplete(IExplorerBrowserEvents *iface, PCIDLIST_ABSOLUTE pidl)
++static void show_overflow_menu(explorer_info *info)
+ {
+-    IExplorerBrowserEventsImpl *This = impl_from_IExplorerBrowserEvents(iface);
+-    IShellFolder *parent;
+-    PCUITEMID_CHILD child_pidl;
+-    HRESULT hres;
+-    STRRET strret;
+-    WCHAR *name;
++    ITEMIDLIST *target = NULL;
++    HMENU menu;
++    int i, cmd;
+ 
+-    if (This->info->sw)
++    if (info->crumb_first_visible <= info->crumb_start)
+     {
+-        VARIANT var;
++        if (info->crumb_count) show_folder_menu(info, info->crumbs[0].pidl, HIT_ROOT_CHEVRON, &info->root_chevron_rect);
++        return;
++    }
+ 
+-        variant_from_pidl(&var, pidl);
+-        IShellWindows_OnNavigate(This->info->sw, This->info->sw_cookie, &var);
+-        VariantClear(&var);
++    menu = CreatePopupMenu();
++    for (i = info->crumb_first_visible - 1; i >= info->crumb_start; i--)
++        AppendMenuW(menu, MF_STRING, i + 1, info->crumbs[i].name);
++    cmd = track_menu(info, menu, HIT_ROOT_CHEVRON, &info->root_chevron_rect);
++    DestroyMenu(menu);
++    if (cmd > 0 && cmd <= info->crumb_count) target = ILClone(info->crumbs[cmd - 1].pidl);
++    if (target)
++    {
++        browse_to(info, target);
++        ILFree(target);
++    }
++}
++
++/******************************************************************************
++ * Address bar editing
++ */
++
++static void begin_address_edit(explorer_info *info)
++{
++    WCHAR *text;
++
++    if (!info->editing)
++    {
++        info->editing = TRUE;
++        text = info->pidl ? get_display_name(info->pidl, SIGDN_DESKTOPABSOLUTEEDITING) : NULL;
++        SetWindowTextW(info->address_edit, text ? text : L"");
++        CoTaskMemFree(text);
++        ShowWindow(info->address_edit, SW_SHOW);
++        InvalidateRect(info->main_window, &info->cmdbar_rect, FALSE);
++    }
++    SetFocus(info->address_edit);
++    SendMessageW(info->address_edit, EM_SETSEL, 0, -1);
++}
++
++static void end_address_edit(explorer_info *info, BOOL focus)
++{
++    if (!info->editing) return;
++    info->editing = FALSE;
++    if (focus) focus_view(info);
++    ShowWindow(info->address_edit, SW_HIDE);
++    InvalidateRect(info->main_window, &info->cmdbar_rect, FALSE);
++}
++
++static void address_go(explorer_info *info)
++{
++    WCHAR text[MAX_PATH * 2], expanded[MAX_PATH * 2], path[MAX_PATH], full[MAX_PATH], fmt[256], *msg, *current;
++    ITEMIDLIST *pidl = NULL;
++    SFGAOF attrs = 0;
++    HRESULT hr;
++    size_t len;
++
++    GetWindowTextW(info->address_edit, text, ARRAY_SIZE(text));
++    StrTrimW(text, L" \t\"");
++    if (!*text)
++    {
++        end_address_edit(info, TRUE);
++        return;
+     }
+ 
+-    ILFree(This->info->pidl);
+-    This->info->pidl = ILClone(pidl);
+-    update_path_box(This->info);
++    current = info->pidl ? get_display_name(info->pidl, SIGDN_DESKTOPABSOLUTEEDITING) : NULL;
++    if (current && !wcscmp(current, text))
++    {
++        CoTaskMemFree(current);
++        end_address_edit(info, TRUE);
++        refresh_view(info);
++        return;
++    }
++    CoTaskMemFree(current);
++
++    if (!ExpandEnvironmentStringsW(text, expanded, ARRAY_SIZE(expanded)))
++        lstrcpynW(expanded, text, ARRAY_SIZE(expanded));
++
++    /* paths relative to the current folder */
++    if (PathIsRelativeW(expanded) && !PathIsURLW(expanded) && info->pidl &&
++        SHGetPathFromIDListW(info->pidl, path) && PathCombineW(full, path, expanded) && PathFileExistsW(full))
++        lstrcpynW(expanded, full, ARRAY_SIZE(expanded));
++
++    hr = SHParseDisplayName(expanded, NULL, &pidl, SFGAO_FOLDER, &attrs);
++    if (SUCCEEDED(hr) && (attrs & SFGAO_FOLDER))
++    {
++        end_address_edit(info, TRUE);
++        browse_to(info, pidl);
++        ILFree(pidl);
++        return;
++    }
++    ILFree(pidl);
++
++    if ((INT_PTR)ShellExecuteW(info->main_window, NULL, expanded, NULL, NULL, SW_SHOWNORMAL) > 32)
++    {
++        end_address_edit(info, TRUE);
++        return;
++    }
++
++    LoadStringW(explorer_hInstance, IDS_NOT_FOUND, fmt, ARRAY_SIZE(fmt));
++    len = wcslen(fmt) + wcslen(text) + 1;
++    if ((msg = malloc(len * sizeof(WCHAR))))
++    {
++        WCHAR title[100];
+ 
+-    hres = SHBindToParent(pidl, &IID_IShellFolder, (void **)&parent, &child_pidl);
+-    if (SUCCEEDED(hres))
++        swprintf(msg, len, fmt, text);
++        LoadStringW(explorer_hInstance, IDS_EXPLORER_TITLE, title, ARRAY_SIZE(title));
++        MessageBoxW(info->main_window, msg, title, MB_OK | MB_ICONERROR);
++        free(msg);
++    }
++    begin_address_edit(info);
++    SetWindowTextW(info->address_edit, text);
++    SendMessageW(info->address_edit, EM_SETSEL, 0, -1);
++}
++
++/******************************************************************************
++ * Search (filters the current folder by name)
++ */
++
++static void apply_search(explorer_info *info)
++{
++    WCHAR text[256];
++    IShellView *view;
++
++    KillTimer(info->main_window, TIMER_SEARCH);
++    GetWindowTextW(info->search_edit, text, ARRAY_SIZE(text));
++    StrTrimW(text, L" \t");
++    if (!wcscmp(text, info->filter ? info->filter : L"")) return;
++
++    free(info->filter);
++    info->filter = *text ? strdupW(text) : NULL;
++
++    if (SUCCEEDED(IExplorerBrowser_GetCurrentView(info->browser, &IID_IShellView, (void **)&view)))
++    {
++        IShellView_Refresh(view);
++        IShellView_Release(view);
++    }
++    update_status(info);
++}
++
++static void clear_search(explorer_info *info)
++{
++    free(info->filter);
++    info->filter = NULL;
++    KillTimer(info->main_window, TIMER_SEARCH);
++    if (GetWindowTextLengthW(info->search_edit))
++    {
++        info->ignore_search_change = TRUE;
++        SetWindowTextW(info->search_edit, L"");
++        info->ignore_search_change = FALSE;
++    }
++}
++
++static void update_search_cue(explorer_info *info)
++{
++    WCHAR fmt[64], cue[MAX_PATH + 64];
++
++    if (!info->crumb_count) return;
++    LoadStringW(explorer_hInstance, IDS_SEARCH_IN, fmt, ARRAY_SIZE(fmt));
++    swprintf(cue, ARRAY_SIZE(cue), fmt, info->crumbs[info->crumb_count - 1].name);
++    SendMessageW(info->search_edit, EM_SETCUEBANNER, FALSE, (LPARAM)cue);
++    InvalidateRect(info->search_edit, NULL, TRUE);
++}
++
++/******************************************************************************
++ * View mode
++ */
++
++static void set_view_mode(explorer_info *info, UINT mode)
++{
++    FOLDERSETTINGS fs;
++
++    fs.ViewMode = mode;
++    fs.fFlags = FWF_AUTOARRANGE | FWF_NOCLIENTEDGE | FWF_FULLROWSELECT;
++    IExplorerBrowser_SetFolderSettings(info->browser, &fs);
++    info->view_mode = mode;
++    set_setting_dword(L"ViewMode", mode);
++    InvalidateRect(info->main_window, &info->status_rect, FALSE);
++}
++
++static void do_hit_action(explorer_info *info, int hit)
++{
++    switch (hit)
+     {
+-        hres = IShellFolder_GetDisplayNameOf(parent, child_pidl, SHGDN_FORADDRESSBAR, &strret);
+-        if (SUCCEEDED(hres))
+-            hres = StrRetToStrW(&strret, child_pidl, &name);
+-        if (SUCCEEDED(hres))
++    case HIT_BACK: browse_back(info); break;
++    case HIT_FORWARD: browse_forward(info); break;
++    case HIT_UP: browse_up(info); break;
++    case HIT_REFRESH: refresh_view(info); break;
++    case HIT_VIEW_DETAILS: set_view_mode(info, FVM_DETAILS); break;
++    case HIT_VIEW_ICONS: set_view_mode(info, FVM_ICON); break;
++    default:
++        if (hit >= HIT_CRUMB && hit < HIT_CRUMB + info->crumb_count)
+         {
+-            SetWindowTextW(This->info->main_window, name);
+-            CoTaskMemFree(name);
++            ITEMIDLIST *target = ILClone(info->crumbs[hit - HIT_CRUMB].pidl);
++            if (target)
++            {
++                if (info->pidl && ILIsEqual(target, info->pidl)) refresh_view(info);
++                else browse_to(info, target);
++                ILFree(target);
++            }
+         }
++        break;
++    }
++}
++
++/******************************************************************************
++ * IExplorerBrowserEvents
++ */
++
++typedef struct
++{
++    IExplorerBrowserEvents IExplorerBrowserEvents_iface;
++    explorer_info* info;
++    LONG ref;
++} IExplorerBrowserEventsImpl;
+ 
+-        IShellFolder_Release(parent);
++static IExplorerBrowserEventsImpl *impl_from_IExplorerBrowserEvents(IExplorerBrowserEvents *iface)
++{
++    return CONTAINING_RECORD(iface, IExplorerBrowserEventsImpl, IExplorerBrowserEvents_iface);
++}
++
++static HRESULT WINAPI IExplorerBrowserEventsImpl_fnQueryInterface(IExplorerBrowserEvents *iface, REFIID riid, void **ppvObject)
++{
++    return E_NOINTERFACE;
++}
++
++static ULONG WINAPI IExplorerBrowserEventsImpl_fnAddRef(IExplorerBrowserEvents *iface)
++{
++    IExplorerBrowserEventsImpl *This = impl_from_IExplorerBrowserEvents(iface);
++    return InterlockedIncrement(&This->ref);
++}
++
++static ULONG WINAPI IExplorerBrowserEventsImpl_fnRelease(IExplorerBrowserEvents *iface)
++{
++    IExplorerBrowserEventsImpl *This = impl_from_IExplorerBrowserEvents(iface);
++    ULONG ref = InterlockedDecrement(&This->ref);
++    if(!ref) free(This);
++    return ref;
++}
++
++static BOOL CALLBACK find_tree_proc(HWND hwnd, LPARAM lparam)
++{
++    WCHAR name[32];
++
++    if (GetClassNameW(hwnd, name, ARRAY_SIZE(name)) && !wcsicmp(name, WC_TREEVIEWW))
++    {
++        *(HWND *)lparam = hwnd;
++        return FALSE;
++    }
++    return TRUE;
++}
++
++static void apply_tree_font(explorer_info *info)
++{
++    HWND tree = NULL;
++
++    if (info->fonts_applied_tree) return;
++    EnumChildWindows(info->main_window, find_tree_proc, (LPARAM)&tree);
++    if (!tree) return;
++    SendMessageW(tree, WM_SETFONT, (WPARAM)info->font, TRUE);
++    info->fonts_applied_tree = TRUE;
++}
++
++static HRESULT WINAPI IExplorerBrowserEventsImpl_fnOnNavigationComplete(IExplorerBrowserEvents *iface, PCIDLIST_ABSOLUTE pidl)
++{
++    IExplorerBrowserEventsImpl *This = impl_from_IExplorerBrowserEvents(iface);
++    explorer_info *info = This->info;
++
++    if (info->sw)
++    {
++        VARIANT var;
++
++        variant_from_pidl(&var, pidl);
++        IShellWindows_OnNavigate(info->sw, info->sw_cookie, &var);
++        VariantClear(&var);
+     }
+ 
+-    return hres;
++    ILFree(info->pidl);
++    info->pidl = ILClone(pidl);
++    history_update(info, pidl);
++    end_address_edit(info, FALSE);
++
++    build_crumbs(info);
++    layout_crumbs(info);
++    if (info->crumb_count)
++        SetWindowTextW(info->main_window, info->crumbs[info->crumb_count - 1].name);
++    update_search_cue(info);
++    apply_tree_font(info);
++    update_status(info);
++    invalidate_bars(info);
++
++    /* the old view may still be tearing down, fix up the focus later */
++    PostMessageW(info->main_window, WM_EXPLORER_FOCUS_VIEW, 0, 0);
++    return S_OK;
+ }
+ 
+ static HRESULT WINAPI IExplorerBrowserEventsImpl_fnOnNavigationFailed(IExplorerBrowserEvents *iface, PCIDLIST_ABSOLUTE pidl)
+ {
++    IExplorerBrowserEventsImpl *This = impl_from_IExplorerBrowserEvents(iface);
++
++    /* the browser already moved its travel log cursor */
++    if (This->info->travel) history_update(This->info, pidl);
++    invalidate_bars(This->info);
+     return S_OK;
+ }
+ 
+ static HRESULT WINAPI IExplorerBrowserEventsImpl_fnOnNavigationPending(IExplorerBrowserEvents *iface, PCIDLIST_ABSOLUTE pidl)
+ {
++    IExplorerBrowserEventsImpl *This = impl_from_IExplorerBrowserEvents(iface);
++
++    if (!This->info->pidl || !ILIsEqual(This->info->pidl, pidl))
++        clear_search(This->info);
+     return S_OK;
+ }
+ 
+ static HRESULT WINAPI IExplorerBrowserEventsImpl_fnOnViewCreated(IExplorerBrowserEvents *iface, IShellView *psv)
+ {
++    IExplorerBrowserEventsImpl *This = impl_from_IExplorerBrowserEvents(iface);
++    explorer_info *info = This->info;
++    HWND view = NULL;
++
++    info->list_view = NULL;
++    if (SUCCEEDED(IShellView_GetWindow(psv, &view)) && view)
++        info->list_view = FindWindowExW(view, NULL, WC_LISTVIEWW, NULL);
++    if (info->list_view)
++    {
++        SendMessageW(info->list_view, WM_SETFONT, (WPARAM)info->font, TRUE);
++        SendMessageW(info->list_view, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
++    }
+     return S_OK;
+ }
+ 
+@@ -331,11 +1553,147 @@ static IExplorerBrowserEvents *make_explorer_events(explorer_info *info)
+     ret->IExplorerBrowserEvents_iface.lpVtbl = &vt_IExplorerBrowserEvents;
+     ret->info = info;
+     ret->ref = 1;
+-    SHGetImageList(SHIL_SMALL,&IID_IImageList,(void**)&(ret->info->icon_list));
+-    SendMessageW(info->path_box,CBEM_SETIMAGELIST,0,(LPARAM)ret->info->icon_list);
+     return &ret->IExplorerBrowserEvents_iface;
+ }
+ 
++/******************************************************************************
++ * Browser site: IServiceProvider + ICommDlgBrowser. The explorer_info owns
++ * these interfaces; their lifetime is the lifetime of the window.
++ */
++
++static explorer_info *impl_from_IServiceProvider(IServiceProvider *iface)
++{
++    return CONTAINING_RECORD(iface, explorer_info, IServiceProvider_iface);
++}
++
++static HRESULT WINAPI site_QueryInterface(IServiceProvider *iface, REFIID riid, void **out)
++{
++    explorer_info *info = impl_from_IServiceProvider(iface);
++
++    if (IsEqualIID(riid, &IID_IUnknown) || IsEqualIID(riid, &IID_IServiceProvider))
++        *out = &info->IServiceProvider_iface;
++    else if (IsEqualIID(riid, &IID_ICommDlgBrowser))
++        *out = &info->ICommDlgBrowser_iface;
++    else
++    {
++        *out = NULL;
++        return E_NOINTERFACE;
++    }
++    return S_OK;
++}
++
++static ULONG WINAPI site_AddRef(IServiceProvider *iface)
++{
++    return 2;
++}
++
++static ULONG WINAPI site_Release(IServiceProvider *iface)
++{
++    return 1;
++}
++
++static HRESULT WINAPI site_QueryService(IServiceProvider *iface, REFGUID service, REFIID riid, void **out)
++{
++    explorer_info *info = impl_from_IServiceProvider(iface);
++
++    *out = NULL;
++    if (IsEqualGUID(service, &SID_SExplorerBrowserFrame) && IsEqualIID(riid, &IID_ICommDlgBrowser))
++    {
++        *out = &info->ICommDlgBrowser_iface;
++        return S_OK;
++    }
++    return E_NOINTERFACE;
++}
++
++static const IServiceProviderVtbl site_vtbl =
++{
++    site_QueryInterface,
++    site_AddRef,
++    site_Release,
++    site_QueryService,
++};
++
++static explorer_info *impl_from_ICommDlgBrowser(ICommDlgBrowser *iface)
++{
++    return CONTAINING_RECORD(iface, explorer_info, ICommDlgBrowser_iface);
++}
++
++static HRESULT WINAPI cdb_QueryInterface(ICommDlgBrowser *iface, REFIID riid, void **out)
++{
++    explorer_info *info = impl_from_ICommDlgBrowser(iface);
++
++    if (IsEqualIID(riid, &IID_ICommDlgBrowser))
++    {
++        *out = iface;
++        return S_OK;
++    }
++    return site_QueryInterface(&info->IServiceProvider_iface, riid, out);
++}
++
++static ULONG WINAPI cdb_AddRef(ICommDlgBrowser *iface)
++{
++    return 2;
++}
++
++static ULONG WINAPI cdb_Release(ICommDlgBrowser *iface)
++{
++    return 1;
++}
++
++static HRESULT WINAPI cdb_OnDefaultCommand(ICommDlgBrowser *iface, IShellView *view)
++{
++    /* let the view run the default verb */
++    return S_FALSE;
++}
++
++static HRESULT WINAPI cdb_OnStateChange(ICommDlgBrowser *iface, IShellView *view, ULONG change)
++{
++    explorer_info *info = impl_from_ICommDlgBrowser(iface);
++
++    if (change == CDBOSC_SELCHANGE)
++        SetTimer(info->main_window, TIMER_STATUS, 50, NULL);
++    return S_OK;
++}
++
++static HRESULT WINAPI cdb_IncludeObject(ICommDlgBrowser *iface, IShellView *view, PCUITEMID_CHILD pidl)
++{
++    explorer_info *info = impl_from_ICommDlgBrowser(iface);
++    IShellFolder *folder;
++    IFolderView *fv;
++    HRESULT hr = S_OK;
++    STRRET str;
++    WCHAR *name;
++
++    if (!info->filter || !view) return S_OK;
++    if (FAILED(IShellView_QueryInterface(view, &IID_IFolderView, (void **)&fv))) return S_OK;
++    if (SUCCEEDED(IFolderView_GetFolder(fv, &IID_IShellFolder, (void **)&folder)))
++    {
++        if (SUCCEEDED(IShellFolder_GetDisplayNameOf(folder, pidl, SHGDN_INFOLDER, &str)) &&
++            SUCCEEDED(StrRetToStrW(&str, pidl, &name)))
++        {
++            if (!StrStrIW(name, info->filter)) hr = S_FALSE;
++            CoTaskMemFree(name);
++        }
++        IShellFolder_Release(folder);
++    }
++    IFolderView_Release(fv);
++    return hr;
++}
++
++static const ICommDlgBrowserVtbl cdb_vtbl =
++{
++    cdb_QueryInterface,
++    cdb_AddRef,
++    cdb_Release,
++    cdb_OnDefaultCommand,
++    cdb_OnStateChange,
++    cdb_IncludeObject,
++};
++
++/******************************************************************************
++ * Window creation
++ */
++
+ static IShellFolder *get_starting_shell_folder(WCHAR *path)
+ {
+     IShellFolder* desktop,*folder;
+@@ -364,27 +1722,225 @@ static IShellFolder *get_starting_shell_folder(WCHAR *path)
+     return folder;
+ }
+ 
++static LRESULT CALLBACK edit_subclass_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam,
++                                           UINT_PTR id, DWORD_PTR data)
++{
++    explorer_info *info = (explorer_info *)data;
++
++    switch (msg)
++    {
++    case WM_GETDLGCODE:
++        return DefSubclassProc(hwnd, msg, wparam, lparam) | DLGC_WANTALLKEYS;
++    case WM_KEYDOWN:
++        if (wparam == VK_RETURN)
++        {
++            if (id == ID_ADDRESS_EDIT) address_go(info);
++            else apply_search(info);
++            return 0;
++        }
++        if (wparam == VK_ESCAPE)
++        {
++            if (id == ID_ADDRESS_EDIT) end_address_edit(info, TRUE);
++            else if (GetWindowTextLengthW(hwnd))
++            {
++                SetWindowTextW(hwnd, L"");
++                apply_search(info);
++            }
++            else focus_view(info);
++            return 0;
++        }
++        if (wparam == VK_TAB)
++        {
++            if (id == ID_ADDRESS_EDIT)
++            {
++                end_address_edit(info, FALSE);
++                SetFocus(info->search_edit);
++            }
++            else focus_view(info);
++            return 0;
++        }
++        break;
++    case WM_CHAR:
++        if (wparam == '\r' || wparam == 0x1b || wparam == '\t') return 0;
++        break;
++    case WM_NCDESTROY:
++        RemoveWindowSubclass(hwnd, edit_subclass_proc, id);
++        break;
++    }
++    return DefSubclassProc(hwnd, msg, wparam, lparam);
++}
++
++static HWND create_edit(explorer_info *info, UINT id)
++{
++    HWND edit = CreateWindowExW(0, WC_EDITW, L"", WS_CHILD | ES_AUTOHSCROLL | (id == ID_SEARCH_EDIT ? WS_VISIBLE : 0),
++                                0, 0, 0, 0, info->main_window, (HMENU)(UINT_PTR)id, explorer_hInstance, NULL);
++    if (!edit) return NULL;
++    SendMessageW(edit, WM_SETFONT, (WPARAM)info->font, FALSE);
++    SetWindowSubclass(edit, edit_subclass_proc, id, (DWORD_PTR)info);
++    return edit;
++}
++
++static void create_tooltips(explorer_info *info)
++{
++    static const struct { int id; UINT string; } tools[] =
++    {
++        {HIT_BACK, IDS_TIP_BACK}, {HIT_FORWARD, IDS_TIP_FORWARD}, {HIT_UP, IDS_TIP_UP},
++        {HIT_REFRESH, IDS_TIP_REFRESH}, {HIT_VIEW_DETAILS, IDS_TIP_DETAILS}, {HIT_VIEW_ICONS, IDS_TIP_ICONS},
++    };
++    WCHAR text[128];
++    TOOLINFOW ti;
++    int i;
++
++    info->tooltip = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, NULL, WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
++                                    CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
++                                    info->main_window, NULL, explorer_hInstance, NULL);
++    if (!info->tooltip) return;
++
++    for (i = 0; i < ARRAY_SIZE(tools); i++)
++    {
++        LoadStringW(explorer_hInstance, tools[i].string, text, ARRAY_SIZE(text));
++        memset(&ti, 0, sizeof(ti));
++        ti.cbSize = sizeof(ti);
++        ti.uFlags = TTF_SUBCLASS;
++        ti.hwnd = info->main_window;
++        ti.uId = tools[i].id;
++        ti.lpszText = text;
++        SendMessageW(info->tooltip, TTM_ADDTOOLW, 0, (LPARAM)&ti);
++    }
++}
++
++static void get_default_window_size(explorer_info *info, int *width, int *height)
++{
++    RECT work;
++
++    SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0);
++    *width = min(scale(info, DEFAULT_WIDTH), (work.right - work.left) * 9 / 10);
++    *height = min(scale(info, DEFAULT_HEIGHT), (work.bottom - work.top) * 9 / 10);
++}
++
++/* restore the last window position (stored as workspace coordinates) */
++static BOOL restore_window_placement(explorer_info *info, BOOL *maximized)
++{
++    WINDOWPLACEMENT wp;
++    DWORD size = sizeof(wp.rcNormalPosition);
++
++    *maximized = FALSE;
++    if (RegGetValueW(HKEY_CURRENT_USER, settings_key, L"WindowRect", RRF_RT_REG_BINARY, NULL,
++                     &wp.rcNormalPosition, &size) || size != sizeof(wp.rcNormalPosition))
++        return FALSE;
++    if (wp.rcNormalPosition.right - wp.rcNormalPosition.left < scale(info, MIN_WIDTH) ||
++        wp.rcNormalPosition.bottom - wp.rcNormalPosition.top < scale(info, MIN_HEIGHT) ||
++        !MonitorFromRect(&wp.rcNormalPosition, MONITOR_DEFAULTTONULL))
++        return FALSE;
++
++    wp.length = sizeof(wp);
++    wp.flags = 0;
++    wp.showCmd = SW_HIDE;
++    wp.ptMinPosition.x = wp.ptMinPosition.y = -1;
++    wp.ptMaxPosition.x = wp.ptMaxPosition.y = -1;
++    if (!SetWindowPlacement(info->main_window, &wp)) return FALSE;
++    *maximized = get_setting_dword(L"Maximized", 0) != 0;
++    return TRUE;
++}
++
++static void save_window_rect(explorer_info *info)
++{
++    WINDOWPLACEMENT wp;
++
++    wp.length = sizeof(wp);
++    if (!GetWindowPlacement(info->main_window, &wp)) return;
++    RegSetKeyValueW(HKEY_CURRENT_USER, settings_key, L"WindowRect", REG_BINARY,
++                    &wp.rcNormalPosition, sizeof(wp.rcNormalPosition));
++    set_setting_dword(L"Maximized", wp.showCmd == SW_SHOWMAXIMIZED);
++}
++
++static BOOL translate_accelerator(explorer_info *info, MSG *msg)
++{
++    BOOL alt, ctrl, shift;
++    WCHAR name[16];
++
++    if (msg->message != WM_KEYDOWN && msg->message != WM_SYSKEYDOWN) return FALSE;
++    if (msg->hwnd != info->main_window && !IsChild(info->main_window, msg->hwnd)) return FALSE;
++
++    alt = GetKeyState(VK_MENU) < 0 || (msg->message == WM_SYSKEYDOWN && (msg->lParam & (1 << 29)));
++    ctrl = GetKeyState(VK_CONTROL) < 0;
++    shift = GetKeyState(VK_SHIFT) < 0;
++
++    switch (msg->wParam)
++    {
++    case VK_LEFT:
++        if (alt && !ctrl && !shift) { browse_back(info); return TRUE; }
++        break;
++    case VK_RIGHT:
++        if (alt && !ctrl && !shift) { browse_forward(info); return TRUE; }
++        break;
++    case VK_UP:
++        if (alt && !ctrl && !shift) { browse_up(info); return TRUE; }
++        break;
++    case VK_BROWSER_BACK:
++        browse_back(info);
++        return TRUE;
++    case VK_BROWSER_FORWARD:
++        browse_forward(info);
++        return TRUE;
++    case VK_BACK:
++        if (alt || ctrl || shift) break;
++        if (GetClassNameW(msg->hwnd, name, ARRAY_SIZE(name)) && !wcsicmp(name, WC_EDITW)) break;
++        browse_back(info);
++        return TRUE;
++    case VK_F5:
++        if (alt) break;
++        refresh_view(info);
++        return TRUE;
++    case VK_F4:
++        if (alt || ctrl) break;
++        begin_address_edit(info);
++        return TRUE;
++    case 'D':
++        if (!alt || ctrl) break;
++        begin_address_edit(info);
++        return TRUE;
++    case 'L':
++        if (!ctrl || alt) break;
++        begin_address_edit(info);
++        return TRUE;
++    case VK_F3:
++        if (alt || ctrl) break;
++        SetFocus(info->search_edit);
++        SendMessageW(info->search_edit, EM_SETSEL, 0, -1);
++        return TRUE;
++    case 'E':
++    case 'F':
++        if (!ctrl || alt) break;
++        SetFocus(info->search_edit);
++        SendMessageW(info->search_edit, EM_SETSEL, 0, -1);
++        return TRUE;
++    case 'W':
++        if (!ctrl || alt) break;
++        PostMessageW(info->main_window, WM_CLOSE, 0, 0);
++        return TRUE;
++    }
++    return FALSE;
++}
++
+ static void make_explorer_window(parameters_struct *params)
+ {
+     RECT rect;
+-    HWND rebar,nav_toolbar;
+     FOLDERSETTINGS fs;
+     IExplorerBrowserEvents *events;
++    IObjectWithSite *object_site;
+     explorer_info *info;
+     HRESULT hres;
+     WCHAR explorer_title[100];
+-    WCHAR pathbox_label[50];
+-    TBADDBITMAP bitmap_info;
+-    TBBUTTON nav_buttons[3];
+-    int hist_offset,view_offset;
+-    REBARBANDINFOW band_info;
+     VARIANT var, empty_var;
+     IShellFolder *folder;
+     IDispatch *dispatch;
+     WCHAR *path = NULL;
+     IShellWindows *sw;
+     ITEMIDLIST *pidl;
+-    UINT dpix, dpiy;
++    BOOL maximized;
++    HWND main_window;
++    int width, height;
+     DWORD size;
+     LONG hwnd;
+     HDC hdc;
+@@ -425,43 +1981,55 @@ static void make_explorer_window(parameters_struct *params)
+         }
+     }
+ 
+-    memset(nav_buttons,0,sizeof(nav_buttons));
+-
+     LoadStringW(explorer_hInstance,IDS_EXPLORER_TITLE,explorer_title, ARRAY_SIZE( explorer_title ));
+-    LoadStringW(explorer_hInstance,IDS_PATHBOX_LABEL,pathbox_label, ARRAY_SIZE( pathbox_label ));
+-
+-    hdc = GetDC(0);
+-    dpix = GetDeviceCaps(hdc, LOGPIXELSX);
+-    dpiy = GetDeviceCaps(hdc, LOGPIXELSY);
+-    ReleaseDC(0, hdc);
+-    nav_toolbar_height = MulDiv(NAV_TOOLBAR_HEIGHT, dpiy, USER_DEFAULT_SCREEN_DPI);
+-    pathbox_height = MulDiv(PATHBOX_HEIGHT, dpiy, USER_DEFAULT_SCREEN_DPI);
+-    default_width = MulDiv(DEFAULT_WIDTH, dpix, USER_DEFAULT_SCREEN_DPI);
+-    default_height = MulDiv(DEFAULT_HEIGHT, dpiy, USER_DEFAULT_SCREEN_DPI);
+ 
+     info = calloc( 1, sizeof(explorer_info) );
+     if(!info)
+     {
+         ERR( "Could not allocate an explorer_info struct\n" );
+-        IShellWindows_Release(sw);
++        if (sw) IShellWindows_Release(sw);
+         free(path);
+         return;
+     }
++    info->IServiceProvider_iface.lpVtbl = &site_vtbl;
++    info->ICommDlgBrowser_iface.lpVtbl = &cdb_vtbl;
++    info->hot = info->pressed = HIT_NONE;
++
++    hdc = GetDC(0);
++    info->dpi = GetDeviceCaps(hdc, LOGPIXELSY);
++    ReleaseDC(0, hdc);
++
+     hres = CoCreateInstance(&CLSID_ExplorerBrowser,NULL,CLSCTX_INPROC_SERVER,
+                             &IID_IExplorerBrowser,(LPVOID*)&info->browser);
+     if(FAILED(hres))
+     {
+         ERR( "Could not obtain an instance of IExplorerBrowser\n" );
+         free(info);
+-        IShellWindows_Release(sw);
++        if (sw) IShellWindows_Release(sw);
+         free(path);
+         return;
+     }
+-    info->rebar_height=0;
++
++    get_default_window_size(info, &width, &height);
+     info->main_window
+-        = CreateWindowW(L"ExplorerWClass",explorer_title,WS_OVERLAPPEDWINDOW,
+-                        CW_USEDEFAULT,CW_USEDEFAULT,default_width,
+-                        default_height,NULL,NULL,explorer_hInstance,NULL);
++        = CreateWindowW(L"ExplorerWClass",explorer_title,WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
++                        CW_USEDEFAULT, CW_USEDEFAULT, width, height,
++                        NULL,NULL,explorer_hInstance,NULL);
++    main_window = info->main_window;
++    restore_window_placement(info, &maximized);
++    if ((info->dpi = GetDpiForWindow(main_window)) == 0) info->dpi = USER_DEFAULT_SCREEN_DPI;
++    create_ui_font(info);
++    info->small_icon_size = GetSystemMetrics(SM_CXSMICON);
++    {
++        IImageList *list;
++        int cx, cy;
++
++        if (SUCCEEDED(SHGetImageList(SHIL_SMALL, &IID_IImageList, (void **)&list)))
++        {
++            if (SUCCEEDED(IImageList_GetIconSize(list, &cx, &cy))) info->small_icon_size = cx;
++            IImageList_Release(list);
++        }
++    }
+ 
+     if (sw)
+     {
+@@ -469,67 +2037,29 @@ static void make_explorer_window(parameters_struct *params)
+         info->sw = sw;
+     }
+ 
+-    fs.ViewMode = FVM_DETAILS;
+-    fs.fFlags = FWF_AUTOARRANGE;
++    info->view_mode = get_setting_dword(L"ViewMode", FVM_DETAILS);
++    if (info->view_mode != FVM_ICON && info->view_mode != FVM_SMALLICON &&
++        info->view_mode != FVM_LIST && info->view_mode != FVM_DETAILS)
++        info->view_mode = FVM_DETAILS;
++    fs.ViewMode = info->view_mode;
++    fs.fFlags = FWF_AUTOARRANGE | FWF_NOCLIENTEDGE | FWF_FULLROWSELECT;
+ 
+-    SetRect(&rect, 0, 0, default_width, default_height);
++    GetClientRect(info->main_window, &rect);
++    IExplorerBrowser_SetOptions(info->browser, EBO_SHOWFRAMES | EBO_NOBORDER);
+     IExplorerBrowser_Initialize(info->browser,info->main_window,&rect,&fs);
+-    IExplorerBrowser_SetOptions(info->browser,EBO_SHOWFRAMES);
++    if (SUCCEEDED(IExplorerBrowser_QueryInterface(info->browser, &IID_IObjectWithSite, (void **)&object_site)))
++    {
++        IObjectWithSite_SetSite(object_site, (IUnknown *)&info->IServiceProvider_iface);
++        IObjectWithSite_Release(object_site);
++    }
+     SetWindowLongPtrW(info->main_window,EXPLORER_INFO_INDEX,(LONG_PTR)info);
+ 
+-    /*setup navbar*/
+-    rebar = CreateWindowExW(WS_EX_TOOLWINDOW,REBARCLASSNAMEW,NULL,
+-                            WS_CHILD|WS_VISIBLE|RBS_VARHEIGHT|CCS_TOP|CCS_NODIVIDER,
+-                            0,0,0,0,info->main_window,NULL,explorer_hInstance,NULL);
+-    nav_toolbar
+-        = CreateWindowExW(TBSTYLE_EX_MIXEDBUTTONS,TOOLBARCLASSNAMEW,NULL,
+-                          WS_CHILD|WS_VISIBLE|TBSTYLE_FLAT,0,0,0,0,rebar,NULL,
+-                          explorer_hInstance,NULL);
+-
+-    bitmap_info.hInst = HINST_COMMCTRL;
+-    bitmap_info.nID = IDB_HIST_LARGE_COLOR;
+-    hist_offset= SendMessageW(nav_toolbar,TB_ADDBITMAP,0,(LPARAM)&bitmap_info);
+-    bitmap_info.nID = IDB_VIEW_LARGE_COLOR;
+-    view_offset= SendMessageW(nav_toolbar,TB_ADDBITMAP,0,(LPARAM)&bitmap_info);
+-
+-    nav_buttons[0].iBitmap=hist_offset+HIST_BACK;
+-    nav_buttons[0].idCommand=BACK_BUTTON;
+-    nav_buttons[0].fsState=TBSTATE_ENABLED;
+-    nav_buttons[0].fsStyle=BTNS_BUTTON|BTNS_AUTOSIZE;
+-    nav_buttons[1].iBitmap=hist_offset+HIST_FORWARD;
+-    nav_buttons[1].idCommand=FORWARD_BUTTON;
+-    nav_buttons[1].fsState=TBSTATE_ENABLED;
+-    nav_buttons[1].fsStyle=BTNS_BUTTON|BTNS_AUTOSIZE;
+-    nav_buttons[2].iBitmap=view_offset+VIEW_PARENTFOLDER;
+-    nav_buttons[2].idCommand=UP_BUTTON;
+-    nav_buttons[2].fsState=TBSTATE_ENABLED;
+-    nav_buttons[2].fsStyle=BTNS_BUTTON|BTNS_AUTOSIZE;
+-    SendMessageW(nav_toolbar,TB_BUTTONSTRUCTSIZE,sizeof(TBBUTTON),0);
+-    SendMessageW(nav_toolbar,TB_ADDBUTTONSW,ARRAY_SIZE( nav_buttons ),(LPARAM)nav_buttons);
+-
+-    band_info.cbSize = sizeof(band_info);
+-    band_info.fMask = RBBIM_STYLE|RBBIM_CHILD|RBBIM_CHILDSIZE|RBBIM_SIZE;
+-    band_info.hwndChild = nav_toolbar;
+-    band_info.fStyle=RBBS_GRIPPERALWAYS|RBBS_CHILDEDGE;
+-    band_info.cyChild=nav_toolbar_height;
+-    band_info.cx=0;
+-    band_info.cyMinChild=nav_toolbar_height;
+-    band_info.cxMinChild=0;
+-    SendMessageW(rebar,RB_INSERTBANDW,-1,(LPARAM)&band_info);
+-    info->path_box = CreateWindowW(WC_COMBOBOXEXW,L"",
+-                                   WS_CHILD | WS_VISIBLE | CBS_DROPDOWN,
+-                                   0,0,default_width,pathbox_height,rebar,NULL,
+-                                   explorer_hInstance,NULL);
+-    GetWindowRect(info->path_box, &rect);
+-    band_info.cyChild = rect.bottom - rect.top;
+-    band_info.cx=0;
+-    band_info.cyMinChild = rect.bottom - rect.top;
+-    band_info.cxMinChild=0;
+-    band_info.fMask|=RBBIM_TEXT;
+-    band_info.lpText=pathbox_label;
+-    band_info.fStyle|=RBBS_BREAK;
+-    band_info.hwndChild=info->path_box;
+-    SendMessageW(rebar,RB_INSERTBANDW,-1,(LPARAM)&band_info);
++    info->address_edit = create_edit(info, ID_ADDRESS_EDIT);
++    info->search_edit = create_edit(info, ID_SEARCH_EDIT);
++    if (info->address_edit) SHAutoComplete(info->address_edit, SHACF_FILESYSTEM);
++    create_tooltips(info);
++    layout(info);
++
+     events = make_explorer_events(info);
+     IExplorerBrowser_Advise(info->browser,events,&info->advise_cookie);
+ 
+@@ -538,127 +2068,28 @@ static void make_explorer_window(parameters_struct *params)
+     IShellFolder_Release(folder);
+     free(path);
+ 
+-    ShowWindow(info->main_window,SW_SHOWDEFAULT);
++    SetTimer(info->main_window, TIMER_POLL, 1000, NULL);
++    ShowWindow(info->main_window, maximized ? SW_SHOWMAXIMIZED : SW_SHOWDEFAULT);
+     UpdateWindow(info->main_window);
++    focus_view(info);
+     IExplorerBrowserEvents_Release(events);
+ 
+     while (GetMessageW(&msg, NULL, 0, 0))
+     {
++        explorer_info *cur = IsWindow(main_window) ? (explorer_info *)GetWindowLongPtrW(main_window, EXPLORER_INFO_INDEX) : NULL;
++
++        if (cur && translate_accelerator(cur, &msg)) continue;
+         TranslateMessage(&msg);
+         DispatchMessageW(&msg);
+     }
+ }
+ 
+-static void update_window_size(explorer_info *info, int height, int width)
+-{
+-    RECT new_rect;
+-    new_rect.left = 0;
+-    new_rect.top = info->rebar_height;
+-    new_rect.right = width;
+-    new_rect.bottom = height;
+-    IExplorerBrowser_SetRect(info->browser,NULL,new_rect);
+-}
+-
+ static void do_exit(int code)
+ {
+     OleUninitialize();
+     ExitProcess(code);
+ }
+ 
+-static LRESULT explorer_on_end_edit(explorer_info *info,NMCBEENDEDITW *edit_info)
+-{
+-    LPITEMIDLIST pidl = NULL;
+-
+-    TRACE( "iWhy=%x\n", edit_info->iWhy );
+-    switch(edit_info->iWhy)
+-    {
+-    case CBENF_DROPDOWN:
+-        if(edit_info->iNewSelection!=CB_ERR)
+-            pidl = (LPITEMIDLIST)SendMessageW(edit_info->hdr.hwndFrom,
+-                                              CB_GETITEMDATA,
+-                                              edit_info->iNewSelection,0);
+-        break;
+-    case CBENF_RETURN:
+-        {
+-            WCHAR path[MAX_PATH];
+-            HWND edit_ctrl = (HWND)SendMessageW(edit_info->hdr.hwndFrom,
+-                                                CBEM_GETEDITCONTROL,0,0);
+-            *((WORD*)path)=MAX_PATH;
+-            SendMessageW(edit_ctrl,EM_GETLINE,0,(LPARAM)path);
+-            pidl = ILCreateFromPathW(path);
+-            break;
+-        }
+-    case CBENF_ESCAPE:
+-        /*make sure the that the path box resets*/
+-        update_path_box(info);
+-        return 0;
+-    default:
+-        return 0;
+-    }
+-    if(pidl)
+-        IExplorerBrowser_BrowseToIDList(info->browser,pidl,SBSP_ABSOLUTE);
+-    if(edit_info->iWhy==CBENF_RETURN)
+-        ILFree(pidl);
+-    return 0;
+-}
+-
+-static LRESULT update_rebar_size(explorer_info* info,NMRBAUTOSIZE *size_info)
+-{
+-    RECT new_rect;
+-    RECT window_rect;
+-    info->rebar_height = size_info->rcTarget.bottom-size_info->rcTarget.top;
+-    GetWindowRect(info->main_window,&window_rect);
+-    new_rect.left = 0;
+-    new_rect.top = info->rebar_height;
+-    new_rect.right = window_rect.right-window_rect.left;
+-    new_rect.bottom = window_rect.bottom-window_rect.top;
+-    IExplorerBrowser_SetRect(info->browser,NULL,new_rect);
+-    return 0;
+-}
+-
+-static LRESULT explorer_on_notify(explorer_info* info,NMHDR* notification)
+-{
+-    TRACE( "code=%i\n", notification->code );
+-    switch(notification->code)
+-    {
+-    case CBEN_BEGINEDIT:
+-        {
+-            WCHAR path[MAX_PATH];
+-            HWND edit_ctrl = (HWND)SendMessageW(notification->hwndFrom,
+-                                                CBEM_GETEDITCONTROL,0,0);
+-            SHGetPathFromIDListW(info->pidl,path);
+-            SetWindowTextW(edit_ctrl,path);
+-            break;
+-        }
+-    case CBEN_ENDEDITA:
+-        {
+-            NMCBEENDEDITA *edit_info_a = (NMCBEENDEDITA*)notification;
+-            NMCBEENDEDITW edit_info_w;
+-            edit_info_w.hdr = edit_info_a->hdr;
+-            edit_info_w.fChanged = edit_info_a->fChanged;
+-            edit_info_w.iNewSelection = edit_info_a->iNewSelection;
+-            MultiByteToWideChar(CP_ACP,0,edit_info_a->szText,-1,
+-                                edit_info_w.szText,CBEMAXSTRLEN);
+-            edit_info_w.iWhy = edit_info_a->iWhy;
+-            return explorer_on_end_edit(info,&edit_info_w);
+-        }
+-    case CBEN_ENDEDITW:
+-        return explorer_on_end_edit(info,(NMCBEENDEDITW*)notification);
+-    case CBEN_DELETEITEM:
+-        {
+-            NMCOMBOBOXEXW *entry = (NMCOMBOBOXEXW*)notification;
+-            if(entry->ceItem.lParam)
+-                ILFree((LPITEMIDLIST)entry->ceItem.lParam);
+-            break;
+-        }
+-    case RBN_AUTOSIZE:
+-        return update_rebar_size(info,(NMRBAUTOSIZE*)notification);
+-    default:
+-        break;
+-    }
+-    return 0;
+-}
+-
+ static BOOL handle_copydata(const explorer_info *info, const COPYDATASTRUCT *cds)
+ {
+     static const unsigned int magic = 0xe32ee32e;
+@@ -696,6 +2127,71 @@ static BOOL handle_copydata(const explorer_info *info, const COPYDATASTRUCT *cds
+     return TRUE;
+ }
+ 
++static void on_mouse_move(explorer_info *info, POINT pt)
++{
++    int hit = hit_test(info, pt);
++
++    if (!info->tracking_mouse)
++    {
++        TRACKMOUSEEVENT tme;
++
++        tme.cbSize = sizeof(tme);
++        tme.dwFlags = TME_LEAVE;
++        tme.hwndTrack = info->main_window;
++        tme.dwHoverTime = 0;
++        info->tracking_mouse = TrackMouseEvent(&tme);
++    }
++    if (hit != info->hot)
++    {
++        info->hot = hit;
++        invalidate_bars(info);
++    }
++}
++
++static void on_lbutton_down(explorer_info *info, POINT pt)
++{
++    int hit = hit_test(info, pt);
++
++    if (hit == HIT_NONE) return;
++    if (hit == HIT_ADDRESS)
++    {
++        begin_address_edit(info);
++        return;
++    }
++    if (info->editing) end_address_edit(info, FALSE);
++    if (hit == HIT_ROOT_CHEVRON)
++    {
++        show_overflow_menu(info);
++        return;
++    }
++    if (hit >= HIT_CRUMB_CHEVRON && hit < HIT_CRUMB_CHEVRON + info->crumb_count)
++    {
++        ITEMIDLIST *parent = ILClone(info->crumbs[hit - HIT_CRUMB_CHEVRON].pidl);
++        RECT anchor = info->crumbs[hit - HIT_CRUMB_CHEVRON].chevron_rect;
++
++        if (parent)
++        {
++            show_folder_menu(info, parent, hit, &anchor);
++            ILFree(parent);
++        }
++        return;
++    }
++    info->pressed = hit;
++    SetCapture(info->main_window);
++    invalidate_bars(info);
++}
++
++static void on_lbutton_up(explorer_info *info, POINT pt)
++{
++    int hit = hit_test(info, pt), pressed = info->pressed;
++
++    if (pressed == HIT_NONE) return;
++    info->pressed = HIT_NONE;
++    if (GetCapture() == info->main_window) ReleaseCapture();
++    invalidate_bars(info);
++    if (hit == pressed) do_hit_action(info, hit);
++}
++
+ static LRESULT CALLBACK explorer_wnd_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+ {
+     explorer_info *info
+@@ -705,58 +2201,166 @@ static LRESULT CALLBACK explorer_wnd_proc(HWND hwnd, UINT uMsg, WPARAM wParam, L
+     TRACE( "(hwnd=%p,uMsg=%u,wParam=%Ix,lParam=%Ix)\n", hwnd, uMsg, wParam, lParam );
+     if(info)
+         browser = info->browser;
++    else
++        return DefWindowProcW(hwnd,uMsg,wParam,lParam);
++
+     switch(uMsg)
+     {
+     case WM_DESTROY:
++    {
++        IObjectWithSite *object_site;
++        int i;
++
++        save_window_rect(info);
++        KillTimer(hwnd, TIMER_POLL);
++        KillTimer(hwnd, TIMER_STATUS);
++        KillTimer(hwnd, TIMER_SEARCH);
+         if(info->sw)
+         {
+             IShellWindows_Revoke(info->sw, info->sw_cookie);
+             IShellWindows_Release(info->sw);
+         }
+ 
++        if (SUCCEEDED(IExplorerBrowser_QueryInterface(browser, &IID_IObjectWithSite, (void **)&object_site)))
++        {
++            IObjectWithSite_SetSite(object_site, NULL);
++            IObjectWithSite_Release(object_site);
++        }
+         IExplorerBrowser_Unadvise(browser,info->advise_cookie);
+         IExplorerBrowser_Destroy(browser);
+         IExplorerBrowser_Release(browser);
+         ILFree(info->pidl);
+-        IImageList_Release(info->icon_list);
++        for (i = 0; i < info->history_count; i++) ILFree(info->history[i]);
++        free_crumbs(info);
++        free_glyphs(info);
++        free(info->filter);
++        if (info->font) DeleteObject(info->font);
+         free(info);
+         SetWindowLongPtrW(hwnd,EXPLORER_INFO_INDEX,0);
+         PostQuitMessage(0);
+         break;
++    }
+     case WM_QUIT:
+         do_exit(wParam);
++    case WM_PAINT:
++        on_paint(info);
++        break;
++    case WM_ERASEBKGND:
++        return 1;
++    case WM_MOUSEMOVE:
++    {
++        POINT pt = {(short)LOWORD(lParam), (short)HIWORD(lParam)};
++        on_mouse_move(info, pt);
++        break;
++    }
++    case WM_MOUSELEAVE:
++        info->tracking_mouse = FALSE;
++        if (info->hot != HIT_NONE)
++        {
++            info->hot = HIT_NONE;
++            invalidate_bars(info);
++        }
++        break;
++    case WM_LBUTTONDOWN:
++    case WM_LBUTTONDBLCLK:
++    {
++        POINT pt = {(short)LOWORD(lParam), (short)HIWORD(lParam)};
++        on_lbutton_down(info, pt);
++        break;
++    }
++    case WM_LBUTTONUP:
++    {
++        POINT pt = {(short)LOWORD(lParam), (short)HIWORD(lParam)};
++        on_lbutton_up(info, pt);
++        break;
++    }
++    case WM_CAPTURECHANGED:
++        if ((HWND)lParam != hwnd && info->pressed != HIT_NONE)
++        {
++            info->pressed = HIT_NONE;
++            invalidate_bars(info);
++        }
++        break;
++    case WM_CTLCOLOREDIT:
++        SetTextColor((HDC)wParam, CLR_TEXT);
++        SetBkColor((HDC)wParam, CLR_BACKGROUND);
++        return (LRESULT)GetStockObject(WHITE_BRUSH);
++    case WM_TIMER:
++        switch (wParam)
++        {
++        case TIMER_SEARCH:
++            apply_search(info);
++            break;
++        case TIMER_STATUS:
++            KillTimer(hwnd, TIMER_STATUS);
++            /* fall through */
++        case TIMER_POLL:
++            update_status(info);
++            break;
++        }
++        break;
++    case WM_EXPLORER_FOCUS_VIEW:
++    {
++        /* move the focus to the new view, unless the user is in the tree or the search box */
++        HWND focus = GetFocus();
++        if (!focus || focus == hwnd || focus == info->address_edit || !IsWindowVisible(focus))
++            focus_view(info);
++        break;
++    }
++    case WM_GETMINMAXINFO:
++    {
++        MINMAXINFO *mmi = (MINMAXINFO *)lParam;
++        mmi->ptMinTrackSize.x = scale(info, MIN_WIDTH);
++        mmi->ptMinTrackSize.y = scale(info, MIN_HEIGHT);
++        break;
++    }
++    case WM_DPICHANGED:
++    {
++        const RECT *r = (const RECT *)lParam;
++
++        info->dpi = HIWORD(wParam);
++        free_glyphs(info);
++        create_ui_font(info);
++        SendMessageW(info->address_edit, WM_SETFONT, (WPARAM)info->font, FALSE);
++        SendMessageW(info->search_edit, WM_SETFONT, (WPARAM)info->font, FALSE);
++        if (info->list_view) SendMessageW(info->list_view, WM_SETFONT, (WPARAM)info->font, TRUE);
++        info->fonts_applied_tree = FALSE;
++        apply_tree_font(info);
++        build_crumbs(info);
++        SetWindowPos(hwnd, NULL, r->left, r->top, r->right - r->left, r->bottom - r->top,
++                     SWP_NOZORDER | SWP_NOACTIVATE);
++        layout(info);
++        break;
++    }
+     case WM_NOTIFY:
+-        return explorer_on_notify(info,(NMHDR*)lParam);
++        break;
+     case WM_COMMAND:
+-        if(HIWORD(wParam)==BN_CLICKED)
++        if (LOWORD(wParam) == ID_SEARCH_EDIT)
+         {
+-            switch(LOWORD(wParam))
+-            {
+-            case BACK_BUTTON:
+-                IExplorerBrowser_BrowseToObject(browser,NULL,SBSP_NAVIGATEBACK);
+-                break;
+-            case FORWARD_BUTTON:
+-                IExplorerBrowser_BrowseToObject(browser,NULL,SBSP_NAVIGATEFORWARD);
+-                break;
+-            case UP_BUTTON:
+-                IExplorerBrowser_BrowseToObject(browser,NULL,SBSP_PARENT);
+-                break;
+-            }
++            if (HIWORD(wParam) == EN_CHANGE && !info->ignore_search_change)
++                SetTimer(hwnd, TIMER_SEARCH, 300, NULL);
++            else if (HIWORD(wParam) == EN_SETFOCUS || HIWORD(wParam) == EN_KILLFOCUS)
++                InvalidateRect(hwnd, &info->cmdbar_rect, FALSE);
+         }
++        else if (LOWORD(wParam) == ID_ADDRESS_EDIT && HIWORD(wParam) == EN_KILLFOCUS)
++            end_address_edit(info, FALSE);
+         break;
+     case WM_APPCOMMAND:
+         switch(GET_APPCOMMAND_LPARAM(lParam))
+         {
+             case APPCOMMAND_BROWSER_BACKWARD:
+-                IExplorerBrowser_BrowseToObject(browser,NULL,SBSP_NAVIGATEBACK);
+-                break;
++                browse_back(info);
++                return TRUE;
+             case APPCOMMAND_BROWSER_FORWARD:
+-                IExplorerBrowser_BrowseToObject(browser,NULL,SBSP_NAVIGATEFORWARD);
+-                break;
++                browse_forward(info);
++                return TRUE;
++            case APPCOMMAND_BROWSER_REFRESH:
++                refresh_view(info);
++                return TRUE;
+         }
+-        break;
++        return DefWindowProcW(hwnd,uMsg,wParam,lParam);
+     case WM_SIZE:
+-        update_window_size(info,HIWORD(lParam),LOWORD(lParam));
++        layout(info);
+         break;
+     case WM_COPYDATA:
+         return handle_copydata(info, (const COPYDATASTRUCT *)lParam);
+@@ -769,18 +2373,22 @@ static LRESULT CALLBACK explorer_wnd_proc(HWND hwnd, UINT uMsg, WPARAM wParam, L
+ static void register_explorer_window_class(void)
+ {
+     WNDCLASSEXW window_class;
++    HMODULE shell32 = GetModuleHandleW(L"shell32.dll");
++
+     window_class.cbSize = sizeof(WNDCLASSEXW);
+-    window_class.style = 0;
++    window_class.style = CS_DBLCLKS;
+     window_class.cbClsExtra = 0;
+     window_class.cbWndExtra = sizeof(LONG_PTR);
+     window_class.lpfnWndProc = explorer_wnd_proc;
+     window_class.hInstance = explorer_hInstance;
+-    window_class.hIcon = NULL;
+-    window_class.hCursor = NULL;
+-    window_class.hbrBackground = (HBRUSH)COLOR_BACKGROUND;
++    window_class.hIcon = shell32 ? LoadImageW(shell32, MAKEINTRESOURCEW(4), IMAGE_ICON,
++                                              GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), 0) : NULL;
++    window_class.hCursor = LoadCursorW(NULL, (const WCHAR *)IDC_ARROW);
++    window_class.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+     window_class.lpszMenuName = NULL;
+     window_class.lpszClassName = L"ExplorerWClass";
+-    window_class.hIconSm = NULL;
++    window_class.hIconSm = shell32 ? LoadImageW(shell32, MAKEINTRESOURCEW(4), IMAGE_ICON,
++                                                GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0) : NULL;
+     RegisterClassExW(&window_class);
+ }
+ 
+diff --git a/programs/explorer/explorer.rc b/programs/explorer/explorer.rc
+index 5db3b52..92e4744 100644
+--- a/programs/explorer/explorer.rc
++++ b/programs/explorer/explorer.rc
+@@ -35,6 +35,18 @@ STRINGTABLE
+     IDS_EXIT_LABEL      "E&xit desktop"
+     IDS_EXIT_PROMPT     "Are you sure you want to close all programs and exit the virtual desktop?"
+     IDS_DESKTOP_TITLE   "Wine Desktop"
++    IDS_ITEMS_ONE       "1 item"
++    IDS_ITEMS           "%d items"
++    IDS_SELECTED_ONE    "1 item selected"
++    IDS_SELECTED        "%d items selected"
++    IDS_SEARCH_IN       "Search %s"
++    IDS_NOT_FOUND       "Cannot find '%s'. Check the spelling and try again."
++    IDS_TIP_BACK        "Back (Alt+Left Arrow)"
++    IDS_TIP_FORWARD     "Forward (Alt+Right Arrow)"
++    IDS_TIP_UP          "Up to parent folder (Alt+Up Arrow)"
++    IDS_TIP_REFRESH     "Refresh (F5)"
++    IDS_TIP_DETAILS     "Details"
++    IDS_TIP_ICONS       "Large icons"
+ }
+ 
+ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+diff --git a/programs/explorer/resource.h b/programs/explorer/resource.h
+index e3bf993..c6162c7 100644
+--- a/programs/explorer/resource.h
++++ b/programs/explorer/resource.h
+@@ -28,5 +28,17 @@
+ #define IDS_EXIT_LABEL 5
+ #define IDS_EXIT_PROMPT 6
+ #define IDS_DESKTOP_TITLE 7
++#define IDS_ITEMS_ONE 8
++#define IDS_ITEMS 9
++#define IDS_SELECTED_ONE 10
++#define IDS_SELECTED 11
++#define IDS_SEARCH_IN 12
++#define IDS_NOT_FOUND 13
++#define IDS_TIP_BACK 14
++#define IDS_TIP_FORWARD 15
++#define IDS_TIP_UP 16
++#define IDS_TIP_REFRESH 17
++#define IDS_TIP_DETAILS 18
++#define IDS_TIP_ICONS 19
+ 
+ #endif
 diff --git a/programs/wineboot/wineboot.c b/programs/wineboot/wineboot.c
 index 7dda9ec..2f8c0e4 100644
 --- a/programs/wineboot/wineboot.c
