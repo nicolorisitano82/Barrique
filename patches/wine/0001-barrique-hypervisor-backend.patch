@@ -17728,7 +17728,7 @@ index 0ece8fd..525cf36 100644
      d3d12_command_queue_submit_locked(command_queue);
  
 diff --git a/libs/vkd3d/libs/vkd3d/device.c b/libs/vkd3d/libs/vkd3d/device.c
-index 5f16fef..d58160f 100644
+index 5f16fef..2b70b75 100644
 --- a/libs/vkd3d/libs/vkd3d/device.c
 +++ b/libs/vkd3d/libs/vkd3d/device.c
 @@ -1799,6 +1799,7 @@ static HRESULT vkd3d_init_device_caps(struct d3d12_device *device,
@@ -17756,8 +17756,24 @@ index 5f16fef..d58160f 100644
      }
  
      if (device->use_vk_heaps)
+@@ -2413,6 +2415,7 @@ static HRESULT d3d12_device_init_pipeline_cache(struct d3d12_device *device)
+     VkResult vr;
+ 
+     vkd3d_mutex_init(&device->pipeline_cache_mutex);
++    device->pso_hints = NULL;
+ 
+     cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+     cache_info.pNext = NULL;
+@@ -2436,6 +2439,7 @@ static void d3d12_device_destroy_pipeline_cache(struct d3d12_device *device)
+     if (device->vk_pipeline_cache)
+         VK_CALL(vkDestroyPipelineCache(device->vk_device, device->vk_pipeline_cache, NULL));
+ 
++    vkd3d_free(device->pso_hints);
+     vkd3d_mutex_destroy(&device->pipeline_cache_mutex);
+ }
+ 
 diff --git a/libs/vkd3d/libs/vkd3d/state.c b/libs/vkd3d/libs/vkd3d/state.c
-index 14f5250..816397c 100644
+index 14f5250..3673665 100644
 --- a/libs/vkd3d/libs/vkd3d/state.c
 +++ b/libs/vkd3d/libs/vkd3d/state.c
 @@ -843,7 +843,7 @@ static struct vk_binding_array *d3d12_root_signature_vk_binding_array_for_type(
@@ -18028,7 +18044,197 @@ index 14f5250..816397c 100644
              goto fail;
  
          ++graphics->stage_count;
-@@ -4006,6 +4161,9 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -3673,6 +3828,21 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+     }
+     graphics->attribute_count = j;
+ 
++    /* FNV-1a over the input layout as the application gave it (not the
++     * shader locations), so PSOs that share a vertex declaration share a hint */
++    graphics->layout_hash = 0xcbf29ce484222325ull;
++    for (i = 0; i < desc->input_layout.NumElements; ++i)
++    {
++        const D3D12_INPUT_ELEMENT_DESC *e = &desc->input_layout.pInputElementDescs[i];
++        const uint32_t v[5] = {e->InputSlot, e->Format, aligned_offsets[i], e->InputSlotClass, e->InstanceDataStepRate};
++        unsigned int k;
++
++        for (k = 0; k < ARRAY_SIZE(v); ++k)
++            graphics->layout_hash = (graphics->layout_hash ^ v[k]) * 0x100000001b3ull;
++    }
++    graphics->layout_hash = (graphics->layout_hash ^ desc->primitive_topology_type) * 0x100000001b3ull;
++    graphics->topology_type = desc->primitive_topology_type;
++
+     switch (desc->strip_cut_value)
+     {
+         case D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED:
+@@ -3758,6 +3928,136 @@ fail:
+     return hr;
+ }
+ 
++/* Barrique: vkd3d compiles the Vulkan pipeline at the first draw, because the
++ * vertex strides and the exact topology are only known then. Under MoltenVK
++ * that is a Metal compile on the thread recording the draw, which stalls the
++ * frame for seconds when a game enters a new area. Unreal creates its PSOs
++ * ahead of time on worker threads, so compile there instead: strides and
++ * topology come from earlier draws with the same input layout (learned below),
++ * or don't matter when the PSO has no vertex input.
++ * VKD3D_BARRIQUE_PSO_PRECOMPILE=0 turns it off, =stats also logs hit counts. */
++#define VKD3D_PSO_HINT_COUNT 4096
++#define VKD3D_PSO_HINT_PROBES 8
++
++struct vkd3d_pso_hint
++{
++    uint64_t hash;
++    D3D12_PRIMITIVE_TOPOLOGY topology;
++    uint32_t strides[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
++};
++
++static int pso_precompile_mode(void)
++{
++    static int mode = -1;
++    const char *env;
++
++    if (mode < 0)
++    {
++        env = getenv("VKD3D_BARRIQUE_PSO_PRECOMPILE");
++        mode = !env ? 1 : !strcmp(env, "0") ? 0 : !strcmp(env, "stats") ? 2 : 1;
++    }
++    return mode;
++}
++
++static uint32_t pso_stats_precompiled, pso_stats_draw_compiles;
++
++static void pso_stats_report(void)
++{
++    if (pso_precompile_mode() == 2)
++        ERR("Barrique PSO: %u compiled at creation, %u compiled at draw.\n",
++                pso_stats_precompiled, pso_stats_draw_compiles);
++}
++
++/* called with pipeline_cache_mutex held */
++static struct vkd3d_pso_hint *pso_hint_slot(struct d3d12_device *device, uint64_t hash, bool insert)
++{
++    struct vkd3d_pso_hint *hint;
++    unsigned int i;
++
++    if (!device->pso_hints)
++    {
++        if (!insert || !(device->pso_hints = vkd3d_calloc(VKD3D_PSO_HINT_COUNT, sizeof(*device->pso_hints))))
++            return NULL;
++    }
++
++    for (i = 0; i < VKD3D_PSO_HINT_PROBES; ++i)
++    {
++        hint = &device->pso_hints[(hash + i) & (VKD3D_PSO_HINT_COUNT - 1)];
++        if (hint->hash == hash)
++            return hint;
++        if (!hint->hash)
++            return insert ? hint : NULL;
++    }
++    /* full: replace the first probe */
++    return insert ? &device->pso_hints[hash & (VKD3D_PSO_HINT_COUNT - 1)] : NULL;
++}
++
++static void d3d12_pipeline_state_learn_hint(struct d3d12_pipeline_state *state,
++        D3D12_PRIMITIVE_TOPOLOGY topology, const uint32_t *strides)
++{
++    const struct d3d12_graphics_pipeline_state *graphics = &state->u.graphics;
++    struct d3d12_device *device = state->device;
++    struct vkd3d_pso_hint *hint;
++
++    if (!pso_precompile_mode() || !graphics->attribute_count)
++        return;
++
++    vkd3d_mutex_lock(&device->pipeline_cache_mutex);
++    if ((hint = pso_hint_slot(device, graphics->layout_hash, true)))
++    {
++        hint->hash = graphics->layout_hash;
++        hint->topology = topology;
++        memcpy(hint->strides, strides, sizeof(hint->strides));
++    }
++    vkd3d_mutex_unlock(&device->pipeline_cache_mutex);
++}
++
++static VkPipeline d3d12_pipeline_state_get_or_create_pipeline_internal(struct d3d12_pipeline_state *state,
++        D3D12_PRIMITIVE_TOPOLOGY topology, const uint32_t *strides, VkFormat dsv_format,
++        VkRenderPass *vk_render_pass, bool precompile);
++
++static void d3d12_pipeline_state_precompile(struct d3d12_pipeline_state *state)
++{
++    const struct d3d12_graphics_pipeline_state *graphics = &state->u.graphics;
++    uint32_t strides[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT] = {0};
++    struct d3d12_device *device = state->device;
++    D3D12_PRIMITIVE_TOPOLOGY topology = 0;
++    const struct vkd3d_pso_hint *hint;
++    VkRenderPass vk_render_pass;
++
++    if (!pso_precompile_mode() || !graphics->render_pass || graphics->compile_failed)
++        return;
++
++    vkd3d_mutex_lock(&device->pipeline_cache_mutex);
++    if ((hint = pso_hint_slot(device, graphics->layout_hash, false)))
++    {
++        topology = hint->topology;
++        memcpy(strides, hint->strides, sizeof(strides));
++    }
++    vkd3d_mutex_unlock(&device->pipeline_cache_mutex);
++
++    if (!topology)
++    {
++        if (graphics->attribute_count)
++            return;
++        /* no vertex input: only the topology is unknown, lists are the common case */
++        switch (graphics->topology_type)
++        {
++            case D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE: topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
++            case D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE: topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST; break;
++            case D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT: topology = D3D_PRIMITIVE_TOPOLOGY_POINTLIST; break;
++            default: return;
++        }
++    }
++
++    if (d3d12_pipeline_state_get_or_create_pipeline_internal(state, topology, strides,
++            VK_FORMAT_UNDEFINED, &vk_render_pass, true))
++    {
++        if (!(vkd3d_atomic_increment_u32(&pso_stats_precompiled) & 255))
++            pso_stats_report();
++    }
++}
++
+ HRESULT d3d12_pipeline_state_create_graphics(struct d3d12_device *device,
+         const D3D12_GRAPHICS_PIPELINE_STATE_DESC *desc, struct d3d12_pipeline_state **state)
+ {
+@@ -3776,6 +4076,8 @@ HRESULT d3d12_pipeline_state_create_graphics(struct d3d12_device *device,
+         return hr;
+     }
+ 
++    d3d12_pipeline_state_precompile(object);
++
+     TRACE("Created graphics pipeline state %p.\n", object);
+ 
+     *state = object;
+@@ -3817,6 +4119,9 @@ HRESULT d3d12_pipeline_state_create(struct d3d12_device *device,
+         return hr;
+     }
+ 
++    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)
++        d3d12_pipeline_state_precompile(object);
++
+     TRACE("Created pipeline state %p.\n", object);
+ 
+     *state = object;
+@@ -3955,9 +4260,9 @@ static bool d3d12_pipeline_state_put_pipeline_to_cache(struct d3d12_pipeline_sta
+     return compiled_pipeline;
+ }
+ 
+-VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_state *state,
++static VkPipeline d3d12_pipeline_state_get_or_create_pipeline_internal(struct d3d12_pipeline_state *state,
+         D3D12_PRIMITIVE_TOPOLOGY topology, const uint32_t *strides, VkFormat dsv_format,
+-        VkRenderPass *vk_render_pass)
++        VkRenderPass *vk_render_pass, bool precompile)
+ {
+     VkVertexInputBindingDescription bindings[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+     const struct vkd3d_vk_device_procs *vk_procs = &state->device->vk_procs;
+@@ -4006,6 +4311,9 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
  
      VKD3D_ASSERT(d3d12_pipeline_state_is_graphics(state));
  
@@ -18038,7 +18244,18 @@ index 14f5250..816397c 100644
      memset(&pipeline_key, 0, sizeof(pipeline_key));
      pipeline_key.topology = topology;
  
-@@ -4125,6 +4283,9 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -4035,6 +4343,10 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+         ++binding_count;
+     }
+ 
++    /* Barrique: the bound DSV format only matters for PSOs with DSVFormat
++     * UNKNOWN; keep it out of the key otherwise, so precompiled pipelines match */
++    if (graphics->render_pass)
++        dsv_format = VK_FORMAT_UNDEFINED;
+     pipeline_key.dsv_format = dsv_format;
+ 
+     if ((vk_pipeline = d3d12_pipeline_state_find_compiled_pipeline(state, &pipeline_key, vk_render_pass)))
+@@ -4125,11 +4437,22 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
              1, &pipeline_desc, NULL, &vk_pipeline))) < 0)
      {
          WARN("Failed to create Vulkan graphics pipeline, vr %d.\n", vr);
@@ -18048,8 +18265,36 @@ index 14f5250..816397c 100644
          return VK_NULL_HANDLE;
      }
  
+     if (d3d12_pipeline_state_put_pipeline_to_cache(state, &pipeline_key, vk_pipeline, pipeline_desc.renderPass))
++    {
++        if (!precompile)
++        {
++            d3d12_pipeline_state_learn_hint(state, topology, strides);
++            if (pso_precompile_mode() == 2 && !(vkd3d_atomic_increment_u32(&pso_stats_draw_compiles) & 63))
++                pso_stats_report();
++        }
+         return vk_pipeline;
++    }
+ 
+     /* Other thread compiled the pipeline before us. */
+     VK_CALL(vkDestroyPipeline(device->vk_device, vk_pipeline, NULL));
+@@ -4139,6 +4462,14 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+     return vk_pipeline;
+ }
+ 
++VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_state *state,
++        D3D12_PRIMITIVE_TOPOLOGY topology, const uint32_t *strides, VkFormat dsv_format,
++        VkRenderPass *vk_render_pass)
++{
++    return d3d12_pipeline_state_get_or_create_pipeline_internal(state, topology, strides,
++            dsv_format, vk_render_pass, false);
++}
++
+ static int compile_hlsl_cs(const struct vkd3d_shader_code *hlsl, struct vkd3d_shader_code *dxbc)
+ {
+     struct vkd3d_shader_hlsl_source_info hlsl_info;
 diff --git a/libs/vkd3d/libs/vkd3d/vkd3d_private.h b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
-index 822e172..7d3586d 100644
+index 822e172..16e7704 100644
 --- a/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 +++ b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 @@ -155,6 +155,7 @@ struct vkd3d_vulkan_info
@@ -18076,7 +18321,19 @@ index 822e172..7d3586d 100644
  
      VkVertexInputAttributeDescription attributes[D3D12_VS_INPUT_REGISTER_COUNT];
      VkVertexInputRate input_rates[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
-@@ -1101,6 +1104,7 @@ struct d3d12_pipeline_state
+@@ -1062,6 +1065,11 @@ struct d3d12_graphics_pipeline_state
+     struct list compiled_pipelines;
+ 
+     bool xfb_enabled;
++
++    /* Barrique: input layout + topology type, keys the stride hints that let
++     * the Vulkan pipeline be compiled when the PSO is created (see state.c) */
++    uint64_t layout_hash;
++    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_type;
+ };
+ 
+ static inline unsigned int dsv_attachment_mask(const struct d3d12_graphics_pipeline_state *graphics)
+@@ -1101,6 +1109,7 @@ struct d3d12_pipeline_state
  
      ID3D12RootSignature *implicit_root_signature;
      struct d3d12_device *device;
@@ -18084,7 +18341,7 @@ index 822e172..7d3586d 100644
  
      struct vkd3d_private_store private_store;
  };
-@@ -1228,6 +1232,11 @@ struct d3d12_command_allocator
+@@ -1228,6 +1237,11 @@ struct d3d12_command_allocator
      struct d3d12_command_list *current_command_list;
      struct d3d12_device *device;
  
@@ -18096,7 +18353,7 @@ index 822e172..7d3586d 100644
      struct vkd3d_private_store private_store;
  };
  
-@@ -1289,13 +1298,37 @@ struct vkd3d_resource_list
+@@ -1289,13 +1303,37 @@ struct vkd3d_resource_list
  };
  
  /* ID3D12CommandList */
@@ -18134,6 +18391,14 @@ index 822e172..7d3586d 100644
  
      bool is_recording;
      bool is_valid;
+@@ -1610,6 +1648,7 @@ struct d3d12_device
+     struct vkd3d_mutex pipeline_cache_mutex;
+     struct vkd3d_render_pass_cache render_pass_cache;
+     VkPipelineCache vk_pipeline_cache;
++    struct vkd3d_pso_hint *pso_hints; /* Barrique, under pipeline_cache_mutex */
+ 
+     VkPhysicalDeviceMemoryProperties memory_properties;
+ 
 diff --git a/loader/main.c b/loader/main.c
 index 71ba308..a539b41 100644
 --- a/loader/main.c
