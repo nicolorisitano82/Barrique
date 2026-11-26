@@ -230,6 +230,18 @@ void InvalidationTracker::InvalidateAlignedInterval(uint64_t Address, uint64_t S
   const auto AlignedBase = Address & FEXCore::Utils::FEX_PAGE_MASK;
   const auto AlignedSize = std::max(Size, (Address - AlignedBase + Size + FEXCore::Utils::FEX_PAGE_SIZE - 1) & FEXCore::Utils::FEX_PAGE_MASK);
 
+  // Barrique: guest code only runs from intervals tracked as executable (with DEP
+  // disabled, readable ones are tracked too), so freeing memory that never was
+  // can't drop translated code. Skipping it avoids taking the code invalidation
+  // lock and walking every thread's lookup cache on each free: games free data
+  // constantly while loading (~28% of FEX's time in Hogwarts Legacy zone loads).
+  if (Free && Address) {
+    std::shared_lock Lock(IntervalsLock);
+    if (!XIntervals.Intersect({AlignedBase, AlignedBase + AlignedSize})) {
+      return;
+    }
+  }
+
   InvalidateIntervalInternal(AlignedBase, AlignedSize);
 
   if (Free) {
