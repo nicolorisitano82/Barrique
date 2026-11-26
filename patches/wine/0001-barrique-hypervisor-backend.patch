@@ -2523,10 +2523,10 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..645b271
+index 0000000..e0c5283
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,1543 @@
+@@ -0,0 +1,1782 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -2555,6 +2555,7 @@ index 0000000..645b271
 +#if defined(__APPLE__) && defined(__aarch64__)
 +
 +#include <dlfcn.h>
++#include <mach/mach_time.h>
 +#include <assert.h>
 +#include <fcntl.h>
 +#include <pthread.h>
@@ -3021,11 +3022,12 @@ index 0000000..645b271
 +    return ret;
 +}
 +
-+static void clear_ptes( uint64_t *table, int level, uint64_t base, uint64_t start, uint64_t end )
++/* returns the number of valid page entries it cleared */
++static unsigned int clear_ptes( uint64_t *table, int level, uint64_t base, uint64_t start, uint64_t end )
 +{
 +    unsigned int shift = 39 - 9 * level;
 +    uint64_t span = 1ULL << shift;
-+    unsigned int idx = (start - base) >> shift;
++    unsigned int idx = (start - base) >> shift, cleared = 0;
 +
 +    for (; idx < 512 && base + idx * span < end; idx++)
 +    {
@@ -3033,13 +3035,14 @@ index 0000000..645b271
 +        if (!(table[idx] & D_VALID)) continue;
 +        if (level == 3)
 +        {
-+            if (entry_base != KUSD_VA) table[idx] = 0;
++            if (entry_base != KUSD_VA) { table[idx] = 0; cleared++; }
 +            continue;
 +        }
-+        clear_ptes( (uint64_t *)(table[idx] & D_ADDR), level + 1, entry_base,
-+                    start > entry_base ? start : entry_base,
-+                    end < entry_base + span ? end : entry_base + span );
++        cleared += clear_ptes( (uint64_t *)(table[idx] & D_ADDR), level + 1, entry_base,
++                               start > entry_base ? start : entry_base,
++                               end < entry_base + span ? end : entry_base + span );
 +    }
++    return cleared;
 +}
 +
 +/***********************************************************************
@@ -3052,14 +3055,17 @@ index 0000000..645b271
 + * is stale and it must read again, or the VM would keep a decommitted page (and the
 + * data written to it) mapped with its old protection */
 +static _Atomic uint64_t map_generation;
++/* test only: BARRIQUE_HVF_NO_TLB_FLUSH=1 skips the guest TLB flush after unmaps and
++ * protection changes, to measure what the flushes cost (stale permissions!) */
++static BOOL no_tlb_flush;
 +
 +void hvf_invalidate( const void *addr, size_t size )
 +{
 +    uint64_t start = (uint64_t)addr & ~(GUEST_PAGE - 1);
 +    uint64_t end = ((uint64_t)addr + size + GUEST_PAGE - 1) & ~(GUEST_PAGE - 1);
 +    uint64_t bit, last;
++    unsigned int cleared;
 +    sigset_t sigset;
-+
 +    BOOL blocked;
 +
 +    if (!ttbr0 || start >= IPA_LIMIT || !size) return;
@@ -3068,13 +3074,13 @@ index 0000000..645b271
 +    /* virtual.c calls this under virtual_mutex, with signals already blocked */
 +    if ((blocked = server_in_uninterrupted_section())) pthread_mutex_lock( &hvf_mutex );
 +    else server_enter_uninterrupted_section( &hvf_mutex, &sigset );
-+    clear_ptes( (uint64_t *)ttbr0, 0, 0, start, end );
++    cleared = clear_ptes( (uint64_t *)ttbr0, 0, 0, start, end );
 +    /* the low window is also mapped at its Windows address, see hvf_low_ptr() */
 +    if (start < HVF_LOW_BASE + 0x100000000ULL && end > HVF_LOW_BASE)
 +    {
 +        uint64_t low_start = start > HVF_LOW_BASE ? start - HVF_LOW_BASE : 0;
 +        uint64_t low_end = end < HVF_LOW_BASE + 0x100000000ULL ? end - HVF_LOW_BASE : 0x100000000ULL;
-+        clear_ptes( (uint64_t *)ttbr0, 0, 0, low_start, low_end );
++        cleared += clear_ptes( (uint64_t *)ttbr0, 0, 0, low_start, low_end );
 +    }
 +
 +    /* the host may have replaced the pages: drop stage 2 too, it refaults on demand.
@@ -3091,7 +3097,12 @@ index 0000000..645b271
 +        hv_vm_unmap( bit * HOST_PAGE, (run - bit) * HOST_PAGE );
 +        bit = run;
 +    }
-+    tlb_generation++;
++    /* Barrique: every vCPU flushes its whole TLB (tlbi vmalle1is) on its next exit
++     * when the generation moves: only needed when a translation the TLB may hold
++     * went away. With nothing cleared there is nothing cached (ARM doesn't cache
++     * invalid entries); bumping anyway made a game's main thread spend most of its
++     * time in flushes and two-stage walks while loading (72% of its samples). */
++    if (cleared && !no_tlb_flush) tlb_generation++;
 +    map_generation++;
 +    if (blocked) pthread_mutex_unlock( &hvf_mutex );
 +    else server_leave_uninterrupted_section( &hvf_mutex, &sigset );
@@ -3106,6 +3117,7 @@ index 0000000..645b271
 +static BOOL map_guest_page( uint64_t va, BOOL write, BOOL exec )
 +{
 +    int prots[FAULT_AROUND / GUEST_PAGE], prot;
++    BOOL upgraded = FALSE;
 +    uint64_t *pte, host, block = va & ~(uint64_t)(FAULT_AROUND - 1), page;
 +    unsigned int i, idx = (va - block) / GUEST_PAGE;
 +    BOOL ret = FALSE;
@@ -3151,11 +3163,12 @@ index 0000000..645b271
 +            if (faulting) break;
 +            continue;
 +        }
++        if (*pte & D_VALID) upgraded = TRUE;  /* the old permissions may be cached */
 +        *pte = (host & ~(GUEST_PAGE - 1)) | prot_to_pte( prots[i] );
 +        if (faulting) ret = TRUE;
 +    }
 +    region_cache.on = region_cache.keep;
-+    if (ret) tlb_generation++;   /* a stale permission entry may still be cached */
++    if (upgraded) tlb_generation++;   /* only a valid entry may be cached */
 +    server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +    return ret;
 +}
@@ -3170,7 +3183,11 @@ index 0000000..645b271
 + * (1 GB maps in 12 us and costs no memory), so pages never touched cost only
 + * their guest page table entries. BARRIQUE_HVF_PREMAP=0 turns it off.
 + */
-+#define PREMAP_MAX (64 << 20)
++/* in a game, allocations are often much bigger than what gets touched soon: mapping
++ * all of a 64 MB commit cost Hogwarts Legacy 0.1-0.6 ms per NtAllocateVirtualMemory,
++ * on the loading thread. BARRIQUE_HVF_PREMAP=<MB> sets the cap (0 turns it off). */
++static size_t premap_max = 1 << 20;
++
 +static BOOL premap = TRUE;
 +
 +void hvf_premap( const void *addr, size_t size )
@@ -3178,7 +3195,7 @@ index 0000000..645b271
 +    uint64_t va = (uint64_t)addr, end;
 +
 +    if (!ttbr0 || !premap || !size || va >= IPA_LIMIT) return;
-+    if (size > PREMAP_MAX) size = PREMAP_MAX;
++    if (size > premap_max) size = premap_max;
 +    end = va + size;
 +    if (end > IPA_LIMIT) end = IPA_LIMIT;
 +
@@ -3191,6 +3208,8 @@ index 0000000..645b271
 +    }
 +    region_cache.keep = region_cache.on = FALSE;
 +}
++
++static void start_exitstats(void);
 +
 +/***********************************************************************
 + *           hvf_init_process
@@ -3243,6 +3262,7 @@ index 0000000..645b271
 +
 +    stat_start = stat_now();
 +    start_profiler();
++    start_exitstats();
 +    pthread_key_create( &vcpu_key, destroy_vcpu );
 +    {
 +        uint32_t max_vcpus = 0;
@@ -3255,7 +3275,12 @@ index 0000000..645b271
 +    }
 +    hvf_tso = getenv( "WINE_HVF_TSO" ) && atoi( getenv( "WINE_HVF_TSO" ));
 +    if (getenv( "BARRIQUE_HVF_FAULTAROUND" ) && !atoi( getenv( "BARRIQUE_HVF_FAULTAROUND" ))) fault_around = FALSE;
-+    if (getenv( "BARRIQUE_HVF_PREMAP" ) && !atoi( getenv( "BARRIQUE_HVF_PREMAP" ))) premap = FALSE;
++    if (getenv( "BARRIQUE_HVF_NO_TLB_FLUSH" ) && atoi( getenv( "BARRIQUE_HVF_NO_TLB_FLUSH" ))) no_tlb_flush = TRUE;
++    if (getenv( "BARRIQUE_HVF_PREMAP" ))
++    {
++        premap_max = (size_t)atoi( getenv( "BARRIQUE_HVF_PREMAP" )) << 20;
++        if (!premap_max) premap = FALSE;
++    }
 +    if (getenv( "BARRIQUE_HVF_TLB_KICK" ) && atoi( getenv( "BARRIQUE_HVF_TLB_KICK" ))) tlb_kick = TRUE;
 +    if (getenv( "BARRIQUE_HVF_LAZY_FP" ) && !atoi( getenv( "BARRIQUE_HVF_LAZY_FP" ))) hvf_lazy_fp_enabled = FALSE;
 +    /* not "never": a process with more threads than vCPUs needs them back; only when nearly full */
@@ -3490,6 +3515,219 @@ index 0000000..645b271
 +    return NULL;
 +}
 +
++/* Barrique: BARRIQUE_HVF_EXITSTATS=1 prints every 5s where the time of the threads
++ * that run Windows code goes: inside the VM, and on the host per syscall, Unix
++ * call and fault kind, with counts and average cost. Unlike WINE_HVF_PROFILE it
++ * doesn't stop the vCPUs, so the timings are those of a normal run. */
++#define EXITSTAT_SIZE 4096
++struct exitstat { uint64_t key; uint64_t count, ticks, last_count, last_ticks; };
++static struct exitstat *exitstats;
++static uint64_t exitstat_guest_ticks, exitstat_last_guest;
++BOOL hvf_exitstats;
++
++/* per thread: guest, host work and waits, to find the thread a stall waits for */
++#define THREADSTAT_SIZE 1024
++struct threadstat { pthread_t thread; uint64_t ticks[3], last[3]; };
++static struct threadstat *threadstats;
++static LONG threadstat_count;
++static __thread struct threadstat *my_threadstat;
++static unsigned char wait_syscall_class[1 << 12];  /* 0 unknown, 1 wait, 2 work */
++
++static BOOL is_wait_syscall_id( uint64_t key )
++{
++    const char *name;
++
++    if (key >> 12) return FALSE;  /* win32u */
++    if (!wait_syscall_class[key])
++    {
++        name = ntdll_syscall_name( key );
++        wait_syscall_class[key] = (name && (strstr( name, "Wait" ) || strstr( name, "Delay" ) ||
++                                   strstr( name, "RemoveIoCompletion" ) || strstr( name, "ReplyWaitReceive" ))) ? 1 : 2;
++    }
++    return wait_syscall_class[key] == 1;
++}
++
++static void threadstat_add( unsigned int kind, uint64_t key, uint64_t ticks )
++{
++    unsigned int slot;
++    LONG idx;
++
++    if (!my_threadstat)
++    {
++        if ((idx = InterlockedIncrement( &threadstat_count ) - 1) >= THREADSTAT_SIZE) return;
++        my_threadstat = &threadstats[idx];
++        my_threadstat->thread = pthread_self();
++    }
++    slot = !kind ? 0 : (kind == 1 && is_wait_syscall_id( key )) ? 2 : 1;
++    my_threadstat->ticks[slot] += ticks;
++}
++
++void hvf_exitstat_add( unsigned int kind, uint64_t key, uint64_t ticks )
++{
++    uint64_t full = (uint64_t)kind << 60 | (key & ((1ULL << 60) - 1));
++    unsigned int i = (unsigned int)((full * 0x9e3779b97f4a7c15ull) >> 52) % EXITSTAT_SIZE, n;
++
++    if (threadstats) threadstat_add( kind, key, ticks );
++    if (!kind)
++    {
++        __atomic_fetch_add( &exitstat_guest_ticks, ticks, __ATOMIC_RELAXED );
++        return;
++    }
++    for (n = 0; n < 64; n++, i = (i + 1) % EXITSTAT_SIZE)
++    {
++        uint64_t cur = __atomic_load_n( &exitstats[i].key, __ATOMIC_RELAXED );
++        if (!cur && __atomic_compare_exchange_n( &exitstats[i].key, &cur, full, FALSE,
++                                                 __ATOMIC_RELAXED, __ATOMIC_RELAXED ))
++            cur = full;
++        if (cur != full) continue;
++        __atomic_fetch_add( &exitstats[i].count, 1, __ATOMIC_RELAXED );
++        __atomic_fetch_add( &exitstats[i].ticks, ticks, __ATOMIC_RELAXED );
++        return;
++    }
++}
++
++static void exitstat_name( uint64_t full, char *buf, size_t size )
++{
++    unsigned int kind = full >> 60;
++    uint64_t key = full & ((1ULL << 60) - 1);
++    Dl_info info;
++
++    switch (kind)
++    {
++    case 1:
++        if (key >> 12) snprintf( buf, size, "win32u syscall %#x", (unsigned int)(key & 0xfff) );
++        else snprintf( buf, size, "%s", ntdll_syscall_name( key ) );
++        break;
++    case 2:
++        if (dladdr( (void *)key, &info ) && info.dli_sname)
++            snprintf( buf, size, "unix %s (%s)", info.dli_sname, info.dli_fname ? strrchr( info.dli_fname, '/' ) + 1 : "?" );
++        else if (dladdr( (void *)key, &info ) && info.dli_fname)
++            snprintf( buf, size, "unix %s+%#llx", strrchr( info.dli_fname, '/' ) + 1,
++                      (unsigned long long)(key - (uint64_t)info.dli_fbase) );
++        else snprintf( buf, size, "unix %#llx", (unsigned long long)key );
++        break;
++    default:
++        snprintf( buf, size, "exit type %u", (unsigned int)key );
++        break;
++    }
++}
++
++static void *exitstat_thread( void *arg )
++{
++    mach_timebase_info_data_t tb;
++    unsigned int i, j;
++
++    mach_timebase_info( &tb );
++    for (;;)
++    {
++        struct { uint64_t ticks, count; unsigned int idx; } top[16];
++        uint64_t guest, host = 0;
++        double scale = (double)tb.numer / tb.denom / 1e9 / 5;  /* ticks over 5s -> cores */
++        char name[160];
++
++        sleep( 5 );
++        memset( top, 0, sizeof(top) );
++        guest = exitstat_guest_ticks - exitstat_last_guest;
++        exitstat_last_guest += guest;
++        for (i = 0; i < EXITSTAT_SIZE; i++)
++        {
++            uint64_t t = exitstats[i].ticks - exitstats[i].last_ticks;
++            uint64_t c = exitstats[i].count - exitstats[i].last_count;
++            exitstats[i].last_ticks += t;
++            exitstats[i].last_count += c;
++            if (!t) continue;
++            host += t;
++            for (j = 0; j < 16; j++)
++                if (t > top[j].ticks)
++                {
++                    memmove( top + j + 1, top + j, (15 - j) * sizeof(*top) );
++                    top[j].ticks = t; top[j].count = c; top[j].idx = i;
++                    break;
++                }
++        }
++        if (!guest && !host) continue;
++        {
++            static uint64_t last_gen;
++            uint64_t gen = tlb_generation;
++            fprintf( stderr, "hvf exits %04x: in VM %.2f cores, on host %.2f cores (waits included), %llu TLB flush rounds/s\n",
++                     (int)GetCurrentProcessId(), guest * scale, host * scale, (unsigned long long)(gen - last_gen) / 5 );
++            last_gen = gen;
++        }
++        {
++            struct { uint64_t busy, t[3]; int idx; } tt[10];
++            int k, n = min( threadstat_count, THREADSTAT_SIZE );
++
++            memset( tt, 0, sizeof(tt) );
++            for (i = 0; i < n; i++)
++            {
++                uint64_t d[3];
++                for (k = 0; k < 3; k++)
++                {
++                    d[k] = threadstats[i].ticks[k] - threadstats[i].last[k];
++                    threadstats[i].last[k] += d[k];
++                }
++                for (j = 0; j < 10; j++)
++                    if (d[0] + d[1] > tt[j].busy)
++                    {
++                        memmove( tt + j + 1, tt + j, (9 - j) * sizeof(*tt) );
++                        tt[j].busy = d[0] + d[1]; memcpy( tt[j].t, d, sizeof(d) ); tt[j].idx = i;
++                        break;
++                    }
++            }
++            for (j = 0; j < 10 && tt[j].busy; j++)
++            {
++                name[0] = 0;
++                pthread_getname_np( threadstats[tt[j].idx].thread, name, sizeof(name) );
++                fprintf( stderr, "hvf thread %04x: %3.0f%% in VM %3.0f%% host %3.0f%% wait  %s\n",
++                         (int)GetCurrentProcessId(), tt[j].t[0] * scale * 100, tt[j].t[1] * scale * 100,
++                         tt[j].t[2] * scale * 100, name[0] ? name : "?" );
++            }
++        }
++        for (j = 0; j < 16 && top[j].ticks; j++)
++        {
++            exitstat_name( exitstats[top[j].idx].key, name, sizeof(name) );
++            fprintf( stderr, "hvf exits %04x:   %6.3f cores %8llu/s %8.1f us  %s\n", (int)GetCurrentProcessId(),
++                     top[j].ticks * scale, (unsigned long long)top[j].count / 5,
++                     top[j].ticks * scale * 5 * 1e6 / top[j].count, name );
++        }
++    }
++    return NULL;
++}
++
++static void start_exitstats(void)
++{
++    const char *env = getenv( "BARRIQUE_HVF_EXITSTATS" );
++    pthread_t thread;
++
++    if (!env || !atoi( env )) return;
++    if (!(exitstats = calloc( EXITSTAT_SIZE, sizeof(*exitstats) ))) return;
++    threadstats = calloc( THREADSTAT_SIZE, sizeof(*threadstats) );
++    hvf_exitstats = TRUE;
++    if (!pthread_create( &thread, NULL, exitstat_thread, NULL )) pthread_detach( thread );
++}
++
++/* BARRIQUE_HVF_PROFILE_THREADS=name1,name2,...: only sample threads with these
++ * names ("-" is an unnamed thread); the sample's top byte is the 1-based index in
++ * the list (0 when there is no list) */
++static const char *prof_threads;
++static __thread int prof_tag = -1;
++
++static int prof_thread_tag(void)
++{
++    char name[64], list[512], *tok, *save;
++    int i;
++
++    if (prof_tag >= 0) return prof_tag || !prof_threads;
++    prof_tag = 0;
++    if (!prof_threads) return 1;
++    name[0] = 0;
++    pthread_getname_np( pthread_self(), name, sizeof(name) );
++    snprintf( list, sizeof(list), "%s", prof_threads );
++    for (i = 1, tok = strtok_r( list, ",", &save ); tok; i++, tok = strtok_r( NULL, ",", &save ))
++        if (!strcmp( tok, name ) || (!strcmp( tok, "-" ) && !name[0])) { prof_tag = i; break; }
++    return prof_tag != 0;
++}
++
 +static void start_profiler(void)
 +{
 +    const char *dir = getenv( "WINE_HVF_PROFILE" );
@@ -3498,6 +3736,7 @@ index 0000000..645b271
 +    int fd;
 +
 +    if (!dir || !*dir) return;
++    prof_threads = getenv( "BARRIQUE_HVF_PROFILE_THREADS" );
 +    snprintf( path, sizeof(path), "%s/hvfprof-%d.bin", dir, (int)getpid() );
 +    if ((fd = open( path, O_WRONLY | O_CREAT | O_TRUNC, 0644 )) == -1) return;
 +    if (!(prof_pcs = calloc( PROF_SIZE, sizeof(*prof_pcs) ))) return;
@@ -3953,11 +4192,11 @@ index 0000000..645b271
 +            break;
 +        case HV_EXIT_REASON_CANCELED:
 +            InterlockedIncrement( &stat_kind[0] );
-+            if (prof_pcs)
++            if (prof_pcs && prof_thread_tag())
 +            {
 +                uint64_t pc;
 +                hv_vcpu_get_reg( v->vcpu, HV_REG_PC, &pc );
-+                prof_pcs[(InterlockedIncrement( &prof_count ) - 1) % PROF_SIZE] = pc;
++                prof_pcs[(InterlockedIncrement( &prof_count ) - 1) % PROF_SIZE] = pc | (uint64_t)prof_tag << 56;
 +            }
 +            continue;
 +        case HV_EXIT_REASON_VTIMER_ACTIVATED:
@@ -6526,7 +6765,7 @@ index c80226f..5baaf68 100644
      if (!supported_machines_count)
          fatal_error( "'%s' is a 64-bit installation, it cannot be used with a 32-bit wineserver.\n",
 diff --git a/dlls/ntdll/unix/signal_arm64.c b/dlls/ntdll/unix/signal_arm64.c
-index 02b6d57..9deed0a 100644
+index 02b6d57..2e88175 100644
 --- a/dlls/ntdll/unix/signal_arm64.c
 +++ b/dlls/ntdll/unix/signal_arm64.c
 @@ -29,6 +29,9 @@
@@ -6539,7 +6778,15 @@ index 02b6d57..9deed0a 100644
  #include <stdlib.h>
  #include <stdarg.h>
  #include <stdio.h>
-@@ -412,6 +415,10 @@ void *get_wow_context( CONTEXT *context )
+@@ -51,6 +54,7 @@
+ # include <sys/ucontext.h>
+ #endif
+ 
++#include <mach/mach_time.h>
+ #include "ntstatus.h"
+ #include "windef.h"
+ #include "winnt.h"
+@@ -412,6 +416,10 @@ void *get_wow_context( CONTEXT *context )
  }
  
  
@@ -6550,7 +6797,7 @@ index 02b6d57..9deed0a 100644
  /***********************************************************************
   *              NtSetContextThread  (NTDLL.@)
   *              ZwSetContextThread  (NTDLL.@)
-@@ -432,6 +439,9 @@ NTSTATUS WINAPI NtSetContextThread( HANDLE handle, const CONTEXT *context )
+@@ -432,6 +440,9 @@ NTSTATUS WINAPI NtSetContextThread( HANDLE handle, const CONTEXT *context )
          ret = set_thread_context( handle, context, &self, IMAGE_FILE_MACHINE_ARM64 );
          if (ret || !self) return ret;
      }
@@ -6560,7 +6807,7 @@ index 02b6d57..9deed0a 100644
  
      if (flags & CONTEXT_INTEGER)
      {
-@@ -486,6 +496,10 @@ NTSTATUS WINAPI NtGetContextThread( HANDLE handle, CONTEXT *context )
+@@ -486,6 +497,10 @@ NTSTATUS WINAPI NtGetContextThread( HANDLE handle, CONTEXT *context )
          if (ret || !self) return ret;
      }
      else if (!frame) return STATUS_ACCESS_DENIED;
@@ -6571,7 +6818,7 @@ index 02b6d57..9deed0a 100644
  
      if (needed_flags & CONTEXT_INTEGER)
      {
-@@ -783,6 +797,35 @@ NTSTATUS get_thread_wow64_context( HANDLE handle, void *ctx, ULONG size )
+@@ -783,6 +798,35 @@ NTSTATUS get_thread_wow64_context( HANDLE handle, void *ctx, ULONG size )
  /***********************************************************************
   *           setup_raise_exception
   */
@@ -6607,7 +6854,7 @@ index 02b6d57..9deed0a 100644
  static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcontext,
                                     EXCEPTION_RECORD *rec, CONTEXT *context )
  {
-@@ -790,6 +833,15 @@ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcont
+@@ -790,6 +834,15 @@ static void setup_raise_exception( struct thread_data *data, ucontext_t *sigcont
      struct exc_stack_layout *stack;
      void *stack_ptr = (void *)(SP_sig(sigcontext) & ~15);
  
@@ -6623,7 +6870,7 @@ index 02b6d57..9deed0a 100644
      if (!chpe || !chpe->InSimulation)
      {
          NTSTATUS status = send_debug_event( data, rec, context, TRUE );
-@@ -1037,6 +1089,7 @@ __ASM_GLOBAL_FUNC( user_mode_abort_thread,
+@@ -1037,6 +1090,7 @@ __ASM_GLOBAL_FUNC( user_mode_abort_thread,
                     "bl " __ASM_NAME("abort_thread") )
  
  
@@ -6631,7 +6878,7 @@ index 02b6d57..9deed0a 100644
  /***********************************************************************
   *           KeUserModeCallback
   */
-@@ -1071,6 +1124,7 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+@@ -1071,6 +1125,7 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
      if (!frame->prev_frame) return STATUS_NO_CALLBACK_ACTIVE;
      user_mode_callback_return( ret_ptr, ret_len, status, data->teb );
  }
@@ -6639,7 +6886,7 @@ index 02b6d57..9deed0a 100644
  
  
  /***********************************************************************
-@@ -1078,11 +1132,92 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
+@@ -1078,11 +1133,92 @@ NTSTATUS WINAPI NtCallbackReturn( void *ret_ptr, ULONG ret_len, NTSTATUS status
   *
   * Handle a page fault happening during a system call.
   */
@@ -6732,7 +6979,7 @@ index 02b6d57..9deed0a 100644
      if (!is_inside_syscall( data, SP_sig(context) )) return FALSE;
  
      TRACE( "code=%x flags=%x addr=%p pc=%p\n",
-@@ -1150,6 +1285,21 @@ static void segv_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1150,6 +1286,21 @@ static void segv_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      EXCEPTION_RECORD rec = { .ExceptionAddress = (void *)PC_sig(sigcontext) };
      DWORD64 esr = get_fault_esr( sigcontext );
  
@@ -6754,7 +7001,7 @@ index 02b6d57..9deed0a 100644
      switch (ESR_ELx_EC(esr))
      {
      case ESR_ELx_EC_IABT_LOW:
-@@ -1371,6 +1521,17 @@ static void int_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1371,6 +1522,17 @@ static void int_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
  static void abrt_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
  {
      ucontext_t *sigcontext = _sigcontext;
@@ -6772,7 +7019,7 @@ index 02b6d57..9deed0a 100644
      struct thread_data *data = get_thread_data();
      CONTEXT context;
      EXCEPTION_RECORD rec = { .ExceptionCode = EXCEPTION_WINE_ASSERTION,
-@@ -1392,6 +1553,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1392,6 +1554,11 @@ static void quit_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      ucontext_t *sigcontext = _sigcontext;
      struct thread_data *data = get_thread_data();
  
@@ -6784,7 +7031,7 @@ index 02b6d57..9deed0a 100644
      if (is_inside_syscall( data, SP_sig(sigcontext) )) abort_thread(0);
      user_mode_abort_thread( 0, get_syscall_frame( data ));
  }
-@@ -1427,6 +1593,22 @@ static void save_syscall_entry_frame( ucontext_t *sigcontext )
+@@ -1427,6 +1594,22 @@ static void save_syscall_entry_frame( ucontext_t *sigcontext )
   *
   * Handler for SIGUSR1, used to signal a thread that it got suspended.
   */
@@ -6807,7 +7054,7 @@ index 02b6d57..9deed0a 100644
  static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
  {
      ucontext_t *sigcontext = _sigcontext;
-@@ -1440,6 +1622,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1440,6 +1623,35 @@ static void usr1_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      extern const ULONG_PTR __wine_unix_call_dispatcher_user_stack;
      extern const ULONG_PTR call_user_mode_callback_user_stack_ptr;
  
@@ -6843,7 +7090,7 @@ index 02b6d57..9deed0a 100644
      /* if we're in a syscall dispatcher, but not yet on the syscall stack, construct
       * the frame now from the signal context. */
      if ((ULONG_PTR)__wine_syscall_dispatcher <= PC_sig(sigcontext) &&
-@@ -1509,6 +1720,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
+@@ -1509,6 +1721,9 @@ static void usr2_handler( int signal, siginfo_t *siginfo, void *_sigcontext )
      struct syscall_frame *frame = get_syscall_frame( data );
      DWORD i;
  
@@ -6853,7 +7100,7 @@ index 02b6d57..9deed0a 100644
      if (!is_inside_syscall( data, SP_sig(sigcontext) )) return;
      if (!frame) return;
  
-@@ -1601,6 +1815,10 @@ void signal_init_process( TEB *teb )
+@@ -1601,6 +1816,10 @@ void signal_init_process( TEB *teb )
      if (sigaction( SIGUSR1, &sig_act, NULL ) == -1) goto error;
      sig_act.sa_sigaction = usr2_handler;
      if (sigaction( SIGUSR2, &sig_act, NULL ) == -1) goto error;
@@ -6864,7 +7111,7 @@ index 02b6d57..9deed0a 100644
      sig_act.sa_sigaction = trap_handler;
      if (sigaction( SIGTRAP, &sig_act, NULL ) == -1) goto error;
      sig_act.sa_sigaction = segv_handler;
-@@ -1691,6 +1909,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
+@@ -1691,6 +1910,7 @@ void init_syscall_frame( LPTHREAD_START_ROUTINE entry, void *arg, TEB *teb )
  }
  
  
@@ -6872,7 +7119,7 @@ index 02b6d57..9deed0a 100644
  /***********************************************************************
   *           signal_start_thread
   */
-@@ -1728,6 +1947,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
+@@ -1728,6 +1948,7 @@ __ASM_GLOBAL_FUNC( signal_start_thread,
                     "mov sp, x4\n\t"
                     "bl " __ASM_NAME("init_syscall_frame") "\n\t"
                     "b " __ASM_LOCAL_LABEL("__wine_syscall_dispatcher_return") )
@@ -6880,7 +7127,7 @@ index 02b6d57..9deed0a 100644
  
  
  /***********************************************************************
-@@ -1966,4 +2186,486 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
+@@ -1966,4 +2187,508 @@ __ASM_GLOBAL_POINTER( __ASM_NAME("__wine_unix_call_dispatcher_user_stack"),
  __ASM_GLOBAL_POINTER( __ASM_NAME("call_user_mode_callback_user_stack_ptr"),
                        __ASM_LOCAL_LABEL("call_user_mode_callback_user_stack") )
  
@@ -7193,14 +7440,27 @@ index 02b6d57..9deed0a 100644
 +    struct hvf_exit ex;
 +    struct hvf_regs regs;
 +
++    extern BOOL hvf_exitstats;
++    extern void hvf_exitstat_add( unsigned int kind, uint64_t key, uint64_t ticks );
++
 +    for (;;)
 +    {
 +        struct thread_data *data;
 +        struct syscall_frame * volatile frame;  /* used after longjmp */
 +        ULONG64 ret;
++        uint64_t t0 = 0, t1 = 0, stat_key = 0;
++        unsigned int stat_kind = 0;
 +
 +        hvf_in_guest = TRUE;
++        if (hvf_exitstats) t0 = mach_absolute_time();
 +        hvf_run( &ex, &hvf_pending );
++        if (hvf_exitstats)
++        {
++            t1 = mach_absolute_time();
++            hvf_exitstat_add( 0, 0, t1 - t0 );
++            stat_kind = 3;
++            stat_key = ex.type;
++        }
 +        data = get_thread_data();
 +        frame = get_syscall_frame( data );
 +        hvf_get_user_regs( &regs, !hvf_lazy_fp_enabled ||
@@ -7238,9 +7498,16 @@ index 02b6d57..9deed0a 100644
 +            if (!(fault = _setjmp( jmp )))
 +            {
 +                hvf_syscall_jmp = &jmp;
-+                if (ex.type != HVF_EXIT_UNIX_CALL) ret = hvf_dispatch_syscall( data, &regs );
++                if (ex.type != HVF_EXIT_UNIX_CALL)
++                {
++                    stat_kind = 1;
++                    stat_key = ((regs.x[8] >> 12) & 3) << 12 | (regs.x[8] & 0xfff);
++                    ret = hvf_dispatch_syscall( data, &regs );
++                }
 +                else
 +                {
++                    stat_kind = 2;
++                    stat_key = (uint64_t)((unixlib_entry_t *)regs.x[0])[regs.x[1]];
 +                    extern LONG *hvf_syscall_hist;
 +                    extern void hvf_prof_unix_call( void *func );
 +                    if (hvf_syscall_hist) hvf_prof_unix_call( ((unixlib_entry_t *)regs.x[0])[regs.x[1]] );
@@ -7256,6 +7523,7 @@ index 02b6d57..9deed0a 100644
 +                if (hvf_lazy_fp != frame) hvf_lazy_fp = NULL;  /* a callback frame we left */
 +            }
 +            hvf_syscall_jmp = prev;
++            if (hvf_exitstats) hvf_exitstat_add( stat_kind, stat_key, mach_absolute_time() - t1 );
 +            break;
 +        }
 +        case HVF_EXIT_INTERRUPT:
@@ -7271,6 +7539,7 @@ index 02b6d57..9deed0a 100644
 +            continue;
 +        default:
 +            hvf_handle_exception( data, &ex, &regs );
++            if (hvf_exitstats) hvf_exitstat_add( stat_kind, stat_key, mach_absolute_time() - t1 );
 +            continue;
 +        }
 +        if (cb && cb->done)
