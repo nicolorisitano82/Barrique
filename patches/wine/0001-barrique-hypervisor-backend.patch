@@ -2509,10 +2509,10 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..fac2ad0
+index 0000000..645b271
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
-@@ -0,0 +1,1463 @@
+@@ -0,0 +1,1543 @@
 +/*
 + * Run Windows ARM64 code in a Hypervisor.framework VM on macOS
 + *
@@ -2754,12 +2754,37 @@ index 0000000..fac2ad0
 +    return pte;
 +}
 +
++/* Barrique: plain private anonymous regions seen by map_guest_page() during one
++ * fault. The region info covers the whole region, so the other host pages of the
++ * fault-around block don't need their own mach_vm_region_recurse() (two Mach
++ * messages per 16K page were ~27% of a first-touch fault, tests/pe/vmbench.c) */
++static __thread struct
++{
++    BOOL on;
++    BOOL keep;   /* hvf_premap(): one cache for all the blocks of the range */
++    mach_vm_address_t start, end;
++    vm_region_submap_short_info_data_64_t info;
++} region_cache;
++
++static inline BOOL region_is_plain_anon( const vm_region_submap_short_info_data_64_t *info )
++{
++    return !info->external_pager && (info->share_mode == SM_PRIVATE || info->share_mode == SM_EMPTY);
++}
++
 +static BOOL query_page( uint64_t page, vm_region_extended_info_data_t *info, vm_page_info_basic_data_t *page_info,
 +                        mach_vm_address_t *region_start, mach_vm_size_t *region_size )
 +{
 +    vm_region_submap_short_info_data_64_t short_info;
 +    mach_msg_type_number_t count;
 +    natural_t depth = 0;
++
++    if (region_cache.on && page >= region_cache.start && page + HOST_PAGE <= region_cache.end)
++    {
++        short_info = region_cache.info;
++        *region_start = region_cache.start;
++        *region_size = region_cache.end - region_cache.start;
++        goto found;
++    }
 +
 +    /* Barrique: VM_REGION_EXTENDED_INFO walks every page of the region to count the
 +     * resident ones: on a large VirtualAlloc block each new host page cost a scan of
@@ -2777,6 +2802,13 @@ index 0000000..fac2ad0
 +        depth++;
 +    }
 +    if (*region_start > page || *region_start + *region_size < page + HOST_PAGE) return FALSE;
++    if (region_cache.on && region_is_plain_anon( &short_info ))
++    {
++        region_cache.start = *region_start;
++        region_cache.end = *region_start + *region_size;
++        region_cache.info = short_info;
++    }
++found:
 +    memset( info, 0, sizeof(*info) );
 +    info->protection     = short_info.protection;
 +    info->user_tag       = short_info.user_tag;
@@ -2784,6 +2816,9 @@ index 0000000..fac2ad0
 +    info->share_mode     = short_info.share_mode;
 +    info->shadow_depth   = short_info.shadow_depth;
 +    memset( page_info, 0, sizeof(*page_info) );
++    /* the page flags page_type_ok() checks (external, code signing) only exist for
++     * file-backed memory, and page_is_usable() doesn't look at pages of these regions */
++    if (region_is_plain_anon( &short_info )) return TRUE;
 +    count = VM_PAGE_INFO_BASIC_COUNT;
 +    return mach_vm_page_info( mach_task_self(), page, VM_PAGE_INFO_BASIC,
 +                              (vm_page_info_t)page_info, &count ) == KERN_SUCCESS;
@@ -3011,10 +3046,14 @@ index 0000000..fac2ad0
 +    uint64_t bit, last;
 +    sigset_t sigset;
 +
++    BOOL blocked;
++
 +    if (!ttbr0 || start >= IPA_LIMIT || !size) return;
 +    if (end > IPA_LIMIT) end = IPA_LIMIT;
 +
-+    server_enter_uninterrupted_section( &hvf_mutex, &sigset );
++    /* virtual.c calls this under virtual_mutex, with signals already blocked */
++    if ((blocked = server_in_uninterrupted_section())) pthread_mutex_lock( &hvf_mutex );
++    else server_enter_uninterrupted_section( &hvf_mutex, &sigset );
 +    clear_ptes( (uint64_t *)ttbr0, 0, 0, start, end );
 +    /* the low window is also mapped at its Windows address, see hvf_low_ptr() */
 +    if (start < HVF_LOW_BASE + 0x100000000ULL && end > HVF_LOW_BASE)
@@ -3024,25 +3063,30 @@ index 0000000..fac2ad0
 +        clear_ptes( (uint64_t *)ttbr0, 0, 0, low_start, low_end );
 +    }
 +
-+    /* the host may have replaced the pages: drop stage 2 too, it refaults on demand */
++    /* the host may have replaced the pages: drop stage 2 too, it refaults on demand.
++     * One hv_vm_unmap() per run of mapped pages: each call is a kernel trap and a
++     * stage-2 TLB flush, and freeing a big block used to make one per 16K page */
 +    last = (end + HOST_PAGE - 1) / HOST_PAGE;
-+    for (bit = start / HOST_PAGE; bit < last; bit++)
++    for (bit = start / HOST_PAGE; bit < last;)
 +    {
-+        uint64_t *word = &stage2_bitmap[bit / 64];
-+        if (!*word) { bit |= 63; continue; }
-+        if (!(*word & (1ULL << (bit % 64)))) continue;
-+        hv_vm_unmap( bit * HOST_PAGE, HOST_PAGE );
-+        *word &= ~(1ULL << (bit % 64));
++        uint64_t *word = &stage2_bitmap[bit / 64], run;
++        if (!*word) { bit = (bit | 63) + 1; continue; }
++        if (!(*word & (1ULL << (bit % 64)))) { bit++; continue; }
++        for (run = bit; run < last && (stage2_bitmap[run / 64] & (1ULL << (run % 64))); run++)
++            stage2_bitmap[run / 64] &= ~(1ULL << (run % 64));
++        hv_vm_unmap( bit * HOST_PAGE, (run - bit) * HOST_PAGE );
++        bit = run;
 +    }
 +    tlb_generation++;
 +    map_generation++;
-+    server_leave_uninterrupted_section( &hvf_mutex, &sigset );
++    if (blocked) pthread_mutex_unlock( &hvf_mutex );
++    else server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +    if (tlb_kick) kick_running_vcpus();
 +}
 +
 +/* pages mapped around a faulting one: memory is mostly touched in sequence, and each
 + * fault is a VM exit plus a protection lookup */
-+#define FAULT_AROUND (64 * 1024)
++#define FAULT_AROUND (256 * 1024)
 +
 +/* try to resolve a stage-1 fault from the Windows page protections */
 +static BOOL map_guest_page( uint64_t va, BOOL write, BOOL exec )
@@ -3077,6 +3121,8 @@ index 0000000..fac2ad0
 +        server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +        goto retry;
 +    }
++    region_cache.on = TRUE;
++    if (!region_cache.keep) region_cache.start = region_cache.end = 0;
 +    for (i = 0; i < FAULT_AROUND / GUEST_PAGE; i++)
 +    {
 +        BOOL faulting = (i == idx);
@@ -3094,9 +3140,42 @@ index 0000000..fac2ad0
 +        *pte = (host & ~(GUEST_PAGE - 1)) | prot_to_pte( prots[i] );
 +        if (faulting) ret = TRUE;
 +    }
++    region_cache.on = region_cache.keep;
 +    if (ret) tlb_generation++;   /* a stale permission entry may still be cached */
 +    server_leave_uninterrupted_section( &hvf_mutex, &sigset );
 +    return ret;
++}
++
++/***********************************************************************
++ *           hvf_premap
++ *
++ * Barrique: map freshly committed memory into the VM right away. Otherwise the
++ * first touch of every 256K block is a VM exit plus a lookup of the protections
++ * and of the host region (~35 us, tests/pe/vmbench.c), and a game loading a new
++ * area touches gigabytes of new memory. hv_vm_map() doesn't populate host pages
++ * (1 GB maps in 12 us and costs no memory), so pages never touched cost only
++ * their guest page table entries. BARRIQUE_HVF_PREMAP=0 turns it off.
++ */
++#define PREMAP_MAX (64 << 20)
++static BOOL premap = TRUE;
++
++void hvf_premap( const void *addr, size_t size )
++{
++    uint64_t va = (uint64_t)addr, end;
++
++    if (!ttbr0 || !premap || !size || va >= IPA_LIMIT) return;
++    if (size > PREMAP_MAX) size = PREMAP_MAX;
++    end = va + size;
++    if (end > IPA_LIMIT) end = IPA_LIMIT;
++
++    region_cache.keep = TRUE;
++    region_cache.start = region_cache.end = 0;
++    while (va < end)
++    {
++        map_guest_page( va, FALSE, FALSE );
++        va = (va & ~(uint64_t)(FAULT_AROUND - 1)) + FAULT_AROUND;
++    }
++    region_cache.keep = region_cache.on = FALSE;
 +}
 +
 +/***********************************************************************
@@ -3162,6 +3241,7 @@ index 0000000..fac2ad0
 +    }
 +    hvf_tso = getenv( "WINE_HVF_TSO" ) && atoi( getenv( "WINE_HVF_TSO" ));
 +    if (getenv( "BARRIQUE_HVF_FAULTAROUND" ) && !atoi( getenv( "BARRIQUE_HVF_FAULTAROUND" ))) fault_around = FALSE;
++    if (getenv( "BARRIQUE_HVF_PREMAP" ) && !atoi( getenv( "BARRIQUE_HVF_PREMAP" ))) premap = FALSE;
 +    if (getenv( "BARRIQUE_HVF_TLB_KICK" ) && atoi( getenv( "BARRIQUE_HVF_TLB_KICK" ))) tlb_kick = TRUE;
 +    if (getenv( "BARRIQUE_HVF_LAZY_FP" ) && !atoi( getenv( "BARRIQUE_HVF_LAZY_FP" ))) hvf_lazy_fp_enabled = FALSE;
 +    /* not "never": a process with more threads than vCPUs needs them back; only when nearly full */
@@ -6267,10 +6347,39 @@ index ced0a36..75550ed 100644
          ERR("tcsetattr error '%s'\n", strerror(errno));
          return errno_to_status( errno );
 diff --git a/dlls/ntdll/unix/server.c b/dlls/ntdll/unix/server.c
-index c80226f..2464f38 100644
+index c80226f..5baaf68 100644
 --- a/dlls/ntdll/unix/server.c
 +++ b/dlls/ntdll/unix/server.c
-@@ -627,6 +627,22 @@ static void invoke_system_apc( const union apc_call *call, union apc_result *res
+@@ -324,9 +324,20 @@ NTSTATUS unixcall_wine_server_call( void *args )
+ /***********************************************************************
+  *           server_enter_uninterrupted_section
+  */
++/* Barrique: depth of nested uninterrupted sections in this thread, so that code
++ * called with signals already blocked (hvf_invalidate() under virtual_mutex) can
++ * skip the two pthread_sigmask() syscalls */
++static __thread int uninterrupted_depth;
++
++BOOL server_in_uninterrupted_section(void)
++{
++    return uninterrupted_depth > 0;
++}
++
+ void server_enter_uninterrupted_section( pthread_mutex_t *mutex, sigset_t *sigset )
+ {
+     pthread_sigmask( SIG_BLOCK, &server_block_set, sigset );
++    uninterrupted_depth++;
+     mutex_lock( mutex );
+ }
+ 
+@@ -337,6 +348,7 @@ void server_enter_uninterrupted_section( pthread_mutex_t *mutex, sigset_t *sigse
+ void server_leave_uninterrupted_section( pthread_mutex_t *mutex, sigset_t *sigset )
+ {
+     mutex_unlock( mutex );
++    uninterrupted_depth--;
+     pthread_sigmask( SIG_SETMASK, sigset, NULL );
+ }
+ 
+@@ -627,6 +639,22 @@ static void invoke_system_apc( const union apc_call *call, union apc_result *res
              ext[count].Pointer = &addr_req;
              count++;
          }
@@ -6293,7 +6402,7 @@ index c80226f..2464f38 100644
          if (call->map_view_ex.machine)
          {
              ext[count].Type = MemExtendedParameterImageMachine;
-@@ -1272,6 +1288,23 @@ NTSTATUS unixcall_wine_server_handle_to_fd( void *args )
+@@ -1272,6 +1300,23 @@ NTSTATUS unixcall_wine_server_handle_to_fd( void *args )
  }
  
  
@@ -6317,7 +6426,7 @@ index c80226f..2464f38 100644
  /***********************************************************************
   *           server_pipe
   *
-@@ -1285,7 +1318,7 @@ int server_pipe( int fd[2] )
+@@ -1285,7 +1330,7 @@ int server_pipe( int fd[2] )
  
      if (have_pipe2)
      {
@@ -6326,7 +6435,7 @@ index c80226f..2464f38 100644
          if (errno == ENOSYS || errno == EINVAL) have_pipe2 = FALSE;  /* don't try again */
      }
  #endif
-@@ -1473,6 +1506,55 @@ static int server_connect(void)
+@@ -1473,6 +1518,55 @@ static int server_connect(void)
  #include <mach/mach.h>
  #include <mach/mach_error.h>
  #include <servers/bootstrap.h>
@@ -6382,7 +6491,7 @@ index c80226f..2464f38 100644
  
  extern NTSTATUS apple_spawn_main_thread(void);
  
-@@ -1643,6 +1725,9 @@ void server_init_process( struct thread_data *data )
+@@ -1643,6 +1737,9 @@ void server_init_process( struct thread_data *data )
      sigaddset( &server_block_set, SIGUSR1 );
      sigaddset( &server_block_set, SIGUSR2 );
      sigaddset( &server_block_set, SIGCHLD );
@@ -6392,7 +6501,7 @@ index c80226f..2464f38 100644
      pthread_sigmask( SIG_BLOCK, &server_block_set, NULL );
  
      /* receive the first thread request fd on the main socket */
-@@ -1705,6 +1790,9 @@ void server_init_process( struct thread_data *data )
+@@ -1705,6 +1802,9 @@ void server_init_process( struct thread_data *data )
      SERVER_END_REQ;
  
      if (ret) server_protocol_error( "init_first_thread failed with status %x\n", ret );
@@ -7567,10 +7676,10 @@ index 11171cc..e7fbffb 100644
  
      if (rec->ExceptionFlags & EXCEPTION_STACK_INVALID)
 diff --git a/dlls/ntdll/unix/unix_private.h b/dlls/ntdll/unix/unix_private.h
-index 829db1e..3c39ace 100644
+index 829db1e..c97f14f 100644
 --- a/dlls/ntdll/unix/unix_private.h
 +++ b/dlls/ntdll/unix/unix_private.h
-@@ -138,6 +138,76 @@ static inline struct thread_data *get_thread_data(void)
+@@ -138,6 +138,77 @@ static inline struct thread_data *get_thread_data(void)
      return pthread_getspecific( thread_data_key );
  }
  
@@ -7627,6 +7736,7 @@ index 829db1e..3c39ace 100644
 +#define HVF_RECLAIM_SIGNAL SIGEMT  /* not used otherwise by Wine */
 +extern void hvf_wait_end(void);
 +extern void hvf_set_tso( BOOL enable );
++extern void hvf_premap( const void *addr, size_t size );
 +extern BOOL is_wait_syscall( const void *func );
 +extern int wait_syscall_timeout_arg( const void *func );
 +extern int virtual_hvf_get_prot( const void *addr );
@@ -7647,7 +7757,7 @@ index 829db1e..3c39ace 100644
  /* thread private data, stored in NtCurrentTeb()->GdiTebBatch */
  struct teb_data
  {
-@@ -223,6 +293,7 @@ extern ULONG64 mitigation_options[2];
+@@ -223,6 +294,7 @@ extern ULONG64 mitigation_options[2];
  extern int main_argc;
  extern char **main_argv;
  extern WCHAR **main_wargv;
@@ -7655,7 +7765,15 @@ index 829db1e..3c39ace 100644
  extern const WCHAR system_dir[];
  extern unsigned int supported_machines_count;
  extern USHORT supported_machines[8];
-@@ -266,6 +337,9 @@ extern int server_get_unix_fd( HANDLE handle, unsigned int wanted_access, int *u
+@@ -254,6 +326,7 @@ extern void start_server( BOOL debug );
+ 
+ extern unsigned int server_call_unlocked( void *req_ptr );
+ extern void server_enter_uninterrupted_section( pthread_mutex_t *mutex, sigset_t *sigset );
++extern BOOL server_in_uninterrupted_section(void);
+ extern void server_leave_uninterrupted_section( pthread_mutex_t *mutex, sigset_t *sigset );
+ extern unsigned int server_select( const union select_op *select_op, data_size_t size, UINT flags,
+                                    timeout_t abs_timeout, struct context_data *context, struct user_apc *user_apc );
+@@ -266,6 +339,9 @@ extern int server_get_unix_fd( HANDLE handle, unsigned int wanted_access, int *u
                                 int *needs_close, enum server_fd_type *type, unsigned int *options );
  extern int wine_server_receive_fd( obj_handle_t *handle );
  extern void process_exit_wrapper( int status ) DECLSPEC_NORETURN;
@@ -7665,7 +7783,7 @@ index 829db1e..3c39ace 100644
  extern void server_init_process( struct thread_data *data );
  extern void server_init_process_done(void);
  extern void server_init_thread( struct thread_data *data );
-@@ -740,4 +814,9 @@ static inline int is_gdt_sel( WORD sel )
+@@ -740,4 +816,9 @@ static inline int is_gdt_sel( WORD sel )
  
  #endif  /* defined(__i386__) || defined(__x86_64__) */
  
@@ -7676,7 +7794,7 @@ index 829db1e..3c39ace 100644
 +
  #endif /* __NTDLL_UNIX_PRIVATE_H */
 diff --git a/dlls/ntdll/unix/virtual.c b/dlls/ntdll/unix/virtual.c
-index 84f2a39..70566e9 100644
+index 84f2a39..66f8514 100644
 --- a/dlls/ntdll/unix/virtual.c
 +++ b/dlls/ntdll/unix/virtual.c
 @@ -92,6 +92,59 @@
@@ -8258,7 +8376,18 @@ index 84f2a39..70566e9 100644
  /***********************************************************************
   *           virtual_check_buffer_for_read
   *
-@@ -5004,6 +5375,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
+@@ -4985,6 +5356,10 @@ static NTSTATUS allocate_virtual_memory( void **ret, SIZE_T *size_ptr, ULONG typ
+     {
+         *ret = base;
+         *size_ptr = size;
++#ifdef WINE_HVF
++        if ((type & MEM_COMMIT) && (protect & (PAGE_READONLY | PAGE_READWRITE)))
++            hvf_premap( (void *)hvf_guest_addr( base ), size );
++#endif
+     }
+     else if (status == STATUS_NO_MEMORY)
+         ERR( "out of memory for allocation, base %p size %08lx\n", base, size );
+@@ -5004,6 +5379,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG_PTR z
                                     MEM_PHYSICAL | MEM_LARGE_PAGES | MEM_WRITE_WATCH;
      ULONG_PTR limit;
  
@@ -8270,7 +8399,7 @@ index 84f2a39..70566e9 100644
      TRACE("%p %p %08lx %x %08x\n", process, *ret, *size_ptr, type, protect );
  
      if (!*size_ptr) return STATUS_INVALID_PARAMETER;
-@@ -5148,6 +5524,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *s
+@@ -5148,6 +5528,11 @@ NTSTATUS WINAPI NtAllocateVirtualMemoryEx( HANDLE process, PVOID *ret, SIZE_T *s
      USHORT machine = 0;
      unsigned int status;
  
@@ -8282,7 +8411,7 @@ index 84f2a39..70566e9 100644
      TRACE( "%p %p %08lx %x %08x %p %u\n",
            process, *ret, *size_ptr, type, protect, parameters, count );
  
-@@ -5206,6 +5587,11 @@ NTSTATUS WINAPI NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T *si
+@@ -5206,6 +5591,11 @@ NTSTATUS WINAPI NtFreeVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T *si
      LPVOID addr = *addr_ptr;
      SIZE_T size = *size_ptr;
  
@@ -8294,7 +8423,7 @@ index 84f2a39..70566e9 100644
      TRACE("%p %p %08lx %x\n", process, addr, size, type );
  
      if (process != NtCurrentProcess())
-@@ -5301,6 +5687,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
+@@ -5301,6 +5691,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
      LPVOID addr = *addr_ptr;
      DWORD old;
  
@@ -8306,7 +8435,19 @@ index 84f2a39..70566e9 100644
      TRACE("%p %p %08lx %08x\n", process, addr, size, new_prot );
  
      if (!old_prot)
-@@ -5941,6 +6332,11 @@ NTSTATUS WINAPI NtQueryVirtualMemory( HANDLE process, LPCVOID addr,
+@@ -5358,6 +5753,11 @@ NTSTATUS WINAPI NtProtectVirtualMemory( HANDLE process, PVOID *addr_ptr, SIZE_T
+         *addr_ptr = base;
+         *size_ptr = size;
+         *old_prot = old;
++#ifdef WINE_HVF
++        /* set_protection() dropped the pages from the VM, see hvf_premap() */
++        if (new_prot & (PAGE_READONLY | PAGE_READWRITE))
++            hvf_premap( (void *)hvf_guest_addr( base ), size );
++#endif
+     }
+     else *old_prot = PAGE_NOACCESS;
+     return status;
+@@ -5941,6 +6341,11 @@ NTSTATUS WINAPI NtQueryVirtualMemory( HANDLE process, LPCVOID addr,
  {
      NTSTATUS status;
  
@@ -8318,7 +8459,7 @@ index 84f2a39..70566e9 100644
      TRACE("(%p, %p, info_class=%d, %p, %ld, %p)\n",
            process, addr, info_class, buffer, len, res_len);
  
-@@ -6024,6 +6420,11 @@ NTSTATUS WINAPI NtLockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size,
+@@ -6024,6 +6429,11 @@ NTSTATUS WINAPI NtLockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size,
  {
      unsigned int status = STATUS_SUCCESS;
  
@@ -8330,7 +8471,7 @@ index 84f2a39..70566e9 100644
      if (process != NtCurrentProcess())
      {
          union apc_call call;
-@@ -6062,6 +6463,11 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
+@@ -6062,6 +6472,11 @@ NTSTATUS WINAPI NtUnlockVirtualMemory( HANDLE process, PVOID *addr, SIZE_T *size
  {
      unsigned int status = STATUS_SUCCESS;
  
@@ -8342,7 +8483,7 @@ index 84f2a39..70566e9 100644
      if (process != NtCurrentProcess())
      {
          union apc_call call;
-@@ -6114,10 +6520,18 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
+@@ -6114,10 +6529,18 @@ NTSTATUS WINAPI NtMapViewOfSection( HANDLE handle, HANDLE process, PVOID *addr_p
          return STATUS_INVALID_PARAMETER_4;
  
      /* If both addr_ptr and zero_bits are passed, they have match */
@@ -8361,7 +8502,7 @@ index 84f2a39..70566e9 100644
  
      if (!is_win64 && !is_wow64())
      {
-@@ -6322,6 +6736,9 @@ done:
+@@ -6322,6 +6745,9 @@ done:
   */
  NTSTATUS WINAPI NtUnmapViewOfSection( HANDLE process, PVOID addr )
  {
@@ -8371,7 +8512,7 @@ index 84f2a39..70566e9 100644
      return unmap_view_of_section( process, addr, 0 );
  }
  
-@@ -6333,6 +6750,11 @@ NTSTATUS WINAPI NtUnmapViewOfSectionEx( HANDLE process, PVOID addr, ULONG flags
+@@ -6333,6 +6759,11 @@ NTSTATUS WINAPI NtUnmapViewOfSectionEx( HANDLE process, PVOID addr, ULONG flags
  {
      static const ULONG type_mask = MEM_UNMAP_WITH_TRANSIENT_BOOST | MEM_PRESERVE_PLACEHOLDER;
  
@@ -8383,7 +8524,7 @@ index 84f2a39..70566e9 100644
      if (flags & ~type_mask)
      {
          WARN( "Unsupported flags %#x.\n", flags );
-@@ -6473,6 +6895,9 @@ NTSTATUS WINAPI NtFlushVirtualMemory( HANDLE process, LPCVOID *addr_ptr,
+@@ -6473,6 +6904,9 @@ NTSTATUS WINAPI NtFlushVirtualMemory( HANDLE process, LPCVOID *addr_ptr,
      {
          if (!*size_ptr) *size_ptr = view->size;
          *addr_ptr = addr;
@@ -8393,7 +8534,7 @@ index 84f2a39..70566e9 100644
  #ifdef MS_ASYNC
          if (msync( ROUND_ADDR( addr, host_page_mask ), ROUND_SIZE( addr, *size_ptr, host_page_mask ), MS_ASYNC ))
              status = STATUS_NOT_MAPPED_DATA;
-@@ -6493,6 +6918,11 @@ NTSTATUS WINAPI NtGetWriteWatch( HANDLE process, ULONG flags, PVOID base, SIZE_T
+@@ -6493,6 +6927,11 @@ NTSTATUS WINAPI NtGetWriteWatch( HANDLE process, ULONG flags, PVOID base, SIZE_T
      NTSTATUS status = STATUS_SUCCESS;
      sigset_t sigset;
  
@@ -8405,7 +8546,7 @@ index 84f2a39..70566e9 100644
      size = ROUND_SIZE( base, size, page_mask );
      base = ROUND_ADDR( base, page_mask );
  
-@@ -6551,6 +6981,11 @@ NTSTATUS WINAPI NtResetWriteWatch( HANDLE process, PVOID base, SIZE_T size )
+@@ -6551,6 +6990,11 @@ NTSTATUS WINAPI NtResetWriteWatch( HANDLE process, PVOID base, SIZE_T size )
      NTSTATUS status = STATUS_SUCCESS;
      sigset_t sigset;
  
@@ -8417,7 +8558,7 @@ index 84f2a39..70566e9 100644
      size = ROUND_SIZE( base, size, page_mask );
      base = ROUND_ADDR( base, page_mask );
  
-@@ -6579,6 +7014,11 @@ NTSTATUS WINAPI NtReadVirtualMemory( HANDLE process, const void *addr, void *buf
+@@ -6579,6 +7023,11 @@ NTSTATUS WINAPI NtReadVirtualMemory( HANDLE process, const void *addr, void *buf
  {
      unsigned int status;
  
@@ -8429,7 +8570,7 @@ index 84f2a39..70566e9 100644
      if (!virtual_check_buffer_for_write( buffer, size ))
      {
          status = STATUS_ACCESS_VIOLATION;
-@@ -6623,6 +7063,11 @@ NTSTATUS WINAPI NtWriteVirtualMemory( HANDLE process, void *addr, const void *bu
+@@ -6623,6 +7072,11 @@ NTSTATUS WINAPI NtWriteVirtualMemory( HANDLE process, void *addr, const void *bu
  {
      unsigned int status;
  
@@ -8441,7 +8582,7 @@ index 84f2a39..70566e9 100644
      if (virtual_check_buffer_for_read( buffer, size ))
      {
          SERVER_START_REQ( write_process_memory )
-@@ -6785,6 +7230,9 @@ NTSTATUS WINAPI NtSetInformationVirtualMemory( HANDLE process,
+@@ -6785,6 +7239,9 @@ NTSTATUS WINAPI NtSetInformationVirtualMemory( HANDLE process,
   */
  NTSTATUS WINAPI NtFlushInstructionCache( HANDLE handle, const void *addr, SIZE_T size )
  {
@@ -17773,7 +17914,7 @@ index 5f16fef..2b70b75 100644
  }
  
 diff --git a/libs/vkd3d/libs/vkd3d/state.c b/libs/vkd3d/libs/vkd3d/state.c
-index 14f5250..3673665 100644
+index 14f5250..0a4fa77 100644
 --- a/libs/vkd3d/libs/vkd3d/state.c
 +++ b/libs/vkd3d/libs/vkd3d/state.c
 @@ -843,7 +843,7 @@ static struct vk_binding_array *d3d12_root_signature_vk_binding_array_for_type(
@@ -18066,7 +18207,7 @@ index 14f5250..3673665 100644
      switch (desc->strip_cut_value)
      {
          case D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED:
-@@ -3758,6 +3928,136 @@ fail:
+@@ -3758,6 +3928,158 @@ fail:
      return hr;
  }
  
@@ -18101,13 +18242,25 @@ index 14f5250..3673665 100644
 +    return mode;
 +}
 +
-+static uint32_t pso_stats_precompiled, pso_stats_draw_compiles;
++enum pso_precompile_status
++{
++    PSO_PRECOMPILE_DYNAMIC_DSV,
++    PSO_PRECOMPILE_NO_HINT,
++    PSO_PRECOMPILE_DONE,
++    PSO_PRECOMPILE_OTHER,
++    PSO_PRECOMPILE_COUNT,
++};
++
++static uint32_t pso_stats_precompiled, pso_stats_draw_compiles, pso_stats_miss[PSO_PRECOMPILE_COUNT];
 +
 +static void pso_stats_report(void)
 +{
 +    if (pso_precompile_mode() == 2)
-+        ERR("Barrique PSO: %u compiled at creation, %u compiled at draw.\n",
-+                pso_stats_precompiled, pso_stats_draw_compiles);
++        ERR("Barrique PSO: %u compiled at creation, %u compiled at draw "
++                "(dynamic DSV %u, unknown layout %u, other strides/topology %u, other %u).\n",
++                pso_stats_precompiled, pso_stats_draw_compiles, pso_stats_miss[PSO_PRECOMPILE_DYNAMIC_DSV],
++                pso_stats_miss[PSO_PRECOMPILE_NO_HINT], pso_stats_miss[PSO_PRECOMPILE_DONE],
++                pso_stats_miss[PSO_PRECOMPILE_OTHER]);
 +}
 +
 +/* called with pipeline_cache_mutex held */
@@ -18167,8 +18320,14 @@ index 14f5250..3673665 100644
 +    const struct vkd3d_pso_hint *hint;
 +    VkRenderPass vk_render_pass;
 +
-+    if (!pso_precompile_mode() || !graphics->render_pass || graphics->compile_failed)
++    state->u.graphics.precompile_status = PSO_PRECOMPILE_OTHER;
++    if (!pso_precompile_mode() || graphics->compile_failed)
 +        return;
++    if (!graphics->render_pass)
++    {
++        state->u.graphics.precompile_status = PSO_PRECOMPILE_DYNAMIC_DSV;
++        return;
++    }
 +
 +    vkd3d_mutex_lock(&device->pipeline_cache_mutex);
 +    if ((hint = pso_hint_slot(device, graphics->layout_hash, false)))
@@ -18181,7 +18340,10 @@ index 14f5250..3673665 100644
 +    if (!topology)
 +    {
 +        if (graphics->attribute_count)
++        {
++            state->u.graphics.precompile_status = PSO_PRECOMPILE_NO_HINT;
 +            return;
++        }
 +        /* no vertex input: only the topology is unknown, lists are the common case */
 +        switch (graphics->topology_type)
 +        {
@@ -18192,6 +18354,7 @@ index 14f5250..3673665 100644
 +        }
 +    }
 +
++    state->u.graphics.precompile_status = PSO_PRECOMPILE_DONE;
 +    if (d3d12_pipeline_state_get_or_create_pipeline_internal(state, topology, strides,
 +            VK_FORMAT_UNDEFINED, &vk_render_pass, true))
 +    {
@@ -18203,7 +18366,7 @@ index 14f5250..3673665 100644
  HRESULT d3d12_pipeline_state_create_graphics(struct d3d12_device *device,
          const D3D12_GRAPHICS_PIPELINE_STATE_DESC *desc, struct d3d12_pipeline_state **state)
  {
-@@ -3776,6 +4076,8 @@ HRESULT d3d12_pipeline_state_create_graphics(struct d3d12_device *device,
+@@ -3776,6 +4098,8 @@ HRESULT d3d12_pipeline_state_create_graphics(struct d3d12_device *device,
          return hr;
      }
  
@@ -18212,7 +18375,7 @@ index 14f5250..3673665 100644
      TRACE("Created graphics pipeline state %p.\n", object);
  
      *state = object;
-@@ -3817,6 +4119,9 @@ HRESULT d3d12_pipeline_state_create(struct d3d12_device *device,
+@@ -3817,6 +4141,9 @@ HRESULT d3d12_pipeline_state_create(struct d3d12_device *device,
          return hr;
      }
  
@@ -18222,7 +18385,7 @@ index 14f5250..3673665 100644
      TRACE("Created pipeline state %p.\n", object);
  
      *state = object;
-@@ -3955,9 +4260,9 @@ static bool d3d12_pipeline_state_put_pipeline_to_cache(struct d3d12_pipeline_sta
+@@ -3955,9 +4282,9 @@ static bool d3d12_pipeline_state_put_pipeline_to_cache(struct d3d12_pipeline_sta
      return compiled_pipeline;
  }
  
@@ -18234,7 +18397,7 @@ index 14f5250..3673665 100644
  {
      VkVertexInputBindingDescription bindings[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
      const struct vkd3d_vk_device_procs *vk_procs = &state->device->vk_procs;
-@@ -4006,6 +4311,9 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -4006,6 +4333,9 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
  
      VKD3D_ASSERT(d3d12_pipeline_state_is_graphics(state));
  
@@ -18244,7 +18407,7 @@ index 14f5250..3673665 100644
      memset(&pipeline_key, 0, sizeof(pipeline_key));
      pipeline_key.topology = topology;
  
-@@ -4035,6 +4343,10 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -4035,6 +4365,10 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
          ++binding_count;
      }
  
@@ -18255,7 +18418,7 @@ index 14f5250..3673665 100644
      pipeline_key.dsv_format = dsv_format;
  
      if ((vk_pipeline = d3d12_pipeline_state_find_compiled_pipeline(state, &pipeline_key, vk_render_pass)))
-@@ -4125,11 +4437,22 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -4125,11 +4459,26 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
              1, &pipeline_desc, NULL, &vk_pipeline))) < 0)
      {
          WARN("Failed to create Vulkan graphics pipeline, vr %d.\n", vr);
@@ -18270,15 +18433,19 @@ index 14f5250..3673665 100644
 +        if (!precompile)
 +        {
 +            d3d12_pipeline_state_learn_hint(state, topology, strides);
-+            if (pso_precompile_mode() == 2 && !(vkd3d_atomic_increment_u32(&pso_stats_draw_compiles) & 63))
-+                pso_stats_report();
++            if (pso_precompile_mode() == 2)
++            {
++                vkd3d_atomic_increment_u32(&pso_stats_miss[min(graphics->precompile_status, PSO_PRECOMPILE_OTHER)]);
++                if (!(vkd3d_atomic_increment_u32(&pso_stats_draw_compiles) & 15))
++                    pso_stats_report();
++            }
 +        }
          return vk_pipeline;
 +    }
  
      /* Other thread compiled the pipeline before us. */
      VK_CALL(vkDestroyPipeline(device->vk_device, vk_pipeline, NULL));
-@@ -4139,6 +4462,14 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -4139,6 +4488,14 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
      return vk_pipeline;
  }
  
@@ -18294,7 +18461,7 @@ index 14f5250..3673665 100644
  {
      struct vkd3d_shader_hlsl_source_info hlsl_info;
 diff --git a/libs/vkd3d/libs/vkd3d/vkd3d_private.h b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
-index 822e172..16e7704 100644
+index 822e172..c3f6d7e 100644
 --- a/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 +++ b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 @@ -155,6 +155,7 @@ struct vkd3d_vulkan_info
@@ -18321,7 +18488,7 @@ index 822e172..16e7704 100644
  
      VkVertexInputAttributeDescription attributes[D3D12_VS_INPUT_REGISTER_COUNT];
      VkVertexInputRate input_rates[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
-@@ -1062,6 +1065,11 @@ struct d3d12_graphics_pipeline_state
+@@ -1062,6 +1065,12 @@ struct d3d12_graphics_pipeline_state
      struct list compiled_pipelines;
  
      bool xfb_enabled;
@@ -18330,10 +18497,11 @@ index 822e172..16e7704 100644
 +     * the Vulkan pipeline be compiled when the PSO is created (see state.c) */
 +    uint64_t layout_hash;
 +    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_type;
++    uint8_t precompile_status; /* for VKD3D_BARRIQUE_PSO_PRECOMPILE=stats */
  };
  
  static inline unsigned int dsv_attachment_mask(const struct d3d12_graphics_pipeline_state *graphics)
-@@ -1101,6 +1109,7 @@ struct d3d12_pipeline_state
+@@ -1101,6 +1110,7 @@ struct d3d12_pipeline_state
  
      ID3D12RootSignature *implicit_root_signature;
      struct d3d12_device *device;
@@ -18341,7 +18509,7 @@ index 822e172..16e7704 100644
  
      struct vkd3d_private_store private_store;
  };
-@@ -1228,6 +1237,11 @@ struct d3d12_command_allocator
+@@ -1228,6 +1238,11 @@ struct d3d12_command_allocator
      struct d3d12_command_list *current_command_list;
      struct d3d12_device *device;
  
@@ -18353,7 +18521,7 @@ index 822e172..16e7704 100644
      struct vkd3d_private_store private_store;
  };
  
-@@ -1289,13 +1303,37 @@ struct vkd3d_resource_list
+@@ -1289,13 +1304,37 @@ struct vkd3d_resource_list
  };
  
  /* ID3D12CommandList */
@@ -18391,7 +18559,7 @@ index 822e172..16e7704 100644
  
      bool is_recording;
      bool is_valid;
-@@ -1610,6 +1648,7 @@ struct d3d12_device
+@@ -1610,6 +1649,7 @@ struct d3d12_device
      struct vkd3d_mutex pipeline_cache_mutex;
      struct vkd3d_render_pass_cache render_pass_cache;
      VkPipelineCache vk_pipeline_cache;
