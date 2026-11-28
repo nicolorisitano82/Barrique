@@ -2523,7 +2523,7 @@ index d99a9a1..c4cdc49 100644
          {
 diff --git a/dlls/ntdll/unix/hvf.c b/dlls/ntdll/unix/hvf.c
 new file mode 100644
-index 0000000..e0c5283
+index 0000000..496e2df
 --- /dev/null
 +++ b/dlls/ntdll/unix/hvf.c
 @@ -0,0 +1,1782 @@
@@ -3717,7 +3717,7 @@ index 0000000..e0c5283
 +    char name[64], list[512], *tok, *save;
 +    int i;
 +
-+    if (prof_tag >= 0) return prof_tag || !prof_threads;
++    /* names come later than the first samples (SetThreadDescription): look every time */
 +    prof_tag = 0;
 +    if (!prof_threads) return 1;
 +    name[0] = 0;
@@ -17214,10 +17214,23 @@ index 4b684fc..5730fcc 100644
  register struct _TEB *__wine_current_teb __asm__("x18");
  static FORCEINLINE struct _TEB * WINAPI NtCurrentTeb(void)
 diff --git a/libs/vkd3d/include/vkd3d_shader.h b/libs/vkd3d/include/vkd3d_shader.h
-index dcfdd16..44ae3a3 100644
+index dcfdd16..7276fe6 100644
 --- a/libs/vkd3d/include/vkd3d_shader.h
 +++ b/libs/vkd3d/include/vkd3d_shader.h
-@@ -297,6 +297,10 @@ enum vkd3d_shader_compile_option_feature_flags
+@@ -140,6 +140,12 @@ enum vkd3d_shader_structure_type
+      */
+     VKD3D_SHADER_STRUCTURE_TYPE_SCAN_DENORMAL_MODE_INFO,
+ 
++    /**
++     * Barrique: the structure is a vkd3d_shader_barrique_srv_shift_info
++     * structure.
++     */
++    VKD3D_SHADER_STRUCTURE_TYPE_BARRIQUE_SRV_SHIFT_INFO = 0x7f000001,
++
+     VKD3D_FORCE_32_BIT_ENUM(VKD3D_SHADER_STRUCTURE_TYPE),
+ };
+ 
+@@ -297,6 +303,10 @@ enum vkd3d_shader_compile_option_feature_flags
       * memory. This corresponds to the "shaderZeroInitializeWorkgroupMemory"
       * Vulkan feature. \since 1.16 */
      VKD3D_SHADER_COMPILE_OPTION_FEATURE_ZERO_INITIALIZE_WORKGROUP_MEMORY = 0x00000008,
@@ -17228,7 +17241,7 @@ index dcfdd16..44ae3a3 100644
  
      VKD3D_FORCE_32_BIT_ENUM(VKD3D_SHADER_COMPILE_OPTION_FEATURE_FLAGS),
  };
-@@ -434,6 +438,15 @@ enum vkd3d_shader_compile_option_name
+@@ -434,6 +444,15 @@ enum vkd3d_shader_compile_option_name
       */
      VKD3D_SHADER_COMPILE_OPTION_DENORMAL_MODE_F64 = 0x00000010,
  
@@ -17244,6 +17257,37 @@ index dcfdd16..44ae3a3 100644
      VKD3D_FORCE_32_BIT_ENUM(VKD3D_SHADER_COMPILE_OPTION_NAME),
  };
  
+@@ -1568,6 +1587,30 @@ struct vkd3d_shader_descriptor_offset_info
+     const struct vkd3d_shader_descriptor_offset *uav_counter_offsets;
+ };
+ 
++/**
++ * Barrique: buffer SRV texel shifts. Metal rounds the offset of a texture
++ * buffer down to 16 bytes, so a buffer SRV whose first element is not
++ * 16-byte aligned starts at the aligned address, and the number of elements
++ * it was moved back by sits in a storage texel buffer (R32_UINT, element 0)
++ * at the same descriptor index. Shaders add it to buffer SRV loads.
++ *
++ * This structure extends vkd3d_shader_interface_info.
++ */
++struct vkd3d_shader_barrique_srv_shift_info
++{
++    /** Must be set to VKD3D_SHADER_STRUCTURE_TYPE_BARRIQUE_SRV_SHIFT_INFO. */
++    enum vkd3d_shader_structure_type type;
++    /** Optional pointer to a structure containing further parameters. */
++    const void *next;
++
++    /** Bindings of the shift arrays, one per SRV descriptor range. */
++    const struct vkd3d_shader_uav_counter_binding *bindings;
++    /** Offsets into the shift arrays, as in vkd3d_shader_descriptor_offset_info. */
++    const struct vkd3d_shader_descriptor_offset *offsets;
++    /** Number of elements in 'bindings' and 'offsets'. */
++    unsigned int count;
++};
++
+ /** The format of a shader to be compiled or scanned. */
+ enum vkd3d_shader_source_type
+ {
 diff --git a/libs/vkd3d/libs/vkd3d-shader/ir.c b/libs/vkd3d/libs/vkd3d-shader/ir.c
 index c8f8b8b..0b8b764 100644
 --- a/libs/vkd3d/libs/vkd3d-shader/ir.c
@@ -17288,10 +17332,87 @@ index c8f8b8b..0b8b764 100644
  
  static int signature_element_index_compare(const void *a, const void *b)
 diff --git a/libs/vkd3d/libs/vkd3d-shader/spirv.c b/libs/vkd3d/libs/vkd3d-shader/spirv.c
-index 22af3f1..c9650ad 100644
+index 22af3f1..fcfbaa9 100644
 --- a/libs/vkd3d/libs/vkd3d-shader/spirv.c
 +++ b/libs/vkd3d/libs/vkd3d-shader/spirv.c
-@@ -5483,6 +5483,13 @@ static uint32_t spirv_compiler_emit_builtin_variable_v(struct spirv_compiler *co
+@@ -2729,6 +2729,11 @@ struct vkd3d_symbol_resource_data
+     uint32_t uav_counter_id;
+     const struct vkd3d_symbol *uav_counter_array;
+     unsigned int uav_counter_base_idx;
++    /* Barrique: see struct vkd3d_shader_barrique_srv_shift_info */
++    uint32_t srv_shift_id;
++    uint32_t srv_shift_type_id;
++    const struct vkd3d_symbol *srv_shift_array;
++    unsigned int srv_shift_base_idx;
+ };
+ 
+ struct vkd3d_symbol_sampler_data
+@@ -2956,6 +2961,7 @@ struct spirv_compiler
+ 
+     struct vkd3d_shader_interface_info shader_interface;
+     struct vkd3d_shader_descriptor_offset_info offset_info;
++    struct vkd3d_shader_barrique_srv_shift_info srv_shift_info;
+     uint32_t descriptor_offsets_member_id;
+     uint32_t push_constants_var_id;
+     uint32_t *descriptor_offset_ids;
+@@ -3166,6 +3172,12 @@ static struct spirv_compiler *spirv_compiler_create(struct vsir_program *program
+                 compiler->push_constants[i].pc = shader_interface->push_constant_buffers[i];
+         }
+ 
++        {
++            const struct vkd3d_shader_barrique_srv_shift_info *srv_shift_info;
++
++            if ((srv_shift_info = vkd3d_find_struct(shader_interface->next, BARRIQUE_SRV_SHIFT_INFO)))
++                compiler->srv_shift_info = *srv_shift_info;
++        }
+         if ((offset_info = vkd3d_find_struct(shader_interface->next, DESCRIPTOR_OFFSET_INFO)))
+         {
+             compiler->offset_info = *offset_info;
+@@ -3457,7 +3469,7 @@ static uint32_t spirv_compiler_get_label_id(struct spirv_compiler *compiler, uns
+ static struct vkd3d_shader_descriptor_binding spirv_compiler_get_descriptor_binding(
+         struct spirv_compiler *compiler, const struct vsir_operand *reg,
+         const struct vsir_register_range *range, enum vkd3d_shader_resource_type resource_type,
+-        bool is_uav_counter, struct vkd3d_descriptor_binding_address *binding_address)
++        unsigned int is_uav_counter, struct vkd3d_descriptor_binding_address *binding_address)
+ {
+     const struct vkd3d_shader_interface_info *shader_interface = &compiler->shader_interface;
+     unsigned int register_last = (range->last == ~0u) ? range->first : range->last;
+@@ -3489,7 +3501,33 @@ static struct vkd3d_shader_descriptor_binding spirv_compiler_get_descriptor_bind
+     else
+         resource_type_flag = VKD3D_SHADER_BINDING_FLAG_IMAGE;
+ 
+-    if (is_uav_counter)
++    if (is_uav_counter == 2)
++    {
++        /* Barrique: SRV buffer texel shift, see struct vkd3d_shader_barrique_srv_shift_info */
++        const struct vkd3d_shader_barrique_srv_shift_info *info = &compiler->srv_shift_info;
++
++        for (i = 0; i < info->count; ++i)
++        {
++            const struct vkd3d_shader_uav_counter_binding *current = &info->bindings[i];
++
++            if (!spirv_compiler_check_shader_visibility(compiler, current->shader_visibility))
++                continue;
++            if (current->register_space != range->space || current->register_index > range->first
++                    || current->binding.count <= register_last - current->register_index)
++                continue;
++
++            binding_address->binding_base_idx = current->register_index - info->offsets[i].static_offset;
++            binding_address->push_constant_index = info->offsets[i].dynamic_offset_index;
++            return current->binding;
++        }
++        binding_address->binding_base_idx = range->first;
++        binding_address->push_constant_index = ~0u;
++        binding.set = ~0u;
++        binding.binding = ~0u;
++        binding.count = 0;
++        return binding;
++    }
++    else if (is_uav_counter)
+     {
+         VKD3D_ASSERT(descriptor_type == VKD3D_SHADER_DESCRIPTOR_TYPE_UAV);
+         binding_offsets = compiler->offset_info.uav_counter_offsets;
+@@ -5483,6 +5521,13 @@ static uint32_t spirv_compiler_emit_builtin_variable_v(struct spirv_compiler *co
      vkd3d_spirv_add_iface_variable(builder, id);
      spirv_compiler_decorate_builtin(compiler, id, builtin->spirv_builtin);
  
@@ -17305,7 +17426,7 @@ index 22af3f1..c9650ad 100644
      if (compiler->shader_type == VKD3D_SHADER_TYPE_PIXEL && storage_class == SpvStorageClassInput
              && builtin->data_type != VSIR_DATA_F32 && builtin->data_type != VSIR_DATA_BOOL)
          vkd3d_spirv_build_op_decorate(builder, id, SpvDecorationFlat, NULL, 0);
-@@ -5766,6 +5773,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
+@@ -5766,6 +5811,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
      SpvStorageClass storage_class;
      unsigned int array_sizes[2];
      bool is_patch_constant;
@@ -17313,7 +17434,7 @@ index 22af3f1..c9650ad 100644
      uint32_t id, var_id;
      uint32_t write_mask;
  
-@@ -5785,6 +5793,20 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
+@@ -5785,6 +5831,20 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
          array_sizes[0] = 0;
  
      builtin = vkd3d_get_spirv_builtin(compiler, reg_type, sysval);
@@ -17334,7 +17455,7 @@ index 22af3f1..c9650ad 100644
  
      write_mask = signature_element->mask;
  
-@@ -5834,7 +5856,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
+@@ -5834,7 +5894,7 @@ static void spirv_compiler_emit_output(struct spirv_compiler *compiler,
  
          spirv_compiler_emit_register_execution_mode(compiler, reg_type);
      }
@@ -17343,6 +17464,155 @@ index 22af3f1..c9650ad 100644
      {
          storage_class = SpvStorageClassPrivate;
          id = spirv_compiler_emit_array_variable(compiler, &builder->global_stream,
+@@ -6415,7 +6475,7 @@ static void spirv_compiler_decorate_descriptor(struct spirv_compiler *compiler,
+ static uint32_t spirv_compiler_build_descriptor_variable(struct spirv_compiler *compiler,
+         SpvStorageClass storage_class, uint32_t type_id, const struct vsir_operand *reg,
+         const struct vsir_register_range *range, enum vkd3d_shader_resource_type resource_type,
+-        const struct vsir_descriptor *descriptor, bool is_uav_counter,
++        const struct vsir_descriptor *descriptor, unsigned int is_uav_counter,
+         struct vkd3d_descriptor_variable_info *var_info)
+ {
+     struct vkd3d_spirv_builder *builder = &compiler->spirv_builder;
+@@ -6835,6 +6895,31 @@ static void spirv_compiler_emit_resource_declaration(struct spirv_compiler *comp
+         }
+     }
+ 
++    memset(&resource_symbol, 0, sizeof(resource_symbol));
++    if (!is_uav && resource_type == VKD3D_SHADER_RESOURCE_BUFFER && compiler->srv_shift_info.count)
++    {
++        struct vkd3d_descriptor_binding_address shift_address;
++        struct vkd3d_descriptor_variable_info shift_var_info;
++        struct vkd3d_shader_descriptor_binding shift_binding;
++
++        shift_binding = spirv_compiler_get_descriptor_binding(compiler, &reg, range,
++                resource_type, 2, &shift_address);
++        if (shift_binding.count)
++        {
++            uint32_t shift_type_id;
++
++            spirv_compiler_enable_resource_type(compiler, VKD3D_SHADER_RESOURCE_BUFFER, true);
++            shift_type_id = vkd3d_spirv_get_op_type_image(builder, spirv_get_type_id(compiler, VSIR_DATA_U32, 1),
++                    SpvDimBuffer, 2, 0, 0, 2, SpvImageFormatR32ui);
++            resource_symbol.info.resource.srv_shift_id = spirv_compiler_build_descriptor_variable(compiler,
++                    SpvStorageClassUniformConstant, shift_type_id, &reg, range, resource_type,
++                    descriptor, 2, &shift_var_info);
++            resource_symbol.info.resource.srv_shift_type_id = shift_type_id;
++            resource_symbol.info.resource.srv_shift_array = shift_var_info.array_symbol;
++            resource_symbol.info.resource.srv_shift_base_idx = shift_var_info.binding_base_idx;
++        }
++    }
++
+     vkd3d_symbol_make_resource(&resource_symbol, &reg);
+     resource_symbol.id = var_id;
+     resource_symbol.descriptor_array = var_info.array_symbol;
+@@ -8599,6 +8684,42 @@ static uint32_t spirv_compiler_emit_texel_offset(struct spirv_compiler *compiler
+     return spirv_compiler_get_constant(compiler, VSIR_DATA_I32, component_count, (const uint32_t *)data);
+ }
+ 
++/* Barrique: the texel shift of a buffer SRV, see struct
++ * vkd3d_shader_barrique_srv_shift_info. Returns 0 if the SRV has none. */
++static uint32_t spirv_compiler_emit_srv_shift(struct spirv_compiler *compiler, const struct vsir_operand *reg)
++{
++    struct vkd3d_spirv_builder *builder = &compiler->spirv_builder;
++    const struct vkd3d_symbol_resource_data *resource;
++    uint32_t ptr_id, image_id, type_id, val_id;
++    const struct vkd3d_symbol *symbol;
++
++    if (reg->type != VSIR_REGISTER_RESOURCE || !compiler->srv_shift_info.count)
++        return 0;
++    symbol = spirv_compiler_find_resource(compiler, reg);
++    if (symbol->type != VKD3D_SYMBOL_RESOURCE || !(resource = &symbol->info.resource)->srv_shift_id)
++        return 0;
++
++    ptr_id = resource->srv_shift_id;
++    if (resource->srv_shift_array)
++    {
++        uint32_t ptr_type_id, index_id;
++
++        index_id = spirv_compiler_get_descriptor_index(compiler, reg, resource->srv_shift_array,
++                resource->srv_shift_base_idx, VKD3D_SHADER_RESOURCE_BUFFER);
++        ptr_type_id = vkd3d_spirv_get_op_type_pointer(builder, SpvStorageClassUniformConstant,
++                resource->srv_shift_type_id);
++        ptr_id = vkd3d_spirv_build_op_access_chain(builder, ptr_type_id, ptr_id, &index_id, 1);
++    }
++    image_id = vkd3d_spirv_build_op_load(builder, resource->srv_shift_type_id, ptr_id, SpvMemoryAccessMaskNone);
++    if (reg->non_uniform)
++        spirv_compiler_decorate_nonuniform(compiler, image_id);
++
++    type_id = spirv_get_type_id(compiler, VSIR_DATA_U32, VKD3D_VEC4_SIZE);
++    val_id = vkd3d_spirv_build_op_tr2(builder, &builder->function_stream, SpvOpImageRead, type_id,
++            image_id, spirv_compiler_get_constant_uint(compiler, 0));
++    return vkd3d_spirv_build_op_composite_extract1(builder, spirv_get_type_id(compiler, VSIR_DATA_U32, 1), val_id, 0);
++}
++
+ static void spirv_compiler_emit_ld(struct spirv_compiler *compiler,
+         const struct vkd3d_shader_instruction *instruction)
+ {
+@@ -8611,15 +8732,27 @@ static void spirv_compiler_emit_ld(struct spirv_compiler *compiler,
+     struct vkd3d_shader_image image;
+     uint32_t image_operands[2];
+     uint32_t coordinate_mask;
++    uint32_t shift_id;
+     bool multisample;
+ 
+     multisample = instruction->opcode == VSIR_OP_LD2DMS;
++    shift_id = 0;
+ 
+     spirv_compiler_prepare_image(compiler, &image, &src[1].reg, NULL, VKD3D_IMAGE_FLAG_NONE);
+ 
+     type_id = spirv_get_type_id(compiler, image.sampled_type, VKD3D_VEC4_SIZE);
+     coordinate_mask = (1u << image.resource_type_info->coordinate_component_count) - 1;
+-    coordinate_id = spirv_compiler_emit_load_src(compiler, &src[0], coordinate_mask);
++    if (image.resource_type_info->resource_type == VKD3D_SHADER_RESOURCE_BUFFER
++            && (shift_id = spirv_compiler_emit_srv_shift(compiler, &src[1].reg)))
++    {
++        coordinate_id = spirv_compiler_emit_load_src_with_type(compiler, &src[0], coordinate_mask, VSIR_DATA_U32);
++        coordinate_id = vkd3d_spirv_build_op_iadd(builder, spirv_get_type_id(compiler, VSIR_DATA_U32, 1),
++                coordinate_id, shift_id);
++    }
++    else
++    {
++        coordinate_id = spirv_compiler_emit_load_src(compiler, &src[0], coordinate_mask);
++    }
+     if (image.resource_type_info->resource_type != VKD3D_SHADER_RESOURCE_BUFFER && !multisample)
+     {
+         operands_mask |= SpvImageOperandsLodMask;
+@@ -8899,7 +9032,7 @@ static void spirv_compiler_emit_ld_raw_structured_srv_uav(struct spirv_compiler
+     uint32_t constituents[VKD3D_VEC4_SIZE];
+     struct vkd3d_shader_image image;
+     bool storage_buffer_uav = false;
+-    uint32_t indices[2];
++    uint32_t indices[2], shift_id;
+     unsigned int i, j;
+     SpvOp op;
+ 
+@@ -8951,6 +9084,8 @@ static void spirv_compiler_emit_ld_raw_structured_srv_uav(struct spirv_compiler
+         type_id = spirv_get_type_id(compiler, VSIR_DATA_U32, 1);
+         base_coordinate_id = spirv_compiler_emit_raw_structured_addressing(compiler,
+                 type_id, image.structure_stride, &src[0], VKD3DSP_WRITEMASK_0, &src[1], VKD3DSP_WRITEMASK_0);
++        if ((shift_id = spirv_compiler_emit_srv_shift(compiler, &resource->reg)))
++            base_coordinate_id = vkd3d_spirv_build_op_iadd(builder, type_id, base_coordinate_id, shift_id);
+ 
+         texel_type_id = spirv_get_type_id(compiler, image.sampled_type, VKD3D_VEC4_SIZE);
+         VKD3D_ASSERT(dst->write_mask & VKD3DSP_WRITEMASK_ALL);
+@@ -9499,7 +9634,7 @@ static void spirv_compiler_emit_bufinfo(struct spirv_compiler *compiler,
+     const struct vsir_src_operand *src = instruction->src;
+     const struct vsir_dst_operand *dst = instruction->dst;
+     const struct vkd3d_symbol *resource_symbol;
+-    uint32_t type_id, val_id, stride_id;
++    uint32_t type_id, val_id, stride_id, shift_id;
+     struct vkd3d_shader_image image;
+     uint32_t constituents[2];
+     unsigned int write_mask;
+@@ -9521,6 +9656,8 @@ static void spirv_compiler_emit_bufinfo(struct spirv_compiler *compiler,
+         type_id = spirv_get_type_id(compiler, VSIR_DATA_U32, 1);
+         val_id = vkd3d_spirv_build_op_image_query_size(builder, type_id, image.image_id);
+         write_mask = VKD3DSP_WRITEMASK_0;
++        if ((shift_id = spirv_compiler_emit_srv_shift(compiler, &src->reg)))
++            val_id = vkd3d_spirv_build_op_isub(builder, type_id, val_id, shift_id);
+     }
+ 
+     if (image.structure_stride)
 diff --git a/libs/vkd3d/libs/vkd3d-shader/vkd3d_shader_private.h b/libs/vkd3d/libs/vkd3d-shader/vkd3d_shader_private.h
 index 7a57fb9..f9f53d5 100644
 --- a/libs/vkd3d/libs/vkd3d-shader/vkd3d_shader_private.h
@@ -17357,7 +17627,7 @@ index 7a57fb9..f9f53d5 100644
      uint32_t warn_implicit_truncation : 1;
      uint32_t include_empty_buffers : 1;
 diff --git a/libs/vkd3d/libs/vkd3d/command.c b/libs/vkd3d/libs/vkd3d/command.c
-index 0ece8fd..525cf36 100644
+index 0ece8fd..0857478 100644
 --- a/libs/vkd3d/libs/vkd3d/command.c
 +++ b/libs/vkd3d/libs/vkd3d/command.c
 @@ -20,6 +20,7 @@
@@ -17977,7 +18247,17 @@ index 0ece8fd..525cf36 100644
  
      if (list->current_pipeline != VK_NULL_HANDLE)
          return true;
-@@ -3604,9 +4119,12 @@ static bool d3d12_command_list_begin_render_pass(struct d3d12_command_list *list
+@@ -3597,6 +4112,9 @@ static bool d3d12_command_list_begin_render_pass(struct d3d12_command_list *list
+     struct VkRenderPassBeginInfo begin_desc;
+     VkRenderPass vk_render_pass;
+ 
++    /* Barrique: see gs_dropped in d3d12_pipeline_state_init_graphics() */
++    if (list->state && d3d12_pipeline_state_is_graphics(list->state) && list->state->u.graphics.gs_dropped)
++        return false;
+     if (!d3d12_command_list_update_graphics_pipeline(list))
+         return false;
+     if (!d3d12_command_list_update_current_framebuffer(list))
+@@ -3604,9 +4122,12 @@ static bool d3d12_command_list_begin_render_pass(struct d3d12_command_list *list
  
      d3d12_command_list_update_descriptors(list, VKD3D_PIPELINE_BIND_POINT_GRAPHICS);
  
@@ -17990,7 +18270,7 @@ index 0ece8fd..525cf36 100644
      d3d12_command_list_check_render_pass_hazards(list);
  
      vk_render_pass = list->pso_render_pass;
-@@ -3626,6 +4144,15 @@ static bool d3d12_command_list_begin_render_pass(struct d3d12_command_list *list
+@@ -3626,6 +4147,15 @@ static bool d3d12_command_list_begin_render_pass(struct d3d12_command_list *list
  
      list->current_render_pass = vk_render_pass;
  
@@ -18006,7 +18286,7 @@ index 0ece8fd..525cf36 100644
      graphics = &list->state->u.graphics;
      if (graphics->xfb_enabled)
      {
-@@ -3738,7 +4265,9 @@ static void STDMETHODCALLTYPE d3d12_command_list_Dispatch(ID3D12GraphicsCommandL
+@@ -3738,7 +4268,9 @@ static void STDMETHODCALLTYPE d3d12_command_list_Dispatch(ID3D12GraphicsCommandL
  
      vk_procs = &list->device->vk_procs;
  
@@ -18016,7 +18296,7 @@ index 0ece8fd..525cf36 100644
  }
  
  static void STDMETHODCALLTYPE d3d12_command_list_CopyBufferRegion(ID3D12GraphicsCommandList6 *iface,
-@@ -3769,8 +4298,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyBufferRegion(ID3D12Graphics
+@@ -3769,8 +4301,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyBufferRegion(ID3D12Graphics
      buffer_copy.dstOffset = dst_offset;
      buffer_copy.size = byte_count;
  
@@ -18027,7 +18307,7 @@ index 0ece8fd..525cf36 100644
  }
  
  static void vk_image_subresource_layers_from_d3d12(VkImageSubresourceLayers *subresource,
-@@ -3985,9 +4516,11 @@ static void d3d12_command_list_copy_incompatible_texture_region(struct d3d12_com
+@@ -3985,9 +4519,11 @@ static void d3d12_command_list_copy_incompatible_texture_region(struct d3d12_com
          return;
      }
  
@@ -18039,7 +18319,7 @@ index 0ece8fd..525cf36 100644
  
      vk_barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
      vk_barrier.pNext = NULL;
-@@ -4014,9 +4547,11 @@ static void d3d12_command_list_copy_incompatible_texture_region(struct d3d12_com
+@@ -4014,9 +4550,11 @@ static void d3d12_command_list_copy_incompatible_texture_region(struct d3d12_com
      VKD3D_ASSERT(d3d12_resource_desc_get_depth(src_desc, src_miplevel_idx) ==
              d3d12_resource_desc_get_depth(dst_desc, dst_miplevel_idx));
  
@@ -18051,7 +18331,7 @@ index 0ece8fd..525cf36 100644
  }
  
  static bool validate_d3d12_box(const D3D12_BOX *box)
-@@ -4081,9 +4616,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyTextureRegion(ID3D12Graphic
+@@ -4081,9 +4619,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyTextureRegion(ID3D12Graphic
  
          vk_image_buffer_copy_from_d3d12(&buffer_image_copy, &dst->u.PlacedFootprint,
                  src->u.SubresourceIndex, &src_resource->desc, dst_format, src_box, dst_x, dst_y, dst_z);
@@ -18063,7 +18343,7 @@ index 0ece8fd..525cf36 100644
      }
      else if (src->Type == D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT
              && dst->Type == D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX)
-@@ -4110,9 +4647,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyTextureRegion(ID3D12Graphic
+@@ -4110,9 +4650,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyTextureRegion(ID3D12Graphic
  
          vk_buffer_image_copy_from_d3d12(&buffer_image_copy, &src->u.PlacedFootprint,
                  dst->u.SubresourceIndex, &dst_resource->desc, src_format, src_box, dst_x, dst_y, dst_z);
@@ -18075,7 +18355,7 @@ index 0ece8fd..525cf36 100644
      }
      else if (src->Type == D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX
              && dst->Type == D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX)
-@@ -4141,9 +4680,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyTextureRegion(ID3D12Graphic
+@@ -4141,9 +4683,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyTextureRegion(ID3D12Graphic
          vk_image_copy_from_d3d12(&image_copy, src->u.SubresourceIndex, dst->u.SubresourceIndex,
                   &src_resource->desc, &dst_resource->desc, src_format, dst_format,
                   src_box, dst_x, dst_y, dst_z);
@@ -18087,7 +18367,7 @@ index 0ece8fd..525cf36 100644
      }
      else
      {
-@@ -4184,8 +4725,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyResource(ID3D12GraphicsComm
+@@ -4184,8 +4728,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyResource(ID3D12GraphicsComm
          vk_buffer_copy.srcOffset = 0;
          vk_buffer_copy.dstOffset = 0;
          vk_buffer_copy.size = dst_resource->desc.Width;
@@ -18098,7 +18378,7 @@ index 0ece8fd..525cf36 100644
      }
      else
      {
-@@ -4221,9 +4764,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyResource(ID3D12GraphicsComm
+@@ -4221,9 +4767,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_CopyResource(ID3D12GraphicsComm
              vk_image_copy.srcSubresource.layerCount = layer_count;
              vk_image_copy.dstSubresource.aspectMask = vk_aspect_mask;
              vk_image_copy.dstSubresource.layerCount = layer_count;
@@ -18110,7 +18390,7 @@ index 0ece8fd..525cf36 100644
          }
      }
  }
-@@ -4301,9 +4846,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_ResolveSubresource(ID3D12Graphi
+@@ -4301,9 +4849,11 @@ static void STDMETHODCALLTYPE d3d12_command_list_ResolveSubresource(ID3D12Graphi
      vk_extent_3d_from_d3d12_miplevel(&vk_image_resolve.extent,
              &dst_resource->desc, vk_image_resolve.dstSubresource.mipLevel);
  
@@ -18122,7 +18402,7 @@ index 0ece8fd..525cf36 100644
  }
  
  static void STDMETHODCALLTYPE d3d12_command_list_IASetPrimitiveTopology(ID3D12GraphicsCommandList6 *iface,
-@@ -4474,6 +5021,46 @@ static unsigned int d3d12_find_ds_multiplanar_transition(const D3D12_RESOURCE_BA
+@@ -4474,6 +5024,46 @@ static unsigned int d3d12_find_ds_multiplanar_transition(const D3D12_RESOURCE_BA
      return 0;
  }
  
@@ -18169,7 +18449,7 @@ index 0ece8fd..525cf36 100644
  static void STDMETHODCALLTYPE d3d12_command_list_ResourceBarrier(ID3D12GraphicsCommandList6 *iface,
          UINT barrier_count, const D3D12_RESOURCE_BARRIER *barriers)
  {
-@@ -4489,7 +5076,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ResourceBarrier(ID3D12GraphicsC
+@@ -4489,7 +5079,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ResourceBarrier(ID3D12GraphicsC
      vk_procs = &list->device->vk_procs;
      vk_info = &list->device->vk_info;
  
@@ -18179,7 +18459,7 @@ index 0ece8fd..525cf36 100644
  
      for (i = 0; i < barrier_count; ++i)
      {
-@@ -4903,7 +5491,7 @@ static void d3d12_command_list_set_root_cbv(struct d3d12_command_list *list,
+@@ -4903,7 +5494,7 @@ static void d3d12_command_list_set_root_cbv(struct d3d12_command_list *list,
          buffer_info.range = VK_WHOLE_SIZE;
      }
  
@@ -18188,7 +18468,7 @@ index 0ece8fd..525cf36 100644
      {
          vk_write_descriptor_set_from_root_descriptor(&descriptor_write, root_parameter, NULL, NULL, &buffer_info);
          VK_CALL(vkCmdPushDescriptorSetKHR(list->vk_command_buffer, bindings->vk_bind_point,
-@@ -4975,7 +5563,7 @@ static void d3d12_command_list_set_root_descriptor(struct d3d12_command_list *li
+@@ -4975,7 +5566,7 @@ static void d3d12_command_list_set_root_descriptor(struct d3d12_command_list *li
          return;
      }
  
@@ -18197,7 +18477,7 @@ index 0ece8fd..525cf36 100644
      {
          vk_write_descriptor_set_from_root_descriptor(&descriptor_write, root_parameter, NULL, &vk_buffer_view, NULL);
          VK_CALL(vkCmdPushDescriptorSetKHR(list->vk_command_buffer, bindings->vk_bind_point,
-@@ -5232,6 +5820,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_OMSetRenderTargets(ID3D12Graphi
+@@ -5232,6 +5823,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_OMSetRenderTargets(ID3D12Graphi
      struct d3d12_command_list *list = impl_from_ID3D12GraphicsCommandList6(iface);
      const struct d3d12_rtv_desc *rtv_desc;
      const struct d3d12_dsv_desc *dsv_desc;
@@ -18206,7 +18486,7 @@ index 0ece8fd..525cf36 100644
      VkFormat prev_dsv_format;
      struct vkd3d_view *view;
      unsigned int i;
-@@ -5248,6 +5838,13 @@ static void STDMETHODCALLTYPE d3d12_command_list_OMSetRenderTargets(ID3D12Graphi
+@@ -5248,6 +5841,13 @@ static void STDMETHODCALLTYPE d3d12_command_list_OMSetRenderTargets(ID3D12Graphi
          render_target_descriptor_count = ARRAY_SIZE(list->rtvs);
      }
  
@@ -18220,7 +18500,7 @@ index 0ece8fd..525cf36 100644
      list->fb_width = 0;
      list->fb_height = 0;
      list->fb_layer_count = 0;
-@@ -5322,6 +5919,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_OMSetRenderTargets(ID3D12Graphi
+@@ -5322,6 +5922,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_OMSetRenderTargets(ID3D12Graphi
      if (prev_dsv_format != list->dsv_format && d3d12_pipeline_state_has_unknown_dsv_format(list->state))
          d3d12_command_list_invalidate_current_pipeline(list);
  
@@ -18231,7 +18511,7 @@ index 0ece8fd..525cf36 100644
      d3d12_command_list_invalidate_current_framebuffer(list);
      d3d12_command_list_invalidate_current_render_pass(list);
  }
-@@ -5457,8 +6058,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+@@ -5457,8 +6061,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
      }
      else
      {
@@ -18244,7 +18524,7 @@ index 0ece8fd..525cf36 100644
      }
      if (flags & D3D12_CLEAR_FLAG_STENCIL)
      {
-@@ -5467,8 +6070,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
+@@ -5467,8 +6073,8 @@ static void STDMETHODCALLTYPE d3d12_command_list_ClearDepthStencilView(ID3D12Gra
      }
      else
      {
@@ -18255,7 +18535,7 @@ index 0ece8fd..525cf36 100644
      }
      attachment_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
      attachment_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-@@ -5733,7 +6336,9 @@ static void d3d12_command_list_clear_uav(struct d3d12_command_list *list,
+@@ -5733,7 +6339,9 @@ static void d3d12_command_list_clear_uav(struct d3d12_command_list *list,
              VK_CALL(vkCmdPushConstants(list->vk_command_buffer, pipeline.vk_pipeline_layout,
                      VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(clear_args), &clear_args));
  
@@ -18265,7 +18545,7 @@ index 0ece8fd..525cf36 100644
  
              curr_rect.left += count_x * pipeline.group_size.width;
          }
-@@ -5907,13 +6512,44 @@ static void STDMETHODCALLTYPE d3d12_command_list_BeginQuery(ID3D12GraphicsComman
+@@ -5907,13 +6515,44 @@ static void STDMETHODCALLTYPE d3d12_command_list_BeginQuery(ID3D12GraphicsComman
  
      vk_procs = &list->device->vk_procs;
  
@@ -18313,7 +18593,7 @@ index 0ece8fd..525cf36 100644
      if (D3D12_QUERY_TYPE_SO_STATISTICS_STREAM0 <= type && type <= D3D12_QUERY_TYPE_SO_STATISTICS_STREAM3)
      {
          unsigned int stream_index = type - D3D12_QUERY_TYPE_SO_STATISTICS_STREAM0;
-@@ -5936,6 +6572,47 @@ static void STDMETHODCALLTYPE d3d12_command_list_EndQuery(ID3D12GraphicsCommandL
+@@ -5936,6 +6575,47 @@ static void STDMETHODCALLTYPE d3d12_command_list_EndQuery(ID3D12GraphicsCommandL
  
      vk_procs = &list->device->vk_procs;
  
@@ -18361,7 +18641,7 @@ index 0ece8fd..525cf36 100644
      d3d12_command_list_end_current_render_pass(list);
  
      d3d12_query_heap_mark_result_as_available(query_heap, index);
-@@ -6237,8 +6914,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ExecuteIndirect(ID3D12GraphicsC
+@@ -6237,8 +6917,10 @@ static void STDMETHODCALLTYPE d3d12_command_list_ExecuteIndirect(ID3D12GraphicsC
                      return;
                  }
  
@@ -18372,7 +18652,7 @@ index 0ece8fd..525cf36 100644
                  break;
  
              default:
-@@ -6984,8 +7663,8 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+@@ -6984,8 +7666,8 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
      struct d3d12_command_queue *command_queue = impl_from_ID3D12CommandQueue(iface);
      struct d3d12_command_list *cmd_list;
      struct vkd3d_cs_op_data *op;
@@ -18382,7 +18662,7 @@ index 0ece8fd..525cf36 100644
  
      TRACE("iface %p, command_list_count %u, command_lists %p.\n",
              iface, command_list_count, command_lists);
-@@ -6993,7 +7672,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+@@ -6993,7 +7675,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
      if (!command_list_count)
          return;
  
@@ -18391,7 +18671,7 @@ index 0ece8fd..525cf36 100644
      {
          ERR("Failed to allocate command buffer array.\n");
          return;
-@@ -7012,8 +7691,11 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+@@ -7012,8 +7694,11 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
          }
  
          command_list_flush_vk_heap_updates(cmd_list);
@@ -18404,7 +18684,7 @@ index 0ece8fd..525cf36 100644
      }
  
      vkd3d_mutex_lock(&command_queue->op_mutex);
-@@ -7025,7 +7707,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
+@@ -7025,7 +7710,7 @@ static void STDMETHODCALLTYPE d3d12_command_queue_ExecuteCommandLists(ID3D12Comm
      }
      op->opcode = VKD3D_CS_OP_EXECUTE;
      op->u.execute.buffers = buffers;
@@ -18414,7 +18694,7 @@ index 0ece8fd..525cf36 100644
      d3d12_command_queue_submit_locked(command_queue);
  
 diff --git a/libs/vkd3d/libs/vkd3d/device.c b/libs/vkd3d/libs/vkd3d/device.c
-index 5f16fef..2b70b75 100644
+index 5f16fef..67bd329 100644
 --- a/libs/vkd3d/libs/vkd3d/device.c
 +++ b/libs/vkd3d/libs/vkd3d/device.c
 @@ -1799,6 +1799,7 @@ static HRESULT vkd3d_init_device_caps(struct d3d12_device *device,
@@ -18458,11 +18738,268 @@ index 5f16fef..2b70b75 100644
      vkd3d_mutex_destroy(&device->pipeline_cache_mutex);
  }
  
+@@ -3162,6 +3166,7 @@ static ULONG STDMETHODCALLTYPE d3d12_device_Release(ID3D12Device9 *iface)
+         vkd3d_private_store_destroy(&device->private_store);
+ 
+         vkd3d_cleanup_format_info(device);
++        vkd3d_destroy_srv_shift_views(device);
+         vkd3d_vk_descriptor_heap_layouts_cleanup(device);
+         vkd3d_uav_clear_state_cleanup(&device->uav_clear_state, device);
+         vkd3d_destroy_null_resources(&device->null_resources, device);
+@@ -5680,6 +5685,7 @@ static HRESULT d3d12_device_init(struct d3d12_device *device,
+ 
+     if (FAILED(hr = vkd3d_vk_descriptor_heap_layouts_init(device)))
+         goto out_cleanup_uav_clear_state;
++    vkd3d_init_srv_shift_views(device);
+ 
+     if (device->use_vk_heaps && FAILED(hr = vkd3d_create_thread(device->vkd3d_instance,
+             device_worker_main, device, &device->worker_thread)))
+diff --git a/libs/vkd3d/libs/vkd3d/resource.c b/libs/vkd3d/libs/vkd3d/resource.c
+index f1491cb..7525ce6 100644
+--- a/libs/vkd3d/libs/vkd3d/resource.c
++++ b/libs/vkd3d/libs/vkd3d/resource.c
+@@ -2446,7 +2446,8 @@ static void vkd3d_view_destroy(struct vkd3d_view *view, struct d3d12_device *dev
+             WARN("Unhandled view type %d.\n", view->v.type);
+     }
+ 
+-    if (view->v.vk_counter_view)
++    /* Barrique: an SRV's counter view is a shared texel shift view */
++    if (view->v.vk_counter_view && view->h.magic == VKD3D_DESCRIPTOR_MAGIC_UAV)
+         VK_CALL(vkDestroyBufferView(device->vk_device, view->v.vk_counter_view, NULL));
+ 
+     vkd3d_desc_object_cache_push(&device->view_desc_cache, view);
+@@ -2574,6 +2575,37 @@ static void d3d12_desc_write_vk_heap_null_descriptor(struct d3d12_descriptor_hea
+     writes->count = i;
+ }
+ 
++/* Barrique: a buffer SRV's texel shift goes to the UAV counter set at its index,
++ * see struct vkd3d_shader_barrique_srv_shift_info */
++static void d3d12_desc_write_vk_heap_srv_shift(struct d3d12_descriptor_heap *descriptor_heap,
++        unsigned int dst_array_element, struct descriptor_writes *writes, const VkBufferView *shift_view,
++        struct d3d12_device *device)
++{
++    const struct vkd3d_vk_device_procs *vk_procs = &device->vk_procs;
++    struct d3d12_descriptor_heap_vk_set *descriptor_set;
++    unsigned int i = writes->count;
++
++    descriptor_set = &descriptor_heap->vk_descriptor_sets[VKD3D_SET_INDEX_UAV_COUNTER];
++    writes->vk_descriptor_writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
++    writes->vk_descriptor_writes[i].pNext = NULL;
++    writes->vk_descriptor_writes[i].dstSet = descriptor_set->vk_set;
++    writes->vk_descriptor_writes[i].dstBinding = 0;
++    writes->vk_descriptor_writes[i].dstArrayElement = dst_array_element;
++    writes->vk_descriptor_writes[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
++    writes->vk_descriptor_writes[i].descriptorCount = 1;
++    writes->vk_descriptor_writes[i].pImageInfo = NULL;
++    writes->vk_descriptor_writes[i].pBufferInfo = NULL;
++    writes->vk_descriptor_writes[i++].pTexelBufferView = shift_view;
++
++    if (i >= ARRAY_SIZE(writes->vk_descriptor_writes) - 1)
++    {
++        VK_CALL(vkUpdateDescriptorSets(device->vk_device, i, writes->vk_descriptor_writes, 0, NULL));
++        descriptor_writes_free_object_refs(writes, device);
++        i = 0;
++    }
++    writes->count = i;
++}
++
+ static void d3d12_desc_write_vk_heap(struct d3d12_descriptor_heap *descriptor_heap, unsigned int dst_array_element,
+         struct descriptor_writes *writes, void *object, struct d3d12_device *device)
+ {
+@@ -2633,7 +2665,14 @@ static void d3d12_desc_write_vk_heap(struct d3d12_descriptor_heap *descriptor_he
+             break;
+     }
+     if (is_null && device->vk_info.EXT_robustness2)
+-        return d3d12_desc_write_vk_heap_null_descriptor(descriptor_heap, dst_array_element, writes, device, type);
++    {
++        d3d12_desc_write_vk_heap_null_descriptor(descriptor_heap, dst_array_element, writes, device, type);
++        if (u.header->magic == VKD3D_DESCRIPTOR_MAGIC_SRV && type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
++                && device->srv_shift_views[0])
++            d3d12_desc_write_vk_heap_srv_shift(descriptor_heap, dst_array_element, writes,
++                    &device->srv_shift_views[0], device);
++        return;
++    }
+ 
+     ++i;
+     if (u.header->magic == VKD3D_DESCRIPTOR_MAGIC_UAV && u.view->v.vk_counter_view)
+@@ -2659,6 +2698,11 @@ static void d3d12_desc_write_vk_heap(struct d3d12_descriptor_heap *descriptor_he
+     }
+ 
+     writes->count = i;
++
++    if (u.header->magic == VKD3D_DESCRIPTOR_MAGIC_SRV && type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
++            && device->srv_shift_views[0])
++        d3d12_desc_write_vk_heap_srv_shift(descriptor_heap, dst_array_element, writes,
++                u.view->v.vk_counter_view ? &u.view->v.vk_counter_view : &device->srv_shift_views[0], device);
+ }
+ 
+ void d3d12_desc_flush_vk_heap_updates_locked(struct d3d12_descriptor_heap *descriptor_heap, struct d3d12_device *device)
+@@ -2848,8 +2892,9 @@ static bool vkd3d_create_buffer_view_for_resource(struct d3d12_device *device,
+         unsigned int offset, unsigned int size, unsigned int structure_stride,
+         unsigned int flags, struct vkd3d_view **view)
+ {
++    VkDeviceSize element_size, byte_offset, byte_size;
++    unsigned int misalign, shift = 0;
+     const struct vkd3d_format *format;
+-    VkDeviceSize element_size;
+ 
+     if (view_format == DXGI_FORMAT_R32_TYPELESS && (flags & VKD3D_VIEW_RAW_BUFFER))
+     {
+@@ -2875,8 +2920,105 @@ static bool vkd3d_create_buffer_view_for_resource(struct d3d12_device *device,
+ 
+     VKD3D_ASSERT(d3d12_resource_is_buffer(resource));
+ 
+-    return vkd3d_create_buffer_view(device, magic, resource->u.vk_buffer,
+-            format, offset * element_size, size * element_size, view);
++    /* Barrique: Metal rounds a texture buffer's offset down to 16 bytes, so a
++     * buffer SRV starts at the aligned address and shaders add the texel
++     * shift; see struct vkd3d_shader_barrique_srv_shift_info */
++    byte_offset = offset * element_size;
++    byte_size = size * element_size;
++    if ((misalign = byte_offset & 15))
++    {
++        if (magic == VKD3D_DESCRIPTOR_MAGIC_SRV && device->srv_shift_views[0] && !(misalign % format->byte_count))
++        {
++            shift = misalign / format->byte_count;
++            byte_offset -= misalign;
++            byte_size += misalign;
++        }
++        else
++        {
++            FIXME("Misaligned %s buffer view: format %#x, stride %u, flags %#x, first element %u, size %u.\n",
++                    magic == VKD3D_DESCRIPTOR_MAGIC_UAV ? "UAV" : "SRV", view_format, structure_stride,
++                    flags, offset, size);
++        }
++    }
++
++    if (!vkd3d_create_buffer_view(device, magic, resource->u.vk_buffer,
++            format, byte_offset, byte_size, view))
++        return false;
++    if (magic == VKD3D_DESCRIPTOR_MAGIC_SRV && device->srv_shift_views[0])
++        (*view)->v.vk_counter_view = device->srv_shift_views[shift];
++    return true;
++}
++
++void vkd3d_init_srv_shift_views(struct d3d12_device *device)
++{
++    const struct vkd3d_vk_device_procs *vk_procs = &device->vk_procs;
++    const struct vkd3d_format *format = vkd3d_get_format(device, DXGI_FORMAT_R32_UINT, false);
++    D3D12_HEAP_PROPERTIES heap_properties;
++    D3D12_RESOURCE_DESC1 resource_desc;
++    const char *env;
++    uint32_t *data;
++    unsigned int i;
++
++    memset(device->srv_shift_views, 0, sizeof(device->srv_shift_views));
++    device->srv_shift_buffer = VK_NULL_HANDLE;
++    device->srv_shift_memory = VK_NULL_HANDLE;
++    if (!device->use_vk_heaps || ((env = getenv("VKD3D_BARRIQUE_SRV_SHIFT")) && *env == '0'))
++        return;
++
++    memset(&heap_properties, 0, sizeof(heap_properties));
++    heap_properties.Type = D3D12_HEAP_TYPE_UPLOAD;
++    memset(&resource_desc, 0, sizeof(resource_desc));
++    resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
++    resource_desc.Width = ARRAY_SIZE(device->srv_shift_views) * 16;
++    resource_desc.Height = 1;
++    resource_desc.DepthOrArraySize = 1;
++    resource_desc.MipLevels = 1;
++    resource_desc.SampleDesc.Count = 1;
++    resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
++    resource_desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
++
++    if (FAILED(vkd3d_create_buffer(device, &heap_properties, D3D12_HEAP_FLAG_NONE,
++            &resource_desc, &device->srv_shift_buffer)))
++        goto fail;
++    if (FAILED(vkd3d_allocate_buffer_memory(device, device->srv_shift_buffer,
++            &heap_properties, D3D12_HEAP_FLAG_NONE, &device->srv_shift_memory, NULL, NULL)))
++        goto fail;
++    if (VK_CALL(vkMapMemory(device->vk_device, device->srv_shift_memory, 0, VK_WHOLE_SIZE, 0, (void **)&data)) < 0)
++        goto fail;
++    memset(data, 0, resource_desc.Width);
++    for (i = 0; i < ARRAY_SIZE(device->srv_shift_views); ++i)
++        data[i * 4] = i;
++    VK_CALL(vkUnmapMemory(device->vk_device, device->srv_shift_memory));
++
++    for (i = 0; i < ARRAY_SIZE(device->srv_shift_views); ++i)
++    {
++        if (!vkd3d_create_vk_buffer_view(device, device->srv_shift_buffer, format,
++                i * 16, sizeof(uint32_t), &device->srv_shift_views[i]))
++            goto fail;
++    }
++    TRACE("Buffer SRV texel shifts enabled.\n");
++    return;
++
++fail:
++    WARN("Failed to create the buffer SRV texel shift views.\n");
++    vkd3d_destroy_srv_shift_views(device);
++}
++
++void vkd3d_destroy_srv_shift_views(struct d3d12_device *device)
++{
++    const struct vkd3d_vk_device_procs *vk_procs = &device->vk_procs;
++    unsigned int i;
++
++    for (i = 0; i < ARRAY_SIZE(device->srv_shift_views); ++i)
++    {
++        if (device->srv_shift_views[i])
++            VK_CALL(vkDestroyBufferView(device->vk_device, device->srv_shift_views[i], NULL));
++        device->srv_shift_views[i] = VK_NULL_HANDLE;
++    }
++    VK_CALL(vkDestroyBuffer(device->vk_device, device->srv_shift_buffer, NULL));
++    VK_CALL(vkFreeMemory(device->vk_device, device->srv_shift_memory, NULL));
++    device->srv_shift_buffer = VK_NULL_HANDLE;
++    device->srv_shift_memory = VK_NULL_HANDLE;
+ }
+ 
+ static void vkd3d_set_view_swizzle_for_format(VkComponentMapping *components,
+@@ -3656,6 +3798,8 @@ bool vkd3d_create_raw_buffer_view(struct d3d12_device *device,
+ 
+     resource = vkd3d_gpu_va_allocator_dereference(&device->gpu_va_allocator, gpu_address);
+     VKD3D_ASSERT(d3d12_resource_is_buffer(resource));
++    if ((gpu_address - resource->gpu_address) & 15)
++        FIXME("Misaligned root %s buffer view.\n", parameter_type == D3D12_ROOT_PARAMETER_TYPE_UAV ? "UAV" : "SRV");
+     return vkd3d_create_vk_buffer_view(device, resource->u.vk_buffer, format,
+             gpu_address - resource->gpu_address, VK_WHOLE_SIZE, vk_buffer_view);
+ }
 diff --git a/libs/vkd3d/libs/vkd3d/state.c b/libs/vkd3d/libs/vkd3d/state.c
-index 14f5250..0a4fa77 100644
+index 14f5250..6639646 100644
 --- a/libs/vkd3d/libs/vkd3d/state.c
 +++ b/libs/vkd3d/libs/vkd3d/state.c
-@@ -843,7 +843,7 @@ static struct vk_binding_array *d3d12_root_signature_vk_binding_array_for_type(
+@@ -95,6 +95,8 @@ static void d3d12_root_signature_cleanup(struct d3d12_root_signature *root_signa
+     vkd3d_free(root_signature->descriptor_offsets);
+     vkd3d_free(root_signature->uav_counter_mapping);
+     vkd3d_free(root_signature->uav_counter_offsets);
++    vkd3d_free(root_signature->srv_shift_mapping);
++    vkd3d_free(root_signature->srv_shift_offsets);
+     if (root_signature->root_constants)
+         vkd3d_free(root_signature->root_constants);
+ 
+@@ -305,6 +307,7 @@ struct d3d12_root_signature_info
+ {
+     size_t binding_count;
+     size_t uav_range_count;
++    size_t srv_range_count;
+ 
+     size_t root_constant_count;
+     size_t root_descriptor_count;
+@@ -457,6 +460,7 @@ static HRESULT d3d12_root_signature_info_count_descriptors(struct d3d12_root_sig
+                 info->binding_count += binding_count;
+                 info->srv_count += count * 2u;
+                 srv_unbounded_range |= unbounded;
++                ++info->srv_range_count;
+                 break;
+             case D3D12_DESCRIPTOR_RANGE_TYPE_UAV:
+                 /* As above. */
+@@ -752,6 +756,7 @@ struct vkd3d_descriptor_set_context
+     unsigned int table_index;
+     unsigned int descriptor_index;
+     unsigned int uav_counter_index;
++    unsigned int srv_shift_index;
+     unsigned int push_constant_index;
+ 
+     struct vk_binding_array *root_descriptor_set;
+@@ -843,7 +848,7 @@ static struct vk_binding_array *d3d12_root_signature_vk_binding_array_for_type(
          {
              if (!context->static_samplers_descriptor_set)
              {
@@ -18471,7 +19008,72 @@ index 14f5250..0a4fa77 100644
                      context->static_samplers_descriptor_set = context->root_descriptor_set;
                  else
                      /* The descriptor type is irrelevant here, it will never be used. */
-@@ -1689,6 +1689,18 @@ static HRESULT d3d12_root_signature_init(struct d3d12_root_signature *root_signa
+@@ -1156,6 +1161,32 @@ static void d3d12_root_signature_map_vk_heap_uav_counter(struct d3d12_root_signa
+     offset->dynamic_offset_index = context->push_constant_index;
+ }
+ 
++/* Barrique: buffer SRVs find their texel shift in the UAV counter set, at the
++ * same descriptor index; see struct vkd3d_shader_barrique_srv_shift_info. */
++static void d3d12_root_signature_map_vk_heap_srv_shift(struct d3d12_root_signature *root_signature,
++        const struct d3d12_root_descriptor_table_range *range, enum vkd3d_shader_visibility shader_visibility,
++        struct vkd3d_descriptor_set_context *context)
++{
++    struct vkd3d_shader_uav_counter_binding *mapping;
++    struct vkd3d_shader_descriptor_offset *offset;
++
++    if (!root_signature->srv_shift_mapping)
++        return;
++    mapping = &root_signature->srv_shift_mapping[context->srv_shift_index];
++    offset = &root_signature->srv_shift_offsets[context->srv_shift_index++];
++
++    mapping->register_space = range->register_space;
++    mapping->register_index = range->base_register_idx;
++    mapping->shader_visibility = shader_visibility;
++    mapping->binding.set = root_signature->vk_set_count + VKD3D_SET_INDEX_UAV_COUNTER;
++    mapping->binding.binding = 0;
++    mapping->binding.count = vk_heap_binding_count_from_descriptor_range(range,
++            root_signature->device->vk_info.descriptor_limits.max_uav_descriptor_count);
++    offset->static_offset = range->offset;
++    offset->dynamic_offset_index = context->push_constant_index;
++    root_signature->srv_shift_count = context->srv_shift_index;
++}
++
+ static void d3d12_root_signature_map_descriptor_heap_binding(struct d3d12_root_signature *root_signature,
+         const struct d3d12_root_descriptor_table_range *range, enum vkd3d_shader_visibility shader_visibility,
+         struct vkd3d_descriptor_set_context *context)
+@@ -1167,6 +1198,8 @@ static void d3d12_root_signature_map_descriptor_heap_binding(struct d3d12_root_s
+         d3d12_root_signature_map_vk_heap_binding(root_signature, range, true, shader_visibility, context);
+         if (range->type == VKD3D_SHADER_DESCRIPTOR_TYPE_UAV)
+             d3d12_root_signature_map_vk_heap_uav_counter(root_signature, range, shader_visibility, context);
++        else
++            d3d12_root_signature_map_vk_heap_srv_shift(root_signature, range, shader_visibility, context);
+     }
+ 
+     d3d12_root_signature_map_vk_heap_binding(root_signature, range, is_buffer, shader_visibility, context);
+@@ -1638,6 +1671,9 @@ static HRESULT d3d12_root_signature_init(struct d3d12_root_signature *root_signa
+     root_signature->descriptor_offsets = NULL;
+     root_signature->uav_counter_mapping = NULL;
+     root_signature->uav_counter_offsets = NULL;
++    root_signature->srv_shift_count = 0;
++    root_signature->srv_shift_mapping = NULL;
++    root_signature->srv_shift_offsets = NULL;
+     root_signature->static_sampler_count = 0;
+     root_signature->static_samplers = NULL;
+     root_signature->device = device;
+@@ -1676,6 +1712,12 @@ static HRESULT d3d12_root_signature_init(struct d3d12_root_signature *root_signa
+             || !(root_signature->uav_counter_offsets = vkd3d_calloc(root_signature->uav_mapping_count,
+             sizeof(*root_signature->uav_counter_offsets)))))
+         goto fail;
++    if (use_vk_heaps && device->srv_shift_views[0] && info.srv_range_count
++            && (!(root_signature->srv_shift_mapping = vkd3d_calloc(info.srv_range_count,
++            sizeof(*root_signature->srv_shift_mapping)))
++            || !(root_signature->srv_shift_offsets = vkd3d_calloc(info.srv_range_count,
++            sizeof(*root_signature->srv_shift_offsets)))))
++        goto fail;
+     if (root_signature->use_descriptor_arrays && !(root_signature->descriptor_offsets = vkd3d_calloc(
+             root_signature->binding_count, sizeof(*root_signature->descriptor_offsets))))
+         goto fail;
+@@ -1689,6 +1731,18 @@ static HRESULT d3d12_root_signature_init(struct d3d12_root_signature *root_signa
  
      context.use_vk_heaps = use_vk_heaps;
      context.push_descriptor = vk_info->KHR_push_descriptor;
@@ -18490,7 +19092,7 @@ index 14f5250..0a4fa77 100644
      if (FAILED(hr = d3d12_root_signature_init_root_descriptors(root_signature, desc, &context)))
          goto fail;
      root_signature->main_set = context.root_descriptor_set && context.push_descriptor;
-@@ -1853,8 +1865,11 @@ static HRESULT vkd3d_render_pass_cache_create_pass_locked(struct vkd3d_render_pa
+@@ -1853,8 +1907,11 @@ static HRESULT vkd3d_render_pass_cache_create_pass_locked(struct vkd3d_render_pa
          }
          else
          {
@@ -18504,7 +19106,7 @@ index 14f5250..0a4fa77 100644
          }
          if (key->stencil_enable)
          {
-@@ -1863,8 +1878,9 @@ static HRESULT vkd3d_render_pass_cache_create_pass_locked(struct vkd3d_render_pa
+@@ -1863,8 +1920,9 @@ static HRESULT vkd3d_render_pass_cache_create_pass_locked(struct vkd3d_render_pa
          }
          else
          {
@@ -18516,7 +19118,7 @@ index 14f5250..0a4fa77 100644
          }
          attachments[attachment_index].initialLayout = depth_layout;
          attachments[attachment_index].finalLayout = depth_layout;
-@@ -2380,13 +2396,28 @@ static unsigned int feature_flags_compile_option(const struct d3d12_device *devi
+@@ -2380,13 +2438,28 @@ static unsigned int feature_flags_compile_option(const struct d3d12_device *devi
          flags |= VKD3D_SHADER_COMPILE_OPTION_FEATURE_WAVE_OPS;
      if (device->vk_info.KHR_zero_initialize_workgroup_memory)
          flags |= VKD3D_SHADER_COMPILE_OPTION_FEATURE_ZERO_INITIALIZE_WORKGROUP_MEMORY;
@@ -18545,7 +19147,7 @@ index 14f5250..0a4fa77 100644
  {
      const struct vkd3d_vk_device_procs *vk_procs = &device->vk_procs;
      struct vkd3d_shader_compile_info compile_info;
-@@ -2406,6 +2437,7 @@ static HRESULT create_shader_stage(struct d3d12_device *device,
+@@ -2406,6 +2479,7 @@ static HRESULT create_shader_stage(struct d3d12_device *device,
          {VKD3D_SHADER_COMPILE_OPTION_DENORMAL_MODE_F16, VKD3D_SHADER_DENORMAL_MODE_ANY},
          {VKD3D_SHADER_COMPILE_OPTION_DENORMAL_MODE_F32, VKD3D_SHADER_DENORMAL_MODE_ANY},
          {VKD3D_SHADER_COMPILE_OPTION_DENORMAL_MODE_F64, VKD3D_SHADER_DENORMAL_MODE_ANY},
@@ -18553,7 +19155,15 @@ index 14f5250..0a4fa77 100644
      };
  
      stage_desc->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-@@ -2659,6 +2691,9 @@ static HRESULT d3d12_pipeline_state_init_compute(struct d3d12_pipeline_state *st
+@@ -2652,6 +2726,7 @@ static HRESULT d3d12_pipeline_state_init_compute(struct d3d12_pipeline_state *st
+     const struct vkd3d_vk_device_procs *vk_procs = &device->vk_procs;
+     struct vkd3d_shader_interface_info shader_interface;
+     struct vkd3d_shader_descriptor_offset_info offset_info;
++    struct vkd3d_shader_barrique_srv_shift_info srv_shift_info;
+     struct vkd3d_shader_spirv_target_info target_info;
+     struct d3d12_root_signature *root_signature;
+     VkPipelineLayout vk_pipeline_layout;
+@@ -2659,6 +2734,9 @@ static HRESULT d3d12_pipeline_state_init_compute(struct d3d12_pipeline_state *st
  
      state->ID3D12PipelineState_iface.lpVtbl = &d3d12_pipeline_state_vtbl;
      state->refcount = 1;
@@ -18563,7 +19173,23 @@ index 14f5250..0a4fa77 100644
  
      memset(&state->uav_counters, 0, sizeof(state->uav_counters));
  
-@@ -3212,6 +3247,102 @@ static VkLogicOp vk_logic_op_from_d3d12(D3D12_LOGIC_OP op)
+@@ -2702,6 +2780,15 @@ static HRESULT d3d12_pipeline_state_init_compute(struct d3d12_pipeline_state *st
+         offset_info.uav_counter_offsets = root_signature->uav_counter_offsets;
+         vkd3d_prepend_struct(&target_info, &offset_info);
+     }
++    if (root_signature->srv_shift_count)
++    {
++        srv_shift_info.type = VKD3D_SHADER_STRUCTURE_TYPE_BARRIQUE_SRV_SHIFT_INFO;
++        srv_shift_info.next = NULL;
++        srv_shift_info.bindings = root_signature->srv_shift_mapping;
++        srv_shift_info.offsets = root_signature->srv_shift_offsets;
++        srv_shift_info.count = root_signature->srv_shift_count;
++        vkd3d_prepend_struct(&target_info, &srv_shift_info);
++    }
+ 
+     shader_interface.type = VKD3D_SHADER_STRUCTURE_TYPE_INTERFACE_INFO;
+     shader_interface.next = &target_info;
+@@ -3212,6 +3299,102 @@ static VkLogicOp vk_logic_op_from_d3d12(D3D12_LOGIC_OP op)
      }
  }
  
@@ -18666,7 +19292,15 @@ index 14f5250..0a4fa77 100644
  static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *state,
          struct d3d12_device *device, const struct d3d12_pipeline_state_desc *desc)
  {
-@@ -3238,7 +3369,7 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+@@ -3225,6 +3408,7 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+     struct vkd3d_shader_spirv_target_info *stage_target_info;
+     uint32_t aligned_offsets[D3D12_VS_INPUT_REGISTER_COUNT];
+     struct vkd3d_shader_descriptor_offset_info offset_info;
++    struct vkd3d_shader_barrique_srv_shift_info srv_shift_info;
+     struct vkd3d_shader_scan_signature_info signature_info;
+     struct vkd3d_shader_parameter ps_shader_parameters[1];
+     struct vkd3d_shader_transform_feedback_info xfb_info;
+@@ -3238,7 +3422,7 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
      const struct vkd3d_format *format;
      unsigned int instance_divisor;
      VkVertexInputRate input_rate;
@@ -18675,7 +19309,7 @@ index 14f5250..0a4fa77 100644
      size_t rt_count;
      uint32_t mask;
      HRESULT hr;
-@@ -3262,6 +3393,7 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+@@ -3262,6 +3446,7 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
  
      memset(&state->uav_counters, 0, sizeof(state->uav_counters));
      graphics->stage_count = 0;
@@ -18683,16 +19317,38 @@ index 14f5250..0a4fa77 100644
  
      memset(&signature_info, 0, sizeof(signature_info));
      signature_info.type = VKD3D_SHADER_STRUCTURE_TYPE_SCAN_SIGNATURE_INFO;
-@@ -3504,12 +3636,34 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+@@ -3494,6 +3679,12 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+     shader_interface.combined_samplers = NULL;
+     shader_interface.combined_sampler_count = 0;
+ 
++    srv_shift_info.type = VKD3D_SHADER_STRUCTURE_TYPE_BARRIQUE_SRV_SHIFT_INFO;
++    srv_shift_info.next = NULL;
++    srv_shift_info.bindings = root_signature->srv_shift_mapping;
++    srv_shift_info.offsets = root_signature->srv_shift_offsets;
++    srv_shift_info.count = root_signature->srv_shift_count;
++
+     if (root_signature->descriptor_offsets)
+     {
+         offset_info.type = VKD3D_SHADER_STRUCTURE_TYPE_DESCRIPTOR_OFFSET_INFO;
+@@ -3504,12 +3695,43 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
          offset_info.uav_counter_offsets = root_signature->uav_counter_offsets;
      }
  
 +    if (desc->gs.pShaderBytecode && !vk_info->geometry_shaders && !so_desc->NumEntries)
 +        vs_layer_output = passthrough_gs_layer_output(desc);
++    graphics->gs_dropped = false;
 +    if (desc->gs.pShaderBytecode && !vk_info->geometry_shaders && !vs_layer_output)
 +    {
 +        struct vkd3d_shader_scan_signature_info gs_info;
++        const char *keep = getenv("VKD3D_BARRIQUE_KEEP_DROPPED_GS");
 +        unsigned int k;
++
++        /* Barrique: without its geometry shader the draw rasterizes the vertex
++         * shader's output as it is, all into layer 0. Unreal Engine's
++         * VoxelizeVolumeGS (volumetric fog from Volume materials) amplifies
++         * each triangle into the slices it covers: dropped, it smears garbage
++         * over the slice nearest to the camera. Skip such draws instead. */
++        graphics->gs_dropped = !keep || *keep != '1';
 +
 +        ERR("Geometry shader %p (%zu bytes) cannot be emulated and will be dropped, so %u, rts %u, ds %#x.\n",
 +                desc->gs.pShaderBytecode, (size_t)desc->gs.BytecodeLength, so_desc->NumEntries,
@@ -18718,7 +19374,15 @@ index 14f5250..0a4fa77 100644
  
          if (FAILED(hr = d3d12_pipeline_state_find_and_init_uav_counters(state, device, root_signature,
                  b, shader_stages[i].stage)))
-@@ -3561,8 +3715,9 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+@@ -3558,11 +3780,17 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+         vkd3d_prepend_struct(&shader_interface, stage_target_info);
+         if (root_signature->descriptor_offsets)
+             vkd3d_prepend_struct(&shader_interface, &offset_info);
++        if (root_signature->srv_shift_count)
++        {
++            srv_shift_info.next = NULL;
++            vkd3d_prepend_struct(&shader_interface, &srv_shift_info);
++        }
          if (shader_stages[i].stage == VK_SHADER_STAGE_VERTEX_BIT)
              vkd3d_prepend_struct(&shader_interface, &signature_info);
  
@@ -18730,7 +19394,7 @@ index 14f5250..0a4fa77 100644
              goto fail;
  
          ++graphics->stage_count;
-@@ -3673,6 +3828,21 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
+@@ -3673,6 +3901,21 @@ static HRESULT d3d12_pipeline_state_init_graphics(struct d3d12_pipeline_state *s
      }
      graphics->attribute_count = j;
  
@@ -18752,7 +19416,7 @@ index 14f5250..0a4fa77 100644
      switch (desc->strip_cut_value)
      {
          case D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED:
-@@ -3758,6 +3928,158 @@ fail:
+@@ -3758,6 +4001,158 @@ fail:
      return hr;
  }
  
@@ -18911,7 +19575,7 @@ index 14f5250..0a4fa77 100644
  HRESULT d3d12_pipeline_state_create_graphics(struct d3d12_device *device,
          const D3D12_GRAPHICS_PIPELINE_STATE_DESC *desc, struct d3d12_pipeline_state **state)
  {
-@@ -3776,6 +4098,8 @@ HRESULT d3d12_pipeline_state_create_graphics(struct d3d12_device *device,
+@@ -3776,6 +4171,8 @@ HRESULT d3d12_pipeline_state_create_graphics(struct d3d12_device *device,
          return hr;
      }
  
@@ -18920,7 +19584,7 @@ index 14f5250..0a4fa77 100644
      TRACE("Created graphics pipeline state %p.\n", object);
  
      *state = object;
-@@ -3817,6 +4141,9 @@ HRESULT d3d12_pipeline_state_create(struct d3d12_device *device,
+@@ -3817,6 +4214,9 @@ HRESULT d3d12_pipeline_state_create(struct d3d12_device *device,
          return hr;
      }
  
@@ -18930,7 +19594,7 @@ index 14f5250..0a4fa77 100644
      TRACE("Created pipeline state %p.\n", object);
  
      *state = object;
-@@ -3955,9 +4282,9 @@ static bool d3d12_pipeline_state_put_pipeline_to_cache(struct d3d12_pipeline_sta
+@@ -3955,9 +4355,9 @@ static bool d3d12_pipeline_state_put_pipeline_to_cache(struct d3d12_pipeline_sta
      return compiled_pipeline;
  }
  
@@ -18942,7 +19606,7 @@ index 14f5250..0a4fa77 100644
  {
      VkVertexInputBindingDescription bindings[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
      const struct vkd3d_vk_device_procs *vk_procs = &state->device->vk_procs;
-@@ -4006,6 +4333,9 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -4006,6 +4406,9 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
  
      VKD3D_ASSERT(d3d12_pipeline_state_is_graphics(state));
  
@@ -18952,7 +19616,7 @@ index 14f5250..0a4fa77 100644
      memset(&pipeline_key, 0, sizeof(pipeline_key));
      pipeline_key.topology = topology;
  
-@@ -4035,6 +4365,10 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -4035,6 +4438,10 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
          ++binding_count;
      }
  
@@ -18963,7 +19627,7 @@ index 14f5250..0a4fa77 100644
      pipeline_key.dsv_format = dsv_format;
  
      if ((vk_pipeline = d3d12_pipeline_state_find_compiled_pipeline(state, &pipeline_key, vk_render_pass)))
-@@ -4125,11 +4459,26 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -4125,11 +4532,26 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
              1, &pipeline_desc, NULL, &vk_pipeline))) < 0)
      {
          WARN("Failed to create Vulkan graphics pipeline, vr %d.\n", vr);
@@ -18990,7 +19654,7 @@ index 14f5250..0a4fa77 100644
  
      /* Other thread compiled the pipeline before us. */
      VK_CALL(vkDestroyPipeline(device->vk_device, vk_pipeline, NULL));
-@@ -4139,6 +4488,14 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
+@@ -4139,6 +4561,14 @@ VkPipeline d3d12_pipeline_state_get_or_create_pipeline(struct d3d12_pipeline_sta
      return vk_pipeline;
  }
  
@@ -19006,7 +19670,7 @@ index 14f5250..0a4fa77 100644
  {
      struct vkd3d_shader_hlsl_source_info hlsl_info;
 diff --git a/libs/vkd3d/libs/vkd3d/vkd3d_private.h b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
-index 822e172..c3f6d7e 100644
+index 822e172..dc75369 100644
 --- a/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 +++ b/libs/vkd3d/libs/vkd3d/vkd3d_private.h
 @@ -155,6 +155,7 @@ struct vkd3d_vulkan_info
@@ -19025,7 +19689,18 @@ index 822e172..c3f6d7e 100644
  
      uint64_t descriptor_table_mask;
      uint32_t push_descriptor_mask;
-@@ -1032,6 +1034,7 @@ struct d3d12_graphics_pipeline_state
+@@ -1001,6 +1003,10 @@ struct d3d12_root_signature
+     struct vkd3d_shader_descriptor_offset *descriptor_offsets;
+     struct vkd3d_shader_uav_counter_binding *uav_counter_mapping;
+     struct vkd3d_shader_descriptor_offset *uav_counter_offsets;
++    /* Barrique: see struct vkd3d_shader_barrique_srv_shift_info */
++    unsigned int srv_shift_count;
++    struct vkd3d_shader_uav_counter_binding *srv_shift_mapping;
++    struct vkd3d_shader_descriptor_offset *srv_shift_offsets;
+     unsigned int descriptor_table_offset;
+     unsigned int descriptor_table_count;
+ 
+@@ -1032,6 +1038,7 @@ struct d3d12_graphics_pipeline_state
  {
      VkPipelineShaderStageCreateInfo stages[VKD3D_MAX_SHADER_STAGES];
      size_t stage_count;
@@ -19033,10 +19708,12 @@ index 822e172..c3f6d7e 100644
  
      VkVertexInputAttributeDescription attributes[D3D12_VS_INPUT_REGISTER_COUNT];
      VkVertexInputRate input_rates[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
-@@ -1062,6 +1065,12 @@ struct d3d12_graphics_pipeline_state
+@@ -1062,6 +1069,14 @@ struct d3d12_graphics_pipeline_state
      struct list compiled_pipelines;
  
      bool xfb_enabled;
++    /* Barrique: the geometry shader could not be emulated; draws are skipped */
++    bool gs_dropped;
 +
 +    /* Barrique: input layout + topology type, keys the stride hints that let
 +     * the Vulkan pipeline be compiled when the PSO is created (see state.c) */
@@ -19046,7 +19723,7 @@ index 822e172..c3f6d7e 100644
  };
  
  static inline unsigned int dsv_attachment_mask(const struct d3d12_graphics_pipeline_state *graphics)
-@@ -1101,6 +1110,7 @@ struct d3d12_pipeline_state
+@@ -1101,6 +1116,7 @@ struct d3d12_pipeline_state
  
      ID3D12RootSignature *implicit_root_signature;
      struct d3d12_device *device;
@@ -19054,7 +19731,7 @@ index 822e172..c3f6d7e 100644
  
      struct vkd3d_private_store private_store;
  };
-@@ -1228,6 +1238,11 @@ struct d3d12_command_allocator
+@@ -1228,6 +1244,11 @@ struct d3d12_command_allocator
      struct d3d12_command_list *current_command_list;
      struct d3d12_device *device;
  
@@ -19066,7 +19743,7 @@ index 822e172..c3f6d7e 100644
      struct vkd3d_private_store private_store;
  };
  
-@@ -1289,13 +1304,37 @@ struct vkd3d_resource_list
+@@ -1289,13 +1310,37 @@ struct vkd3d_resource_list
  };
  
  /* ID3D12CommandList */
@@ -19104,7 +19781,29 @@ index 822e172..c3f6d7e 100644
  
      bool is_recording;
      bool is_valid;
-@@ -1610,6 +1649,7 @@ struct d3d12_device
+@@ -1522,6 +1567,8 @@ struct vkd3d_null_resources
+ };
+ 
+ HRESULT vkd3d_init_null_resources(struct vkd3d_null_resources *null_resources, struct d3d12_device *device);
++void vkd3d_init_srv_shift_views(struct d3d12_device *device);
++void vkd3d_destroy_srv_shift_views(struct d3d12_device *device);
+ void vkd3d_destroy_null_resources(struct vkd3d_null_resources *null_resources, struct d3d12_device *device);
+ 
+ struct vkd3d_format_compatibility_list
+@@ -1599,6 +1646,12 @@ struct d3d12_device
+     struct vkd3d_vk_descriptor_heap_layout vk_descriptor_heap_layouts[VKD3D_SET_INDEX_COUNT];
+     bool use_vk_heaps;
+ 
++    /* Barrique: storage texel buffer views holding 0..15, the texel shifts of
++     * buffer SRVs (see struct vkd3d_shader_barrique_srv_shift_info) */
++    VkBuffer srv_shift_buffer;
++    VkDeviceMemory srv_shift_memory;
++    VkBufferView srv_shift_views[16];
++
+     struct d3d12_descriptor_heap **heaps;
+     size_t heap_capacity;
+     size_t heap_count;
+@@ -1610,6 +1663,7 @@ struct d3d12_device
      struct vkd3d_mutex pipeline_cache_mutex;
      struct vkd3d_render_pass_cache render_pass_cache;
      VkPipelineCache vk_pipeline_cache;
